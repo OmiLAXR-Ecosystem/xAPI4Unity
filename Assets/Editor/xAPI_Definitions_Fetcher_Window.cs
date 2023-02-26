@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
@@ -127,77 +128,42 @@ namespace EduXR.xAPI.Editor
     }
     #endregion
 
-    public static class FetcherWindowDefaults
+    public static class DefaultFetcherValues
     {
         // public const string Fetcher_API_BASE = "https://localhost:5001/";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
         public const string Namespace = "EduXR.xAPI.Registry";
+        public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        public static string ExeExtension => Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX
+            ? ""
+            : "exe";
+
+        public static string ProjectRoot => Directory.GetCurrentDirectory();
+        public static string AssetRoot => Path.Join(ProjectRoot, "Assets");
+
+        public static string OutputPath => AssetRoot;
     }
     
     [Serializable]
     public class FetcherSettings
     {
-        [SerializeField] private FetcherType selectedFetcherType = FetcherType.CommandLine;
-        [SerializeField] private string selectedFetcherUrl = "";
-        [SerializeField] private SourceType selectedSourceType = SourceType.Local;
-
-        public void Fetcher_View()
+        public class FetcherArguments : Dictionary<string, string>
         {
-            CustomGUI.Subtitle("Select your tool");
-            CustomGUI.Description(
-                "You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
-            
-            CustomGUI.BeginHorizontal();
-            selectedFetcherType = CustomGUI.Popup("Fetcher type", selectedFetcherType);
-
-            switch (selectedFetcherType)
+            public FetcherArguments From(Dictionary<string, string> dict)
             {
-                case FetcherType.WebService:
-                    break;
-                case FetcherType.CommandLine:
-                    if (CustomGUI.Button("Download Executable"))
-                    {
-                        
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-            
-            CustomGUI.EndHorizontal();
-        }
-
-        private void xAPI_Source_View()
-        {
-            CustomGUI.Subtitle("xAPI Source");
-
-            switch (selectedFetcherType)
-            {
-                case FetcherType.WebService:
-                    CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
-                    CustomGUI.BeginHorizontal();
-                    selectedFetcherUrl = CustomGUI.TextField("Service Url", selectedFetcherUrl);
-                    if (CustomGUI.Button("Open"))
-                    {
-                        Process.Start(selectedFetcherUrl);
-                    }
-                    CustomGUI.EndHorizontal();
-                    break;
-                case FetcherType.CommandLine:
-                    CustomGUI.Description(
-                        "If you are using the source type 'Local' you need a local copy of the xAPI registry on your computer.");
-
-                    if (selectedFetcherType == FetcherType.CommandLine)
-                        selectedSourceType = CustomGUI.Popup("Source type", selectedSourceType);
-                    else
-                        CustomGUI.Popup("Source type", SourceType.Local);
-
-                    SourceType_View();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                var rtn = new FetcherArguments();
+                rtn.AddRange(dict);
+                return rtn;
             }
         }
+        
+        [SerializeField] public FetcherType selectedType = FetcherType.CommandLine;
+        [SerializeField] public string selectedFetcherUrl = "";
+        [SerializeField] public SourceType selectedSourceType = SourceType.Local;
+        [SerializeField] public string localPath = DefaultFetcherValues.HomeDirectory;
+        [SerializeField] public string exePath = "";
+        [SerializeField] public string outputPath = "";
     }
 
     [Serializable]
@@ -286,25 +252,19 @@ namespace EduXR.xAPI.Editor
     
     public class xAPI_Definitions_Fetcher_Window : EditorWindow
     {
-        private delegate Dictionary<string, string> ArgumentsHandler();
         
         [SerializeReference] private FetcherSettings fetcher = new FetcherSettings();
         [SerializeReference] private LocalSourceSettings localSource = new LocalSourceSettings();
         [SerializeReference] private GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
         private string _lastAppliedRepoUrl = "";
 
-        [SerializeField] private string @namespace = FetcherWindowDefaults.Namespace;
+        [SerializeField] private string @namespace = DefaultFetcherValues.Namespace;
 
         [SerializeField] private bool useShellWindow = false;
 
         [SerializeField] private string selectedFetcherUrl = "https://fetch.xapi.elearn.rwth-aachen.de";
         
-        private Dictionary<string, string> SourceArguments =>
-            (new Dictionary<SourceType, ArgumentsHandler>
-            {
-                [SourceType.GitLab] = GetGitlabArguments,
-                [SourceType.Local] = GetLocalStorageArguments
-            })[selectedSourceType]?.Invoke();
+        
 
         [MenuItem("EduXR Tools/xAPI/Quick fetch definitions")]
         public static void QuickFetchDefinitions()
@@ -381,7 +341,7 @@ namespace EduXR.xAPI.Editor
             localSource.path = CustomGUI.TextField("Local root path", localSource.path);
             if (CustomGUI.Button("Browse path"))
             {
-                localPath = EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", localPath, "xapi");
+                fetcher.localPath = EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", fetcher.localPath, "xapi");
                 GUI.FocusControl(null);
             }
 
@@ -390,7 +350,7 @@ namespace EduXR.xAPI.Editor
 
         private void SourceType_View()
         {
-            switch (selectedSourceType)
+            switch (fetcher.selectedSourceType)
             {
                 case SourceType.Local:
                     LocalSource_View();
@@ -402,6 +362,64 @@ namespace EduXR.xAPI.Editor
                     throw new ArgumentOutOfRangeException();
             }
         }
+        
+        private void xAPI_Source_View()
+        {
+            CustomGUI.Subtitle("xAPI Source");
+
+            switch (fetcher.selectedType)
+            {
+                case FetcherType.WebService:
+                    CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
+                    CustomGUI.BeginHorizontal();
+                    selectedFetcherUrl = CustomGUI.TextField("Service Url", selectedFetcherUrl);
+                    if (CustomGUI.Button("Open"))
+                    {
+                        Process.Start(selectedFetcherUrl);
+                    }
+                    CustomGUI.EndHorizontal();
+                    break;
+                case FetcherType.CommandLine:
+                    CustomGUI.Description(
+                        "If you are using the source type 'Local' you need a local copy of the xAPI registry on your computer.");
+
+                    if (fetcher.selectedType == FetcherType.CommandLine)
+                        fetcher.selectedSourceType = CustomGUI.Popup("Source type", fetcher.selectedSourceType);
+                    else
+                        CustomGUI.Popup("Source type", SourceType.Local);
+
+                    SourceType_View();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        public void Fetcher_View()
+        {
+            CustomGUI.Subtitle("Select your tool");
+            CustomGUI.Description(
+                "You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
+            
+            CustomGUI.BeginHorizontal();
+            fetcher.selectedType = CustomGUI.Popup("Fetcher type", fetcher.selectedType);
+
+            switch (fetcher.selectedType)
+            {
+                case FetcherType.WebService:
+                    break;
+                case FetcherType.CommandLine:
+                    if (CustomGUI.Button("Download Executable"))
+                    {
+                        
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            CustomGUI.EndHorizontal();
+        }
 
         private void Fetcher_Args_View()
         {
@@ -409,18 +427,18 @@ namespace EduXR.xAPI.Editor
 
             @namespace = CustomGUI.TextField("Namespace", @namespace).Replace(" ", "_");
 
-            fetcherPath = CustomGUI.TextField("Executable path", fetcherPath);
+            fetcher.exePath = CustomGUI.TextField("Executable path", fetcher.exePath);
             if (CustomGUI.Button("Browse executable"))
             {
-                fetcherPath = EditorUtility.OpenFilePanel("Browse xAPI Definitions Fetcher", "", "exe");
+                fetcher.exePath = EditorUtility.OpenFilePanel("Browse executable", "", DefaultFetcherValues.ExeExtension);
                 GUI.FocusControl(null);
             }
 
             EditorGUILayout.Space();
-            outputPath = CustomGUI.TextField("Result output path", outputPath);
+            fetcher.outputPath = CustomGUI.TextField("Result output path", fetcher.outputPath);
             if (CustomGUI.Button("Set default output path"))
             {
-                outputPath = DefaultOutputPath;
+                fetcher.outputPath = DefaultFetcherValues.OutputPath;
                 GUI.FocusControl(null);
             }
         }
@@ -468,8 +486,8 @@ namespace EduXR.xAPI.Editor
         {
             var arguments = new Dictionary<string, string>
             {
-                ["source"] = selectedSourceType.ToString(),
-                ["output"] = outputPath,
+                ["source"] = fetcher.selectedType.ToString(),
+                ["output"] = fetcher.outputPath,
                 ["namespace"] = @namespace
             };
 
@@ -496,7 +514,7 @@ namespace EduXR.xAPI.Editor
         {
             return new Dictionary<string, string>
             {
-                ["local"] = localPath
+                ["local"] = fetcher.localPath
             };
         }
 
@@ -504,7 +522,8 @@ namespace EduXR.xAPI.Editor
         {
             var list = new List<string>();
 
-            var arguments = GetArguments(SourceArguments);
+            // todo
+            var arguments = new Dictionary<string, string>();
 
             foreach (var pair in arguments)
             {
@@ -517,7 +536,7 @@ namespace EduXR.xAPI.Editor
 
         private void ExecuteFetcher()
         {
-            var startInfo = new ProcessStartInfo(fetcherPath);
+            var startInfo = new ProcessStartInfo(fetcher.exePath);
 
             // prepare arguments
             var preparedArguments = PreparedArguments();
@@ -572,8 +591,8 @@ namespace EduXR.xAPI.Editor
             gitlabSource ??= new GitLabSourceSettings();
             localSource ??= new LocalSourceSettings();
 
-            if (outputPath == "")
-                outputPath = DefaultOutputPath;
+            if (fetcher.outputPath == "")
+                fetcher.outputPath = DefaultFetcherValues.OutputPath;
         }
 
         private void SaveSettings()
