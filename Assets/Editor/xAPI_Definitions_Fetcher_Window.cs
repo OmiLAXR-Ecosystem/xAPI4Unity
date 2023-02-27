@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Unity.VisualScripting;
+using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
@@ -69,7 +69,7 @@ namespace EduXR.xAPI.Editor
 
         public static string Popup(string label, IEnumerable<string> options, string value)
         {
-            var opts = new [] { "" };
+            var opts = new[] { "" };
             opts = opts.Concat(options).ToArray();
 
             if (string.IsNullOrEmpty(value))
@@ -78,7 +78,7 @@ namespace EduXR.xAPI.Editor
             var optsIndex = Array.IndexOf(opts, value);
             if (optsIndex < 0)
                 optsIndex = 0;
-            
+
             return opts[EditorGUILayout.Popup(label, optsIndex, opts)];
         }
 
@@ -95,8 +95,9 @@ namespace EduXR.xAPI.Editor
             Space(spaceLines);
         }
 
-        public static string TextField(string label, string text, params GUILayoutOption[] options)
-            => EditorGUILayout.TextField(label, text, (new[]
+        public static string TextField(string label, string text, string defaultText = "",
+            params GUILayoutOption[] options)
+            => EditorGUILayout.TextField(label, string.IsNullOrEmpty(text) ? defaultText : text, (new[]
             {
                 GUILayout.MinWidth(250)
             }).Concat(options).ToArray());
@@ -108,32 +109,41 @@ namespace EduXR.xAPI.Editor
     }
 
     #region Enums
+
     public enum SourceType
     {
         GitLab,
         Local
     }
-    
+
     public enum FetcherType
     {
         WebService,
         CommandLine
     }
-    
+
     public enum PackageType
     {
         SimpleAsset,
         Binary,
         UnityPackage
     }
+
     #endregion
 
     public static class DefaultFetcherValues
     {
-        // public const string Fetcher_API_BASE = "https://localhost:5001/";
+        public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
+        public const FetcherType FetcherType = Editor.FetcherType.WebService;
         public const string Namespace = "EduXR.xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        public const PackageType PackageType = Editor.PackageType.SimpleAsset;
+        public const SourceType SourceType = Editor.SourceType.Local;
+
+        public const string GitLabBranch = "main";
+        public const string GitLabProjectId = "";
+        public const string GitLabAccessKey = "";
 
         public static string ExeExtension => Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX
             ? ""
@@ -141,10 +151,21 @@ namespace EduXR.xAPI.Editor
 
         public static string ProjectRoot => Directory.GetCurrentDirectory();
         public static string AssetRoot => Path.Join(ProjectRoot, "Assets");
+        public static string ToolsRoot => Path.Join(ProjectRoot, "Tools");
+        public static string ExeRoot => Path.Join(ToolsRoot, "xAPI_Fetcher");
+        public static string ExePath => Path.Join(ExeRoot, "xAPI_Definitions_Fetcher" + ExeExtension);
 
         public static string OutputPath => AssetRoot;
+
+        public static void EnsureFolders()
+        {
+            if (!Directory.Exists(ToolsRoot))
+                Directory.CreateDirectory(ToolsRoot);
+            if (!Directory.Exists(ExeRoot))
+                Directory.CreateDirectory(ExeRoot);
+        }
     }
-    
+
     [Serializable]
     public class FetcherSettings
     {
@@ -157,114 +178,163 @@ namespace EduXR.xAPI.Editor
                 return rtn;
             }
         }
-        
-        [SerializeField] public FetcherType selectedType = FetcherType.CommandLine;
-        [SerializeField] public string selectedFetcherUrl = "";
-        [SerializeField] public SourceType selectedSourceType = SourceType.Local;
+
+        [SerializeField] public FetcherType selectedType = DefaultFetcherValues.FetcherType;
+        [SerializeField] public string selectedUrl = DefaultFetcherValues.FetcherAPIBase;
+        [SerializeField] public SourceType selectedSourceType = DefaultFetcherValues.SourceType;
         [SerializeField] public string localPath = DefaultFetcherValues.HomeDirectory;
-        [SerializeField] public string exePath = "";
-        [SerializeField] public string outputPath = "";
+        [SerializeField] public string exePath = DefaultFetcherValues.ExePath;
+        [SerializeField] public string outputPath = DefaultFetcherValues.OutputPath;
     }
 
     [Serializable]
-        public class GitLabSourceSettings
+    public class GitLabSourceSettings
+    {
+        [SerializeField] public string repoUrl = DefaultFetcherValues.RepoUrl;
+        [SerializeField] public string projectId = DefaultFetcherValues.GitLabProjectId;
+        [SerializeField] public string accessKey = DefaultFetcherValues.GitLabAccessKey;
+        [SerializeField] public string branch = DefaultFetcherValues.GitLabBranch;
+
+        private Dictionary<string, int> _projectIds = new Dictionary<string, int>();
+
+        public string[] Branches { get; private set; } = Array.Empty<string>();
+
+        public Uri BaseRepoUri => new Uri(repoUrl);
+        public string BaseUri => BaseRepoUri.AbsoluteUri.Replace(BaseRepoUri.AbsolutePath, "");
+        public string AccessTokenUri => Path.Join(BaseUri, "-/profile/personal_access_tokens");
+        public string BranchesUri => Path.Join(BaseUri, $"api/v4/projects/{projectId}/repository/branches");
+
+        public int? FetchProjectId() => FetchProjectId(repoUrl);
+        public string[] FetchBranches() => FetchBranches(BranchesUri);
+
+        public void AutoDetectProjectId()
         {
-            [SerializeField] public string repoUrl = "https://gitlab.com/learntech-rwth/xapi";
-            [SerializeField] public string projectId = "";
-            [SerializeField] public string privateKey = "";
-            [SerializeField] public string branch = "main";
-            
-            private Dictionary<string, int> _projectIds = new Dictionary<string, int>();
-
-            public string[] Branches { get; private set; } = Array.Empty<string>();
-
-            public Uri BaseRepoUri => new Uri(repoUrl);
-            public string BaseUri => BaseRepoUri.AbsoluteUri.Replace(BaseRepoUri.AbsolutePath, "");
-            public string AccessTokenUri => Path.Join(BaseUri, "-/profile/personal_access_tokens");
-            public string BranchesUri => Path.Join(BaseUri, $"api/v4/projects/{projectId}/repository/branches");
-            
-            public int? FetchProjectId() => FetchProjectId(repoUrl);
-            public string[] FetchBranches() => FetchBranches(BranchesUri);
-
-            public void AutoDetectProjectId()
+            var pid = FetchProjectId();
+            if (!pid.HasValue) return;
+            projectId = pid.Value.ToString();
+            if (!_projectIds.ContainsKey(repoUrl))
             {
-                var pid = FetchProjectId();
-                if (!pid.HasValue) return;
-                projectId = pid.Value.ToString();
-                if (!_projectIds.ContainsKey(repoUrl))
-                {
-                    _projectIds.Add(repoUrl, pid.Value);
-                }
-            }
-
-            /// <summary>
-            /// Check if the typed repo url is matching with the project id.
-            /// </summary>
-            /// <returns>true, repo url is matching with the project id</returns>
-            public bool IsProjectIdMatchingRepoUrl()
-            {
-                var allProjectIds = _projectIds.Values.Select(p => p.ToString()).ToArray();
-                if (!allProjectIds.Contains(projectId) || !_projectIds.ContainsKey(repoUrl))
-                    return false;
-                var pid = _projectIds[repoUrl];
-                return pid.ToString() == projectId;
-            }
-            
-            private static int? FetchProjectId(string uri)
-            {
-                var response = EditorHttpHelper.Get(uri, "application/text");
-                // Define a regular expression for repeated words.
-                var rx = new Regex(@"\b(Project ID: [0-9]+)\b",
-                    RegexOptions.Compiled | RegexOptions.IgnoreCase);
-                    
-                // Find matches.
-                var matches = rx.Matches(response);
-                var match = matches.First().Value;
-                var projectId = int.Parse(match.Replace("Project ID:", ""));
-
-                // Report the number of matches found.
-                Debug.Log("Project ID " + projectId);
-                return projectId;
-            }
-
-            private static string[] FetchBranches(string uri)
-            {
-                var response = EditorHttpHelper.Get(uri, "application/json");
-                var rx = new Regex("(\"name\":\"[0-9a-zA-Z-_]+\")", RegexOptions.Compiled | RegexOptions.Multiline);
-
-                var matches = rx.Matches(response);
-                return matches
-                    .Select(m => m.Value.Replace("\"", "").Replace("name:", ""))
-                    .ToArray(); 
-            }
-
-            public void AutoDetectBranches()
-            {
-                Branches = FetchBranches(BranchesUri);
+                _projectIds.Add(repoUrl, pid.Value);
             }
         }
+
+        /// <summary>
+        /// Check if the typed repo url is matching with the project id.
+        /// </summary>
+        /// <returns>true, repo url is matching with the project id</returns>
+        public bool IsProjectIdMatchingRepoUrl()
+        {
+            var allProjectIds = _projectIds.Values.Select(p => p.ToString()).ToArray();
+            if (!allProjectIds.Contains(projectId) || !_projectIds.ContainsKey(repoUrl))
+                return false;
+            var pid = _projectIds[repoUrl];
+            return pid.ToString() == projectId;
+        }
+
+        private static int? FetchProjectId(string uri)
+        {
+            var response = EditorHttpHelper.Get(uri, "application/text");
+            // Define a regular expression for repeated words.
+            var rx = new Regex(@"\b(Project ID: [0-9]+)\b",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            // Find matches.
+            var matches = rx.Matches(response);
+            var match = matches.First().Value;
+            var projectId = int.Parse(match.Replace("Project ID:", ""));
+
+            // Report the number of matches found.
+            Debug.Log("Project ID " + projectId);
+            return projectId;
+        }
+
+        private static string[] FetchBranches(string uri)
+        {
+            var response = EditorHttpHelper.Get(uri);
+            var rx = new Regex("(\"name\":\"[0-9a-zA-Z-_]+\")", RegexOptions.Compiled | RegexOptions.Multiline);
+
+            var matches = rx.Matches(response);
+            return matches
+                .Select(m => m.Value.Replace("\"", "").Replace("name:", ""))
+                .ToArray();
+        }
+
+        public void AutoDetectBranches()
+        {
+            Branches = FetchBranches(BranchesUri);
+        }
+    }
+
+    [Serializable]
+    public class LocalSourceSettings
+    {
+        [SerializeField] public string path = "";
+    }
+
+    internal interface IObservable
+    {
+        void RememberStartValue();
+        bool IsDirty();
+        void ResetToDefault();
+    }
+
+    public delegate T ObservableValueHandler<T>();
+    public class Observable<T> : IObservable where T : IComparable
+    {
+        private T _startValue;
+        private T _defaultValue;
+
+        public ObservableValueHandler<T> GetValue;
+
+        public Observable<T> SetValue(T value)
+        {
+            GetValue = () => value;
+            return this;
+        }
+
+        public Observable(T defaultValue)
+        {
+            _defaultValue = defaultValue;
+            GetValue = () => _defaultValue;
+        }
+
+        public void RememberStartValue() => _startValue = GetValue();
+        public bool IsDirty() => _startValue.CompareTo(GetValue()) != 0;
+
+        public void ResetToDefault()
+        {
+            _startValue = _defaultValue;
+            GetValue = () => _defaultValue;
+        }
+    }
+
+    [Serializable]
+    public class FetcherWindowSettings
+    {
+        private List<IObservable> _observables = new List<IObservable>();
+
+        [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
+        [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
+        [SerializeReference] public GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
         
-        [Serializable]
-        public class LocalSourceSettings
+        [SerializeReference] public string @namespace = DefaultFetcherValues.Namespace;
+        [SerializeReference] public PackageType packageType = DefaultFetcherValues.PackageType;
+
+        public void RememberValues()
         {
-            [SerializeField] public string path = "";
+            _observables.Clear();
+            _observables.Add(new Observable<string>(DefaultFetcherValues.Namespace).SetValue(@namespace));
+            _observables.Add(new Observable<PackageType>(DefaultFetcherValues.PackageType).SetValue(packageType));
+            _observables.ForEach(o => o.RememberStartValue());
         }
-    
+        public bool IsDirty() => _observables.Any(o => o.IsDirty());
+        public void ResetToDefault() => _observables.ForEach(o => o.ResetToDefault());
+    }
+
     public class xAPI_Definitions_Fetcher_Window : EditorWindow
     {
-        
-        [SerializeReference] private FetcherSettings fetcher = new FetcherSettings();
-        [SerializeReference] private LocalSourceSettings localSource = new LocalSourceSettings();
-        [SerializeReference] private GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
+        [SerializeReference] private FetcherWindowSettings settings = new FetcherWindowSettings();
         private string _lastAppliedRepoUrl = "";
-
-        [SerializeField] private string @namespace = DefaultFetcherValues.Namespace;
-
-        [SerializeField] private bool useShellWindow = false;
-
-        [SerializeField] private string selectedFetcherUrl = "https://fetch.xapi.elearn.rwth-aachen.de";
-        
-        
 
         [MenuItem("EduXR Tools/xAPI/Quick fetch definitions")]
         public static void QuickFetchDefinitions()
@@ -276,72 +346,78 @@ namespace EduXR.xAPI.Editor
         {
             GetWindow<xAPI_Definitions_Fetcher_Window>("xAPI Definitions Fetcher").Show();
         }
-        
+
         private void ApplyGitLabRepo()
         {
-            gitlabSource.AutoDetectProjectId();
-            _lastAppliedRepoUrl = gitlabSource.repoUrl;
-            
-            gitlabSource.AutoDetectBranches();
+            settings.gitlabSource.AutoDetectProjectId();
+            _lastAppliedRepoUrl = settings.gitlabSource.repoUrl;
+
+            settings.gitlabSource.AutoDetectBranches();
         }
 
         private void GitLabSource_View()
         {
             CustomGUI.BeginHorizontal();
-            gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", gitlabSource.repoUrl);
-            
-            CustomGUI.BeginDisabledGroup(gitlabSource.repoUrl == _lastAppliedRepoUrl);
+            settings.gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", settings.gitlabSource.repoUrl);
+
+            CustomGUI.BeginDisabledGroup(settings.gitlabSource.repoUrl == _lastAppliedRepoUrl);
             if (CustomGUI.Button("Apply"))
             {
                 ApplyGitLabRepo();
             }
+
             CustomGUI.EndDisabledGroup();
 
             CustomGUI.EndHorizontal();
 
-            CustomGUI.BeginDisabledGroup(gitlabSource.repoUrl != _lastAppliedRepoUrl);
-            
+            CustomGUI.BeginDisabledGroup(settings.gitlabSource.repoUrl != _lastAppliedRepoUrl);
+
             CustomGUI.BeginHorizontal();
-            gitlabSource.privateKey = CustomGUI.TextField("Private access token", gitlabSource.privateKey);
+            settings.gitlabSource.accessKey = CustomGUI.TextField("Access token", settings.gitlabSource.accessKey);
             if (CustomGUI.Button("Create one"))
             {
-                Process.Start(gitlabSource.AccessTokenUri);
+                Process.Start(settings.gitlabSource.AccessTokenUri);
             }
+
             CustomGUI.EndHorizontal();
-            
+
             CustomGUI.BeginHorizontal();
-            gitlabSource.projectId = CustomGUI.TextField("Project ID", gitlabSource.projectId, GUILayout.MaxWidth(300));
-            
-            CustomGUI.BeginDisabledGroup(gitlabSource.IsProjectIdMatchingRepoUrl());
+            settings.gitlabSource.projectId =
+                CustomGUI.TextField("Project ID", settings.gitlabSource.projectId, "", GUILayout.MaxWidth(300));
+
+            CustomGUI.BeginDisabledGroup(settings.gitlabSource.IsProjectIdMatchingRepoUrl());
             if (CustomGUI.Button("Fetch Project ID from repo"))
             {
-                gitlabSource.AutoDetectProjectId();
+                settings.gitlabSource.AutoDetectProjectId();
             }
+
             CustomGUI.EndDisabledGroup();
 
             CustomGUI.EndHorizontal();
 
-            CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(gitlabSource.projectId));
+            CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(settings.gitlabSource.projectId));
 
             CustomGUI.BeginHorizontal();
-            gitlabSource.branch = CustomGUI.Popup("Branch", gitlabSource.Branches,gitlabSource.branch);
+            settings.gitlabSource.branch = CustomGUI.Popup("Branch", settings.gitlabSource.Branches, settings.gitlabSource.branch);
             if (CustomGUI.Button("Refresh"))
             {
-                gitlabSource.AutoDetectBranches();
+                settings.gitlabSource.AutoDetectBranches();
             }
+
             CustomGUI.EndHorizontal();
             CustomGUI.EndDisabledGroup();
-            
+
             CustomGUI.EndDisabledGroup();
         }
 
         private void LocalSource_View()
         {
             CustomGUI.BeginHorizontal();
-            localSource.path = CustomGUI.TextField("Local root path", localSource.path);
+            settings.localSource.path = CustomGUI.TextField("Local root path", settings.localSource.path);
             if (CustomGUI.Button("Browse path"))
             {
-                fetcher.localPath = EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", fetcher.localPath, "xapi");
+                settings.fetcher.localPath =
+                    EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", settings.fetcher.localPath, "xapi");
                 GUI.FocusControl(null);
             }
 
@@ -350,7 +426,7 @@ namespace EduXR.xAPI.Editor
 
         private void SourceType_View()
         {
-            switch (fetcher.selectedSourceType)
+            switch (settings.fetcher.selectedSourceType)
             {
                 case SourceType.Local:
                     LocalSource_View();
@@ -362,29 +438,30 @@ namespace EduXR.xAPI.Editor
                     throw new ArgumentOutOfRangeException();
             }
         }
-        
+
         private void xAPI_Source_View()
         {
             CustomGUI.Subtitle("xAPI Source");
 
-            switch (fetcher.selectedType)
+            switch (settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
                     CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
                     CustomGUI.BeginHorizontal();
-                    selectedFetcherUrl = CustomGUI.TextField("Service Url", selectedFetcherUrl);
-                    if (CustomGUI.Button("Open"))
+                    settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", settings.fetcher.selectedUrl, DefaultFetcherValues.FetcherAPIBase);
+                    if (CustomGUI.Button("Open in browser"))
                     {
-                        Process.Start(selectedFetcherUrl);
+                        Process.Start(settings.fetcher.selectedUrl);
                     }
+
                     CustomGUI.EndHorizontal();
                     break;
                 case FetcherType.CommandLine:
                     CustomGUI.Description(
                         "If you are using the source type 'Local' you need a local copy of the xAPI registry on your computer.");
 
-                    if (fetcher.selectedType == FetcherType.CommandLine)
-                        fetcher.selectedSourceType = CustomGUI.Popup("Source type", fetcher.selectedSourceType);
+                    if (settings.fetcher.selectedType == FetcherType.CommandLine)
+                        settings.fetcher.selectedSourceType = CustomGUI.Popup("Source type", settings.fetcher.selectedSourceType);
                     else
                         CustomGUI.Popup("Source type", SourceType.Local);
 
@@ -394,30 +471,41 @@ namespace EduXR.xAPI.Editor
                     throw new ArgumentOutOfRangeException();
             }
         }
-        
+
         public void Fetcher_View()
         {
             CustomGUI.Subtitle("Select your tool");
             CustomGUI.Description(
                 "You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
-            
-            CustomGUI.BeginHorizontal();
-            fetcher.selectedType = CustomGUI.Popup("Fetcher type", fetcher.selectedType);
 
-            switch (fetcher.selectedType)
+            CustomGUI.BeginHorizontal();
+            settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", settings.fetcher.selectedType);
+
+            switch (settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
                     break;
                 case FetcherType.CommandLine:
                     if (CustomGUI.Button("Download Executable"))
                     {
-                        
                     }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
+            CustomGUI.EndHorizontal();
+
+            CustomGUI.BeginHorizontal();
+            settings.fetcher.exePath = CustomGUI.TextField("Executable path", settings.fetcher.exePath, DefaultFetcherValues.ExePath);
+            if (CustomGUI.Button("Browse executable"))
+            {
+                settings.fetcher.exePath =
+                    EditorUtility.OpenFilePanel("Browse executable", "", DefaultFetcherValues.ExeExtension);
+                GUI.FocusControl(null);
+            }
+
             CustomGUI.EndHorizontal();
         }
 
@@ -425,22 +513,24 @@ namespace EduXR.xAPI.Editor
         {
             CustomGUI.Subtitle("Fetcher configuration");
 
-            @namespace = CustomGUI.TextField("Namespace", @namespace).Replace(" ", "_");
+            settings.@namespace = CustomGUI.TextField("Namespace", settings.@namespace.Replace(" ", "_").Trim(),
+                DefaultFetcherValues.Namespace);
 
-            fetcher.exePath = CustomGUI.TextField("Executable path", fetcher.exePath);
-            if (CustomGUI.Button("Browse executable"))
+            CustomGUI.Space();
+
+            settings.packageType = CustomGUI.Popup("Package Type", settings.packageType);
+
+            CustomGUI.Space();
+
+            CustomGUI.BeginHorizontal();
+            settings.fetcher.outputPath =
+                CustomGUI.TextField("Result output path", settings.fetcher.outputPath, DefaultFetcherValues.OutputPath);
+            if (CustomGUI.Button("Open in explorer"))
             {
-                fetcher.exePath = EditorUtility.OpenFilePanel("Browse executable", "", DefaultFetcherValues.ExeExtension);
-                GUI.FocusControl(null);
+                Process.Start(settings.fetcher.outputPath);
             }
 
-            EditorGUILayout.Space();
-            fetcher.outputPath = CustomGUI.TextField("Result output path", fetcher.outputPath);
-            if (CustomGUI.Button("Set default output path"))
-            {
-                fetcher.outputPath = DefaultFetcherValues.OutputPath;
-                GUI.FocusControl(null);
-            }
+            CustomGUI.EndHorizontal();
         }
 
         private void OnGUI()
@@ -453,42 +543,46 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.Divider();
 
-            EditorGUILayout.Space();
+            CustomGUI.Space();
 
-            CustomGUI.Space(4);
-
-            if (GUILayout.Button("Save settings", GUILayout.Width(100), GUILayout.Height(40)))
+            Fetcher_Args_View();
+            
+            CustomGUI.Divider();
+            
+            CustomGUI.BeginHorizontal();
+            
+            CustomGUI.BeginDisabledGroup(!settings.IsDirty());
+            if (CustomGUI.Button("Save settings"))
             {
                 GUI.FocusControl(null);
                 SaveSettings();
             }
-
-            EditorGUILayout.Separator();
-
-            CustomGUI.Space(2);
-
-            //_sourceSelected = EditorGUILayout.Popup("Source", _sourceSelected, _sources);
-
+            CustomGUI.EndDisabledGroup();
+            
             if (CustomGUI.Button("Reset to default"))
             {
                 ResetSettings();
                 LoadSettings();
             }
+            
+            CustomGUI.Space();
 
-            if (CustomGUI.Button("Fetch xAPI Definitions"))
+            if (CustomGUI.Button("Transform JSON => C#"))
             {
                 GUI.FocusControl(null);
                 ExecuteFetcher();
             }
+            
+            CustomGUI.EndHorizontal();
         }
 
         private Dictionary<string, string> GetArguments(Dictionary<string, string> args = null)
         {
             var arguments = new Dictionary<string, string>
             {
-                ["source"] = fetcher.selectedType.ToString(),
-                ["output"] = fetcher.outputPath,
-                ["namespace"] = @namespace
+                ["source"] = settings.fetcher.selectedType.ToString(),
+                ["output"] = settings.fetcher.outputPath,
+                ["namespace"] = settings.@namespace
             };
 
             if (args == null) return arguments;
@@ -504,9 +598,9 @@ namespace EduXR.xAPI.Editor
         {
             return new Dictionary<string, string>
             {
-                ["projectId"] = gitlabSource.projectId,
-                ["privateKey"] = gitlabSource.privateKey,
-                ["branch"] = gitlabSource.branch
+                ["projectId"] = settings.gitlabSource.projectId,
+                ["privateKey"] = settings.gitlabSource.accessKey,
+                ["branch"] = settings.gitlabSource.branch
             };
         }
 
@@ -514,7 +608,7 @@ namespace EduXR.xAPI.Editor
         {
             return new Dictionary<string, string>
             {
-                ["local"] = fetcher.localPath
+                ["local"] = settings.fetcher.localPath
             };
         }
 
@@ -536,33 +630,27 @@ namespace EduXR.xAPI.Editor
 
         private void ExecuteFetcher()
         {
-            var startInfo = new ProcessStartInfo(fetcher.exePath);
-
             // prepare arguments
             var preparedArguments = PreparedArguments();
             var arguments = string.Join(" ", preparedArguments);
-            startInfo.Arguments = arguments;
 
-            if (!useShellWindow)
+            var startInfo = new ProcessStartInfo(settings.fetcher.exePath)
             {
-                startInfo.UseShellExecute = false;
-                startInfo.RedirectStandardOutput = true;
-                startInfo.CreateNoWindow = true;
-            }
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
 
-
-            var process = new Process();
-            process.StartInfo = startInfo;
-            if (!useShellWindow)
+            var process = new Process()
             {
-                process.OutputDataReceived += Process_OutputDataReceived;
-                process.ErrorDataReceived += Process_ErrorDataReceived;
-            }
+                StartInfo = startInfo
+            };
+            process.OutputDataReceived += Process_OutputDataReceived;
+            process.ErrorDataReceived += Process_ErrorDataReceived;
 
+            process.BeginOutputReadLine();
             process.Start();
-
-            if (!useShellWindow)
-                process.BeginOutputReadLine();
         }
 
         private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -575,31 +663,40 @@ namespace EduXR.xAPI.Editor
             Debug.Log(e.Data);
         }
 
+        #region Load, Save & Reset Settings
+
+        private const string SettingsKey = "EduXR.xAPI.Fetcher";
+        
         protected void OnEnable() => LoadSettings();
 
         private void ResetSettings()
         {
-            EditorPrefs.DeleteKey("EduXR.xAPI.Fetcher");
+            EditorPrefs.DeleteKey(SettingsKey);
+            settings = new FetcherWindowSettings();
+            _lastAppliedRepoUrl = string.Empty;
         }
 
         private void LoadSettings()
         {
-            var data = EditorPrefs.GetString("EduXR.xAPI.Fetcher", JsonUtility.ToJson(this, false));
+            DefaultFetcherValues.EnsureFolders();
+            
+            var data = EditorPrefs.GetString(SettingsKey, JsonUtility.ToJson(settings, false));
             // Then we apply them to this window
-            JsonUtility.FromJsonOverwrite(data, this);
+            JsonUtility.FromJsonOverwrite(data, settings);
+            
+            settings ??= new FetcherWindowSettings();
 
-            gitlabSource ??= new GitLabSourceSettings();
-            localSource ??= new LocalSourceSettings();
-
-            if (fetcher.outputPath == "")
-                fetcher.outputPath = DefaultFetcherValues.OutputPath;
+            settings.RememberValues();
         }
 
         private void SaveSettings()
         {
             var data = JsonUtility.ToJson(this, false);
             // And we save it
-            EditorPrefs.SetString("xAPI_Definitions_Fetcher_Window", data);
+            EditorPrefs.SetString(SettingsKey, data);
+            
+            settings.RememberValues();
         }
+        #endregion
     }
 }
