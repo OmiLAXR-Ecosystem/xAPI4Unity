@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Unity.VisualScripting;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -134,7 +134,8 @@ namespace EduXR.xAPI.Editor
     public static class DefaultFetcherValues
     {
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
-        public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
+        //public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
+        public const string FetcherAPIBase = "http://localhost:8083/";
         public const FetcherType FetcherType = Editor.FetcherType.WebService;
         public const string Namespace = "EduXR.xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -282,7 +283,7 @@ namespace EduXR.xAPI.Editor
     public class Observable<T> : IObservable where T : IComparable
     {
         private T _startValue;
-        private T _defaultValue;
+        private readonly T _defaultValue;
 
         public ObservableValueHandler<T> GetValue;
 
@@ -335,6 +336,8 @@ namespace EduXR.xAPI.Editor
     {
         [SerializeReference] private FetcherWindowSettings settings = new FetcherWindowSettings();
         private string _lastAppliedRepoUrl = "";
+
+        private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
 
         [MenuItem("EduXR Tools/xAPI/Quick fetch definitions")]
         public static void QuickFetchDefinitions()
@@ -488,6 +491,12 @@ namespace EduXR.xAPI.Editor
                 case FetcherType.CommandLine:
                     if (CustomGUI.Button("Download Executable"))
                     {
+                        FetcherService().DownloadExe(DefaultFetcherValues.ExeRoot, (_, _) =>
+                        {
+                            var zipPath = Path.Join(DefaultFetcherValues.ExeRoot, FetcherApiService.ZipName);
+                            var outPath = Path.Join(DefaultFetcherValues.ExeRoot, "xapi-fetcher");
+                            ZipFile.ExtractToDirectory(zipPath, outPath);
+                        });
                     }
 
                     break;

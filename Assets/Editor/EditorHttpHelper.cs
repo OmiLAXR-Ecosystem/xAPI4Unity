@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace EduXR.xAPI.Editor
@@ -18,7 +16,6 @@ namespace EduXR.xAPI.Editor
             try
             {
                 using var response = (HttpWebResponse)request.GetResponse();
-                Debug.Log("Publish Response: " + (int)response.StatusCode + ", " + response.StatusDescription);
                 if (response.StatusCode != HttpStatusCode.OK) 
                     return null;
                 using var r = new System.IO.StreamReader(response.GetResponseStream() ?? throw new InvalidOperationException(), Encoding.UTF8);
@@ -35,5 +32,8 @@ namespace EduXR.xAPI.Editor
 
             return null;
         }
+
+        public static void Download(string fileUri, string fileName)
+            => new WebClient().DownloadFileAsync(new Uri(fileUri), fileName);
     }
 }
