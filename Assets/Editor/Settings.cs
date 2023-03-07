@@ -4,12 +4,84 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 namespace EduXR.xAPI.Editor
 {
+    public interface ISettings
+    {
+        T Clone<T>();
+        bool Equals(ISettings s);
+    }
+
     [Serializable]
-    public class FetcherSettings
+    public class Settings : ISettings
+    {
+        private const string SettingsKey = "EduXR.xAPI";
+
+        public static Settings instance = new Settings();
+        private static Settings _savedInstance = new Settings();
+
+        [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
+        [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
+        [SerializeReference] public GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
+
+        [SerializeReference] public string @namespace = DefaultValues.Namespace;
+        [SerializeReference] public PackageType packageType = DefaultValues.PackageType;
+
+        public void Reset()
+        {
+            EditorPrefs.DeleteKey(SettingsKey);
+            instance = new Settings();
+            _savedInstance = instance.Clone<Settings>();
+        }
+
+        public T Clone<T>()
+        {
+            var s = new Settings
+            {
+                fetcher = fetcher.Clone<FetcherSettings>(),
+                localSource = localSource.Clone<LocalSourceSettings>(),
+                gitlabSource = gitlabSource.Clone<GitLabSourceSettings>(),
+                @namespace = @namespace,
+                packageType = packageType
+            };
+            return (T)(object)s;
+        }
+
+        public bool Equals(ISettings so)
+        {
+            var s = so as Settings;
+            return fetcher.Equals(s.fetcher) && localSource.Equals(s.localSource) &&
+                   gitlabSource.Equals(s.gitlabSource) && @namespace == s.@namespace && packageType == s.packageType;
+        }
+
+        public void Load()
+        {
+            DefaultValues.EnsureFolders();
+
+            var data = EditorPrefs.GetString(SettingsKey, JsonUtility.ToJson(instance, false));
+            // Then we apply them to this window
+            JsonUtility.FromJsonOverwrite(data, instance);
+
+            instance ??= new Settings();
+            _savedInstance = instance.Clone<Settings>();
+        }
+
+        public void Save()
+        {
+            var data = JsonUtility.ToJson(this, false);
+            // And we save it
+            EditorPrefs.SetString(SettingsKey, data);
+            _savedInstance = instance.Clone<Settings>();
+        }
+
+        public static bool IsDirty() => !instance.Equals(_savedInstance);
+    }
+
+    [Serializable]
+    public class FetcherSettings : ISettings
     {
         public class FetcherArguments : Dictionary<string, string>
         {
@@ -27,10 +99,32 @@ namespace EduXR.xAPI.Editor
         [SerializeField] public string localPath = DefaultValues.HomeDirectory;
         [SerializeField] public string exePath = DefaultValues.ExePath;
         [SerializeField] public string outputPath = DefaultValues.OutputPath;
+
+        public T Clone<T>()
+        {
+            var f = new FetcherSettings
+            {
+                selectedType = selectedType,
+                selectedUrl = selectedUrl,
+                selectedSourceType = selectedSourceType,
+                localPath = localPath,
+                exePath = exePath,
+                outputPath = outputPath
+            };
+            return (T)(object)f;
+        }
+
+        public bool Equals(ISettings s)
+        {
+            var f = s as FetcherSettings;
+            return selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
+                   selectedSourceType == f.selectedSourceType && localPath == f.localPath &&
+                   exePath == f.exePath && outputPath == f.outputPath;
+        }
     }
 
     [Serializable]
-    public class GitLabSourceSettings
+    public class GitLabSourceSettings : ISettings
     {
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
         [SerializeField] public string projectId = DefaultValues.GitLabProjectId;
@@ -105,48 +199,38 @@ namespace EduXR.xAPI.Editor
         {
             Branches = FetchBranches(BranchesUri);
         }
+
+        public T Clone<T>()
+        {
+            var gb = new GitLabSourceSettings
+            {
+                repoUrl = repoUrl,
+                branch = branch,
+                projectId = projectId,
+                accessKey = accessKey
+            };
+            return (T)(object)gb;
+        }
+
+        public bool Equals(ISettings s)
+        {
+            var gb = s as GitLabSourceSettings;
+            return gb.repoUrl == repoUrl && gb.branch == branch && gb.projectId == projectId &&
+                   gb.accessKey == accessKey;
+        }
     }
 
     [Serializable]
-    public class LocalSourceSettings
+    public class LocalSourceSettings : ISettings
     {
         [SerializeField] public string path = "";
-    }
 
-    internal interface IObservable
-    {
-        void RememberStartValue();
-        bool IsDirty();
-        void ResetToDefault();
-    }
-
-    public delegate T ObservableValueHandler<T>();
-    public class Observable<T> : IObservable where T : IComparable
-    {
-        private T _startValue;
-        private readonly T _defaultValue;
-
-        public ObservableValueHandler<T> GetValue;
-
-        public Observable<T> SetValue(T value)
+        public T Clone<T>()
         {
-            GetValue = () => value;
-            return this;
+            return (T)(object)(new LocalSourceSettings() { path = path });
         }
 
-        public Observable(T defaultValue)
-        {
-            _defaultValue = defaultValue;
-            GetValue = () => _defaultValue;
-        }
-
-        public void RememberStartValue() => _startValue = GetValue();
-        public bool IsDirty() => _startValue.CompareTo(GetValue()) != 0;
-
-        public void ResetToDefault()
-        {
-            _startValue = _defaultValue;
-            GetValue = () => _defaultValue;
-        }
+        public bool Equals(ISettings s)
+            => (s as LocalSourceSettings)?.path == path;
     }
 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
@@ -12,32 +11,9 @@ using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
 {
-    [Serializable]
-    public class FetcherWindowSettings
-    {
-        private List<IObservable> _observables = new List<IObservable>();
-
-        [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
-        [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
-        [SerializeReference] public GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
-        
-        [SerializeReference] public string @namespace = DefaultValues.Namespace;
-        [SerializeReference] public PackageType packageType = DefaultValues.PackageType;
-
-        public void RememberValues()
-        {
-            _observables.Clear();
-            _observables.Add(new Observable<string>(DefaultValues.Namespace).SetValue(@namespace));
-            _observables.Add(new Observable<PackageType>(DefaultValues.PackageType).SetValue(packageType));
-            _observables.ForEach(o => o.RememberStartValue());
-        }
-        public bool IsDirty() => _observables.Any(o => o.IsDirty());
-        public void ResetToDefault() => _observables.ForEach(o => o.ResetToDefault());
-    }
-
     public class xAPI_Fetcher_Window : EditorWindow
     {
-        [SerializeReference] private FetcherWindowSettings settings = new FetcherWindowSettings();
+        private Settings settings => Settings.instance;
         private string _lastAppliedRepoUrl = "";
 
         private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
@@ -47,7 +23,7 @@ namespace EduXR.xAPI.Editor
         {
         }
 
-        [MenuItem("EduXR Tools/xAPI/Fetch custom definitions")]
+        [MenuItem("EduXR Tools/xAPI/Fetcher")]
         public static void ShowWindow()
         {
             GetWindow<xAPI_Fetcher_Window>("xAPI Fetcher").Show();
@@ -276,18 +252,19 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.BeginHorizontal();
             
-            CustomGUI.BeginDisabledGroup(!settings.IsDirty());
+            CustomGUI.BeginDisabledGroup(!Settings.IsDirty());
             if (CustomGUI.Button("Save settings"))
             {
                 GUI.FocusControl(null);
-                SaveSettings();
+                Settings.instance.Save();
             }
             CustomGUI.EndDisabledGroup();
             
             if (CustomGUI.Button("Reset to default"))
             {
-                ResetSettings();
-                LoadSettings();
+                _lastAppliedRepoUrl = string.Empty;
+                Settings.instance.Reset();
+                Settings.instance.Load();
             }
             
             CustomGUI.Space();
@@ -390,38 +367,9 @@ namespace EduXR.xAPI.Editor
 
         #region Load, Save & Reset Settings
 
-        private const string SettingsKey = "EduXR.xAPI.Fetcher";
         
-        protected void OnEnable() => LoadSettings();
-
-        private void ResetSettings()
-        {
-            EditorPrefs.DeleteKey(SettingsKey);
-            settings = new FetcherWindowSettings();
-            _lastAppliedRepoUrl = string.Empty;
-        }
-
-        private void LoadSettings()
-        {
-            DefaultValues.EnsureFolders();
-            
-            var data = EditorPrefs.GetString(SettingsKey, JsonUtility.ToJson(settings, false));
-            // Then we apply them to this window
-            JsonUtility.FromJsonOverwrite(data, settings);
-            
-            settings ??= new FetcherWindowSettings();
-
-            settings.RememberValues();
-        }
-
-        private void SaveSettings()
-        {
-            var data = JsonUtility.ToJson(this, false);
-            // And we save it
-            EditorPrefs.SetString(SettingsKey, data);
-            
-            settings.RememberValues();
-        }
+        protected void OnEnable() => Settings.instance.Load();
+        
         #endregion
     }
 }
