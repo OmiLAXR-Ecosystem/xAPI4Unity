@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Net;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace EduXR.xAPI.Editor {
     public class FetcherApiService
@@ -12,23 +15,29 @@ namespace EduXR.xAPI.Editor {
             _url = url;
         }
 
-        public FetcherApiService DownloadExe(string outPath, DownloadDataCompletedEventHandler onFinish = null)
+        public IEnumerator DownloadExe(string outPath, Action<byte[]> onFinish = null)
         {
-            var fileUri = Path.Join(_url, "download/fetcher-cli.zip?os=Auto");
-            var fileName = Path.Join(outPath, ZipName);
-            var client = new WebClient();
-            
-            client.Headers.Add("accept", "*/*");
+            var fileUri = Path.Join(_url.Replace("https", "http"), "static/fetcher-cli-mac.zip");//"download/fetcher-cli.zip?os=Auto");
+            var savePath = Path.Join(outPath, ZipName);
+            using (var webRequest = UnityWebRequest.Get(fileUri))
+            {
+                webRequest.SetRequestHeader("accept", "application/x-zip-compression");
+                // Send the request to the server
+                yield return webRequest.SendWebRequest();
 
-            var bytes = client.DownloadString(new Uri(fileUri));
-            
-            
-            using var fs = new FileStream(fileName, FileMode.CreateNew);
-           // fs.Write(bytes);
-            fs.Flush(true);
-            fs.Close();
-            onFinish?.Invoke(null, null);
-            return this;
+                // Check for errors
+                if (webRequest.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"Failed to download file. Error: {webRequest.error}");
+                }
+                else
+                {
+                    // Save the downloaded file to disk
+                    File.WriteAllBytes(savePath, webRequest.downloadHandler.data);
+                    Debug.Log("File download successful.");
+                    onFinish?.Invoke(webRequest.downloadHandler.data);
+                }
+            }
         }
     }
 }
