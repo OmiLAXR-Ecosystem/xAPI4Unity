@@ -6,8 +6,8 @@ namespace EduXR.xAPI.Editor
     public static class DefaultValues
     {
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
-        //public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
-        public const string FetcherAPIBase = "https://localhost:5000/";
+        public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
+        //public const string FetcherAPIBase = "https://localhost:5000/";
         public const FetcherType FetcherType = Editor.FetcherType.WebService;
         public const string Namespace = "EduXR.xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -25,7 +25,7 @@ namespace EduXR.xAPI.Editor
         public static string ProjectRoot => Directory.GetCurrentDirectory();
         public static string AssetRoot => Path.Join(ProjectRoot, "Assets");
         public static string ToolsRoot => Path.Join(ProjectRoot, "Tools");
-        public static string ExeRoot => Path.Join(ToolsRoot, "xAPI_Fetcher");
+        public static string ExeRoot => Path.Join(ToolsRoot, "xapi-fetcher");
         public static string ExePath => Path.Join(ExeRoot, "xAPI_Definitions_Fetcher" + ExeExtension);
 
         public static string OutputPath => AssetRoot;

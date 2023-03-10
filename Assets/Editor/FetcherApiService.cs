@@ -17,7 +17,7 @@ namespace EduXR.xAPI.Editor {
 
         public IEnumerator DownloadExe(string outPath, Action<byte[]> onFinish = null)
         {
-            var fileUri = Path.Join(_url.Replace("https", "http"), "static/fetcher-cli-mac.zip");//"download/fetcher-cli.zip?os=Auto");
+            var fileUri = Path.Join(_url, "static/fetcher-cli-mac.zip");//"download/fetcher-cli.zip?os=Auto");
             var savePath = Path.Join(outPath, ZipName);
             using (var webRequest = UnityWebRequest.Get(fileUri))
             {

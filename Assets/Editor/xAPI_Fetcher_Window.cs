@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Text;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace EduXR.xAPI.Editor
     {
         private Settings settings => Settings.instance;
         private string _lastAppliedRepoUrl = "";
+        private bool _isDownloading = false;
 
         private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
 
@@ -95,7 +97,7 @@ namespace EduXR.xAPI.Editor
         private void LocalSource_View()
         {
             CustomGUI.BeginHorizontal();
-            settings.localSource.path = CustomGUI.TextField("Local root path", settings.localSource.path);
+            settings.localSource.path = CustomGUI.TextField("Path to xapi repository", settings.localSource.path);
             if (CustomGUI.Button("Browse path"))
             {
                 settings.localSource.path =
@@ -123,20 +125,11 @@ namespace EduXR.xAPI.Editor
 
         private void xAPI_Source_View()
         {
-            CustomGUI.Subtitle("xAPI Source");
+            CustomGUI.Subtitle("xAPI JSON Definitions Location");
 
             switch (settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
-                    CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
-                    CustomGUI.BeginHorizontal();
-                    settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", settings.fetcher.selectedUrl, DefaultValues.FetcherAPIBase);
-                    if (CustomGUI.Button("Open in browser"))
-                    {
-                        Process.Start(settings.fetcher.selectedUrl);
-                    }
-
-                    CustomGUI.EndHorizontal();
                     break;
                 case FetcherType.CommandLine:
                     CustomGUI.Description(
@@ -168,22 +161,28 @@ namespace EduXR.xAPI.Editor
                 case FetcherType.WebService:
                     break;
                 case FetcherType.CommandLine:
-                    if (CustomGUI.Button("Download Executable"))
+                    if (CustomGUI.StateButton("Download Executable", _isDownloading, "Downloading..."))
                     {
-                        EditorCoroutineUtility.StartCoroutineOwnerless(FetcherService().DownloadExe(
-                            DefaultValues.ExeRoot, (data) =>
+                        _isDownloading = true;
+                        EditorCoroutineUtility.StartCoroutineOwnerless(FetcherService().DownloadExe(DefaultValues.ExeRoot, 
+                            (_) =>
                             {
                                 var zipPath = Path.Join(DefaultValues.ExeRoot, FetcherApiService.ZipName);
-                                var outPath = Path.Join(DefaultValues.ExeRoot, "xapi-fetcher");
-                                if (Directory.Exists(outPath))
-                                    Directory.Delete(outPath, true);
+                                var outPath = DefaultValues.ExeRoot;
+
+                                ZipFile.ExtractToDirectory(zipPath, outPath, Encoding.UTF8, true);
                                 
-                                ZipFile.ExtractToDirectory(zipPath, outPath);
                                 File.Delete(zipPath);
 
                                 var ext = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "";
                                 var exePath = Path.Join(outPath, "xAPI_Definitions_Parser_CLI" + ext);
+                                
                                 settings.fetcher.exePath = exePath;
+                                
+                                _isDownloading = false;
+                                EditorUtility.DisplayDialog("Download fetcher executable successfully",
+                                    $"The executable was downloaded successfully at '{outPath}'. The 'executable path' was automatically set.",
+                                    "OK");
                             }));
                     }
 
@@ -194,18 +193,36 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.EndHorizontal();
 
-            CustomGUI.BeginHorizontal();
-            CustomGUI.BeginDisabledGroup(true);
-            settings.fetcher.exePath = CustomGUI.TextField("Executable path", settings.fetcher.exePath, DefaultValues.ExePath);
-            CustomGUI.EndDisabledGroup();
-            if (CustomGUI.Button("Browse executable"))
+            if (settings.fetcher.selectedType == FetcherType.CommandLine)
             {
-                settings.fetcher.exePath =
-                    EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.ExeExtension);
-                GUI.FocusControl(null);
+                CustomGUI.BeginHorizontal();
+                CustomGUI.BeginDisabledGroup(true);
+                settings.fetcher.exePath = CustomGUI.TextField("Executable path", settings.fetcher.exePath, DefaultValues.ExePath);
+                CustomGUI.EndDisabledGroup();
+                if (CustomGUI.Button("Browse executable"))
+                {
+                    settings.fetcher.exePath =
+                        EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.ExeExtension);
+                    GUI.FocusControl(null);
+                }
+                CustomGUI.EndHorizontal();
+                CustomGUI.Description("Choose the path of the fetcher tool executable.");
+            }
+            else
+            {
+                CustomGUI.BeginHorizontal();
+                settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", settings.fetcher.selectedUrl, DefaultValues.FetcherAPIBase);
+                if (CustomGUI.Button("Open in browser"))
+                {
+                    Process.Start(settings.fetcher.selectedUrl);
+                }
+
+                CustomGUI.EndHorizontal();
+                CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
+
             }
 
-            CustomGUI.EndHorizontal();
+   
         }
 
         private void Fetcher_Args_View()
@@ -239,11 +256,12 @@ namespace EduXR.xAPI.Editor
             Fetcher_View();
 
             CustomGUI.Divider();
-
-            xAPI_Source_View();
-
-            CustomGUI.Divider();
-
+            
+            if (settings.fetcher.selectedType == FetcherType.CommandLine) {
+                xAPI_Source_View();
+                CustomGUI.Divider();
+            }
+            
             CustomGUI.Space();
 
             Fetcher_Args_View();
@@ -328,6 +346,11 @@ namespace EduXR.xAPI.Editor
             }
 
             return list.ToArray();
+        }
+
+        private void FetchFromWebService()
+        {
+            
         }
 
         private void ExecuteFetcher()

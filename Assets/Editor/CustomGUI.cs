@@ -31,16 +31,34 @@ namespace EduXR.xAPI.Editor
             wordWrap = true,
             richText = true
         };
+        
+        private static readonly GUIStyle ErrorStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 11,
+            wordWrap = true,
+            richText = true,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.red
+            }
+        };
 
         public static bool Button(string text, params GUILayoutOption[] options)
         {
-            var res = GUILayout.Button(text, ButtonStyle, (new[]
+            return GUILayout.Button(text, ButtonStyle, (new[]
             {
                 GUILayout.Height(30),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
+        }
 
-            return res;
+        public static bool StateButton(string normalText, bool isStateMode, string stateText,
+            params GUILayoutOption[] options)
+        {
+            BeginDisabledGroup(isStateMode);
+            var result = Button(isStateMode ? stateText : normalText, options);
+            EndDisabledGroup();
+            return result;
         }
 
         public static void Title(string text)
@@ -54,6 +72,9 @@ namespace EduXR.xAPI.Editor
 
         public static void Description(string text)
             => GUILayout.Label(text, TextStyle, GUILayout.ExpandWidth(true));
+
+        public static void Error(string text)
+            => GUILayout.Label(text, ErrorStyle, GUILayout.ExpandWidth(true));
 
         public static void Space(int lines = 1)
         {
