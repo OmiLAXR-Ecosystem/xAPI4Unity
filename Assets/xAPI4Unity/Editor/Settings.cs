@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace EduXR.xAPI.Editor
 {
@@ -97,7 +98,7 @@ namespace EduXR.xAPI.Editor
         [SerializeField] public string selectedUrl = DefaultValues.FetcherAPIBase;
         [SerializeField] public SourceType selectedSourceType = DefaultValues.SourceType;
         [SerializeField] public string localPath = DefaultValues.HomeDirectory;
-        [SerializeField] public string exePath = DefaultValues.ExePath;
+        [SerializeField] public string cliPath = DefaultValues.CliPath;
         [SerializeField] public string outputPath = DefaultValues.OutputPath;
 
         public T Clone<T>()
@@ -108,7 +109,7 @@ namespace EduXR.xAPI.Editor
                 selectedUrl = selectedUrl,
                 selectedSourceType = selectedSourceType,
                 localPath = localPath,
-                exePath = exePath,
+                cliPath = cliPath,
                 outputPath = outputPath
             };
             return (T)(object)f;
@@ -119,7 +120,7 @@ namespace EduXR.xAPI.Editor
             var f = s as FetcherSettings;
             return selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
                    selectedSourceType == f.selectedSourceType && localPath == f.localPath &&
-                   exePath == f.exePath && outputPath == f.outputPath;
+                   cliPath == f.cliPath && outputPath == f.outputPath;
         }
     }
 

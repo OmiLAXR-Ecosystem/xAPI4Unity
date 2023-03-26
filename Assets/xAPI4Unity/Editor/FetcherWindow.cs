@@ -12,9 +12,9 @@ using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
 {
-    public class xAPI_Fetcher_Window : EditorWindow
+    public class FetcherWindow : EditorWindow
     {
-        private Settings settings => Settings.instance;
+        private static Settings settings => Settings.instance;
         private string _lastAppliedRepoUrl = "";
         private bool _isDownloading = false;
 
@@ -25,7 +25,7 @@ namespace EduXR.xAPI.Editor
         {
         }
 
-        [MenuItem("EduXR Tools/xAPI/Fetcher")]
+        [MenuItem("EduXR / xAPI / Fetcher")]
         public static void ShowWindow()
         {
             GetWindow<xAPI_Fetcher_Window>("xAPI Fetcher").Show();
