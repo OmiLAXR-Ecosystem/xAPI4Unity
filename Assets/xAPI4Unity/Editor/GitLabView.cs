@@ -24,7 +24,7 @@ namespace EduXR.xAPI.Editor
         
         public void Show()
         {
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             _settings.gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", _settings.gitlabSource.repoUrl);
 
             CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl == _lastAppliedRepoUrl);
@@ -35,20 +35,20 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.EndDisabledGroup();
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
 
             CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl != _lastAppliedRepoUrl);
 
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             _settings.gitlabSource.accessKey = CustomGUI.TextField("Access token", _settings.gitlabSource.accessKey);
             if (CustomGUI.Button("Create one"))
             {
                 Process.Start(_settings.gitlabSource.AccessTokenUri);
             }
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
 
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             _settings.gitlabSource.projectId =
                 CustomGUI.TextField("Project ID", _settings.gitlabSource.projectId, "", GUILayout.MaxWidth(300));
 
@@ -60,18 +60,18 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.EndDisabledGroup();
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
 
             CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(_settings.gitlabSource.projectId));
 
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             _settings.gitlabSource.branch = CustomGUI.Popup("Branch", _settings.gitlabSource.Branches, _settings.gitlabSource.branch);
             if (CustomGUI.Button("Refresh"))
             {
                 _settings.gitlabSource.AutoDetectBranches();
             }
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
             CustomGUI.EndDisabledGroup();
 
             CustomGUI.EndDisabledGroup();

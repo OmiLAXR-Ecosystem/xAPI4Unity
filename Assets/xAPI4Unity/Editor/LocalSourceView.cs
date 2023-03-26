@@ -17,7 +17,7 @@ namespace EduXR.xAPI.Editor
         public void Show()
         {
             
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(true);
             _settings.localSource.path = CustomGUI.TextField("Path to xapi repository", _settings.localSource.path);
@@ -51,7 +51,7 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.EndDisabledGroup();
             
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
             
             if (!Git.IsCloned)
                 CustomGUI.Error("For working with 'Local' you need a local copy of the xAPI registry on your computer. Browse for it by click on 'Browse path'. If you haven't cloned one yet, click on Clone repository and it will create an own branch locally which you can use. Make sure you have Git CLI on your computer.");

@@ -1,71 +1,242 @@
-﻿using System;
-using UnityEditor;
-using UnityEngine;
-using UnityEngine.UIElements;
+﻿using System.Collections.Generic;
+using UnityEditor.IMGUI.Controls;
 
 namespace EduXR.xAPI.Editor
 {
-    public class DefinitionsTreeView : EditorWindow
+    public class DefinitionsTreeView : TreeView
     {
-        [SerializeField]
-        protected VisualTreeAsset uxml;
-        
-        protected interface IDefinition
-        {
-        }
-        
-        protected interface IDefinitions
-        {
-            public IDefinitions[] subDefinitions { get; }
-            public IDefinitions definitions { get; }
-            public string name { get; }
-        }
-        
-        protected class Definitions : IDefinitions
-        {
-            public IDefinitions[] subDefinitions { get; }
-            public IDefinitions definitions { get; }
-            public string name { get; private set; }
 
-            public Definitions(string name, IDefinitions[] subDefinitions = null)
-            {
-                this.name = name;
-                this.subDefinitions = subDefinitions ?? Array.Empty<IDefinitions>();
-            }
-        }
-        
-        protected class Activities : Definitions
+        public DefinitionsTreeView(TreeViewState state) : base(state)
         {
-            public Activities(IDefinitions[] subDefinitions = null) : base("activities", subDefinitions)
-            {
-            }
-        }
-        
-        protected class Extensions : Definitions
-        {
-            public Extensions(IDefinitions[] subDefinitions = null) : base("extensions", subDefinitions)
-            {
-            }
-        }
-        
-        protected class Verbs : Definitions
-        {
-            public Verbs(IDefinitions[] subDefinitions = null) : base("verbs", subDefinitions)
-            {
-            }
+            Reload();
         }
 
-        protected class Context : Definitions
+        public DefinitionsTreeView(TreeViewState state, MultiColumnHeader multiColumnHeader) : base(state, multiColumnHeader)
         {
-            public Verbs verbs { get; private set; }
-            public Activities activities { get; private set; }
-            public Extensions extensions { get; private set; }
-            public Context(string name) : base(name, Array.Empty<IDefinitions>())
+            Reload();
+        }
+
+        protected override TreeViewItem BuildRoot()
+        {
+            // BuildRoot is called every time Reload is called to ensure that TreeViewItems 
+            // are created from data. Here we create a fixed set of items. In a real world example,
+            // a data model should be passed into the TreeView and the items created from the model.
+
+            // This section illustrates that IDs should be unique. The root item is required to 
+            // have a depth of -1, and the rest of the items increment from that.
+            var root = new TreeViewItem {id = 0, depth = -1, displayName = "Root"};
+            var allItems = new List<TreeViewItem> 
             {
-                verbs = new Verbs();
-                activities = new Activities();
-                extensions = new Extensions();
-            }
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 1, depth = 0, displayName = "Animals"},
+                new TreeViewItem {id = 2, depth = 1, displayName = "Mammals"},
+                new TreeViewItem {id = 3, depth = 2, displayName = "Tiger"},
+                new TreeViewItem {id = 4, depth = 2, displayName = "Elephant"},
+                new TreeViewItem {id = 5, depth = 2, displayName = "Okapi"},
+                new TreeViewItem {id = 6, depth = 2, displayName = "Armadillo"},
+                new TreeViewItem {id = 7, depth = 1, displayName = "Reptiles"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 8, depth = 2, displayName = "Crocodile"},
+                new TreeViewItem {id = 9, depth = 2, displayName = "Lizard"},
+            };
+            
+            // Utility method that initializes the TreeViewItem.children and .parent for all items.
+            SetupParentsAndChildrenFromDepths (root, allItems);
+            
+            // Return root of the tree
+            return root;
         }
     }
 }

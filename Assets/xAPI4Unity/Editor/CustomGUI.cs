@@ -8,6 +8,45 @@ namespace EduXR.xAPI.Editor
 {
     public static class CustomGUI
     {
+        public static class Horizontal
+        {
+            public static void Begin() => EditorGUILayout.BeginHorizontal();
+            public static void End() => EditorGUILayout.EndHorizontal();
+
+            public static void Wrap(Action action)
+            {
+                Begin();
+                action();
+                End();
+            }
+        }
+        public class ScrollViewGUI
+        {
+            private Vector2 _scrollPos;
+            private ScrollViewGUI(Vector2 startScroll)
+            {
+                _scrollPos = startScroll;
+            }
+
+            private void Begin(params GUILayoutOption[] options)
+            {
+                _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, options);
+            }
+
+            private void End()
+            {
+                EditorGUILayout.EndScrollView();
+            }
+
+            public static void Wrap(Action action, Vector2 startScroll = default, params GUILayoutOption[] options)
+            {
+                var scrollView = new ScrollViewGUI(startScroll);
+                scrollView.Begin(options);
+                action();
+                scrollView.End();
+            }
+        }
+        
         private static readonly GUIStyle TitleLabelStyle = new GUIStyle(EditorStyles.whiteLargeLabel)
         {
             fontSize = 16,
@@ -74,9 +113,9 @@ namespace EduXR.xAPI.Editor
         public static bool YesNoPopup(string label, bool value)
         {
             var v = value ? "Yes" : "No";
-            BeginHorizontal();
+            Horizontal.Begin();
             v = Popup(label, new[] { "Yes", "No" }, v);
-            EndHorizontal();
+            Horizontal.End();
             return v == "Yes";
         }
 
@@ -153,8 +192,7 @@ namespace EduXR.xAPI.Editor
                 GUILayout.MinWidth(250)
             }).Concat(options).ToArray());
 
-        public static void BeginHorizontal() => EditorGUILayout.BeginHorizontal();
-        public static void EndHorizontal() => EditorGUILayout.EndHorizontal();
+
         public static void BeginVertical() => EditorGUILayout.BeginVertical();
         public static void EndVertical() => EditorGUILayout.EndVertical();
         public static void BeginDisabledGroup(bool conditions) => EditorGUI.BeginDisabledGroup(conditions);

@@ -77,7 +77,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Description(
                 "You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
 
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
            settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", settings.fetcher.selectedType);
 
           switch (settings.fetcher.selectedType)
@@ -115,12 +115,12 @@ namespace EduXR.xAPI.Editor
                    throw new ArgumentOutOfRangeException();
            }
 
-            CustomGUI.EndHorizontal();
+          CustomGUI.Horizontal.End();
             
 
             if (settings.fetcher.selectedType == FetcherType.CommandLine)
             {
-                CustomGUI.BeginHorizontal();
+                CustomGUI.Horizontal.Begin();
                 CustomGUI.BeginDisabledGroup(true);
                 settings.fetcher.cliPath = CustomGUI.TextField("Executable path", settings.fetcher.cliPath, DefaultValues.CliPath);
                 CustomGUI.EndDisabledGroup();
@@ -134,13 +134,13 @@ namespace EduXR.xAPI.Editor
                         EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.CliExeExtension);
                     GUI.FocusControl(null);
                 }
-                CustomGUI.EndHorizontal();
+                CustomGUI.Horizontal.End();
                 CustomGUI.Description("Choose the path of the fetcher tool executable.");
             }
             else
             {
                 CustomGUI.Warning("Not supported yet.");
-                CustomGUI.BeginHorizontal();
+                CustomGUI.Horizontal.Begin();
                 
                 CustomGUI.BeginDisabledGroup(true);
                 settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", settings.fetcher.selectedUrl, DefaultValues.FetcherAPIBase);
@@ -151,7 +151,7 @@ namespace EduXR.xAPI.Editor
                     Process.Start(settings.fetcher.selectedUrl);
                 }
 
-                CustomGUI.EndHorizontal();
+                CustomGUI.Horizontal.End();
                 CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
             }
 
@@ -175,7 +175,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Space();
             */
             
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             settings.fetcher.outputPath =
                 CustomGUI.TextField("Result output path", settings.fetcher.outputPath, DefaultValues.OutputPath);
             if (CustomGUI.Button("Open in explorer"))
@@ -183,7 +183,7 @@ namespace EduXR.xAPI.Editor
                 Process.Start(settings.fetcher.outputPath);
             }
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
         }
 
         private void OnGUI()
@@ -207,7 +207,7 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.Divider();
             
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(!Settings.IsDirty());
             if (CustomGUI.Button("Save settings"))
@@ -241,7 +241,7 @@ namespace EduXR.xAPI.Editor
             }
             CustomGUI.EndDisabledGroup();
 
-            CustomGUI.EndHorizontal();
+            CustomGUI.Horizontal.End();
             CustomGUI.EndDisabledGroup();
 
         }
@@ -265,7 +265,7 @@ namespace EduXR.xAPI.Editor
             
             var cmdString = ComposeArguments();
 
-            CustomGUI.BeginHorizontal();
+            CustomGUI.Horizontal.Begin();
             CustomGUI.BeginDisabledGroup(true);
             CustomGUI.TextField("Fetcher CLI Arguments", cmdString);
             CustomGUI.EndDisabledGroup();
@@ -277,7 +277,7 @@ namespace EduXR.xAPI.Editor
             }
             CustomGUI.EndDisabledGroup();
 
-            CustomGUI.EndHorizontal(); 
+            CustomGUI.Horizontal.End(); 
         }
 
         private static Dictionary<string, string> GetArguments()
