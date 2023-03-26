@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace EduXR.xAPI.Editor
 {
@@ -18,24 +20,35 @@ namespace EduXR.xAPI.Editor
         public const string GitLabProjectId = "";
         public const string GitLabAccessKey = "";
 
-        public static string ExeExtension => Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX
-            ? ""
-            : "exe";
+        public static Dictionary<PlatformID, string> Filenames = new Dictionary<PlatformID, string>()
+        {
+            [PlatformID.MacOSX] = "osx-x64",
+            [PlatformID.Unix] = "unix-x64",
+            [PlatformID.Win32NT] = "win-x64.exe"
+        };
+
+        public static string ExeFilename
+        {
+            get
+            {
+                var platform = Environment.OSVersion.Platform;
+                return Filenames.ContainsKey(platform) ? Filenames[platform] : "win-x64.exe";
+            }
+        }
 
         public static string ProjectRoot => Directory.GetCurrentDirectory();
         public static string AssetRoot => Path.Join(ProjectRoot, "Assets");
-        public static string ToolsRoot => Path.Join(ProjectRoot, "Tools");
-        public static string ExeRoot => Path.Join(ToolsRoot, "xAPI_Fetcher");
-        public static string ExePath => Path.Join(ExeRoot, "xAPI_Definitions_Fetcher" + ExeExtension);
+        public static string PackageRoot => Path.Join(AssetRoot, "xAPI4Unity");
+        public static string CliRoot => Path.Join(PackageRoot, "CLI");
+        
+        // todo also osx and linux
+        public static string CliPath => Path.Join(CliRoot, ExeFilename);
+        public static string CliExeExtension => Path.GetExtension(CliPath);
 
         public static string OutputPath => AssetRoot;
 
         public static void EnsureFolders()
         {
-            if (!Directory.Exists(ToolsRoot))
-                Directory.CreateDirectory(ToolsRoot);
-            if (!Directory.Exists(ExeRoot))
-                Directory.CreateDirectory(ExeRoot);
         }
     }
 }

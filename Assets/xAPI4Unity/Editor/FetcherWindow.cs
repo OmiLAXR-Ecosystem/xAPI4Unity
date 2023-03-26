@@ -1,32 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.IO.Compression;
-using System.Runtime.InteropServices;
-using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
 {
-    public class xAPI_Fetcher_Window : EditorWindow
+    public class FetcherWindow : EditorWindow
     {
-        private Settings settings => Settings.instance;
+        private static Settings settings => Settings.instance;
         private string _lastAppliedRepoUrl = "";
 
-        private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
+        private static FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
 
         //[MenuItem("EduXR Tools/xAPI/Quick fetch definitions")]
         public static void QuickFetchDefinitions()
         {
         }
 
-        [MenuItem("EduXR Tools/xAPI/Fetcher")]
+        [MenuItem("EduXR / xAPI / Fetcher")]
         public static void ShowWindow()
         {
-            GetWindow<xAPI_Fetcher_Window>("xAPI Fetcher").Show();
+            GetWindow<FetcherWindow>("xAPI Fetcher").Show();
         }
 
         private void ApplyGitLabRepo()
@@ -154,7 +150,7 @@ namespace EduXR.xAPI.Editor
             }
         }
 
-        public void Fetcher_View()
+        private static void Fetcher_View()
         {
             CustomGUI.Subtitle("Select your tool");
             CustomGUI.Description(
@@ -163,6 +159,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.BeginHorizontal();
             settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", settings.fetcher.selectedType);
 
+            /*
             switch (settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
@@ -190,29 +187,29 @@ namespace EduXR.xAPI.Editor
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
-            }
+            }*/
 
             CustomGUI.EndHorizontal();
 
             CustomGUI.BeginHorizontal();
             CustomGUI.BeginDisabledGroup(true);
-            settings.fetcher.exePath = CustomGUI.TextField("Executable path", settings.fetcher.exePath, DefaultValues.ExePath);
+            settings.fetcher.cliPath = CustomGUI.TextField("Executable path", settings.fetcher.cliPath, DefaultValues.CliPath);
             CustomGUI.EndDisabledGroup();
             if (CustomGUI.Button("Browse executable"))
             {
-                settings.fetcher.exePath =
-                    EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.ExeExtension);
+                settings.fetcher.cliPath =
+                    EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.CliExeExtension);
                 GUI.FocusControl(null);
             }
 
             CustomGUI.EndHorizontal();
         }
 
-        private void Fetcher_Args_View()
+        private static void Fetcher_Args_View()
         {
             CustomGUI.Subtitle("Fetcher configuration");
 
-            settings.@namespace = CustomGUI.TextField("Namespace", settings.@namespace.Replace(" ", "_").Trim(),
+            /*settings.@namespace = CustomGUI.TextField("Namespace", settings.@namespace.Replace(" ", "_").Trim(),
                 DefaultValues.Namespace);
 
             CustomGUI.Space();
@@ -221,7 +218,7 @@ namespace EduXR.xAPI.Editor
             settings.packageType = CustomGUI.Popup("Package Type", settings.packageType);
             CustomGUI.EndDisabledGroup();
             
-            CustomGUI.Space();
+            CustomGUI.Space();*/
 
             CustomGUI.BeginHorizontal();
             settings.fetcher.outputPath =
@@ -314,7 +311,7 @@ namespace EduXR.xAPI.Editor
             };
         }
 
-        private string[] PreparedArguments()
+        private static string[] PreparedArguments()
         {
             var list = new List<string>();
 
@@ -336,7 +333,7 @@ namespace EduXR.xAPI.Editor
             var preparedArguments = PreparedArguments();
             var arguments = string.Join(" ", preparedArguments);
 
-            var startInfo = new ProcessStartInfo(settings.fetcher.exePath)
+            var startInfo = new ProcessStartInfo(settings.fetcher.cliPath)
             {
                 Arguments = arguments,
                 UseShellExecute = false,
@@ -366,8 +363,6 @@ namespace EduXR.xAPI.Editor
         }
 
         #region Load, Save & Reset Settings
-
-        
         protected void OnEnable() => Settings.instance.Load();
         
         #endregion
