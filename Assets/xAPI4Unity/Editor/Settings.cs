@@ -100,6 +100,8 @@ namespace EduXR.xAPI.Editor
         [SerializeField] public string localPath = DefaultValues.HomeDirectory;
         [SerializeField] public string cliPath = DefaultValues.CliPath;
         [SerializeField] public string outputPath = DefaultValues.OutputPath;
+        [SerializeField] public bool asmDef = DefaultValues.AsmDef;
+        [SerializeField] public string version = DefaultValues.Version;
 
         public T Clone<T>()
         {
@@ -110,7 +112,8 @@ namespace EduXR.xAPI.Editor
                 selectedSourceType = selectedSourceType,
                 localPath = localPath,
                 cliPath = cliPath,
-                outputPath = outputPath
+                outputPath = outputPath,
+                asmDef = asmDef
             };
             return (T)(object)f;
         }
@@ -118,7 +121,7 @@ namespace EduXR.xAPI.Editor
         public bool Equals(ISettings s)
         {
             var f = s as FetcherSettings;
-            return selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
+            return asmDef == f.asmDef && selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
                    selectedSourceType == f.selectedSourceType && localPath == f.localPath &&
                    cliPath == f.cliPath && outputPath == f.outputPath;
         }
@@ -224,8 +227,9 @@ namespace EduXR.xAPI.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-        [SerializeField] public string path = "";
-
+        [SerializeField] public string path = Path.Join(DefaultValues.AssetRoot, "xapi");
+        [SerializeField] public int gitCloneAmount = 0;
+        
         public T Clone<T>()
         {
             return (T)(object)(new LocalSourceSettings() { path = path });
@@ -233,5 +237,7 @@ namespace EduXR.xAPI.Editor
 
         public bool Equals(ISettings s)
             => (s as LocalSourceSettings)?.path == path;
+        
+        public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.Replace(".", "_")}-{gitCloneAmount++}";
     }
 }

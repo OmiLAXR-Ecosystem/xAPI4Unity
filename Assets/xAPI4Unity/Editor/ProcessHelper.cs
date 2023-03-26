@@ -1,21 +1,23 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
+using Debug = UnityEngine.Debug;
 
 namespace EduXR.xAPI.Editor
 {
     public static class ProcessHelper
     {
-        public static Process Cmd(string appPath, params string[] args)
-            => Cmd(appPath, args, null);
-        public static Process Cmd(string appPath, string[] args, Action<Process> configure)
+        public static Process Cmd(string app, string arguments, bool showShell = false, string workingDirectory = default, Action<Process> configure = null)
         {
-            var arguments = string.Join(" ", args);
-            var startInfo = new ProcessStartInfo(appPath)
+            Debug.Log("[xAPI4Unity] > " + app + " " + arguments);
+            
+            var startInfo = new ProcessStartInfo(app)
             {
                 Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
+                UseShellExecute = showShell,
+                RedirectStandardOutput = !showShell,
+                CreateNoWindow = !showShell,
+                WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory
             };
 
             var process = new Process()
@@ -34,9 +36,9 @@ namespace EduXR.xAPI.Editor
         }
         
         private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-            => UnityEngine.Debug.LogError(e.Data);
+            => Debug.LogError(e.Data);
 
         private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-            => UnityEngine.Debug.Log(e.Data);
+            => Debug.Log(e.Data);
     }
 }

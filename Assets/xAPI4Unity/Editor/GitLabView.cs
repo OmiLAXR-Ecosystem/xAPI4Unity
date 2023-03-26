@@ -1,0 +1,85 @@
+﻿using System.Diagnostics;
+using UnityEngine;
+
+namespace EduXR.xAPI.Editor
+{
+    public class GitLabView
+    {
+        private string _lastAppliedRepoUrl = "";
+
+        private readonly Settings _settings;
+
+        public GitLabView(Settings settings)
+        {
+            _settings = settings;
+        }
+
+        private void ApplyGitLabRepo()
+        {
+            _settings.gitlabSource.AutoDetectProjectId();
+            _lastAppliedRepoUrl = _settings.gitlabSource.repoUrl;
+
+            _settings.gitlabSource.AutoDetectBranches();
+        }
+        
+        public void Show()
+        {
+            CustomGUI.BeginHorizontal();
+            _settings.gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", _settings.gitlabSource.repoUrl);
+
+            CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl == _lastAppliedRepoUrl);
+            if (CustomGUI.Button("Apply"))
+            {
+                ApplyGitLabRepo();
+            }
+
+            CustomGUI.EndDisabledGroup();
+
+            CustomGUI.EndHorizontal();
+
+            CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl != _lastAppliedRepoUrl);
+
+            CustomGUI.BeginHorizontal();
+            _settings.gitlabSource.accessKey = CustomGUI.TextField("Access token", _settings.gitlabSource.accessKey);
+            if (CustomGUI.Button("Create one"))
+            {
+                Process.Start(_settings.gitlabSource.AccessTokenUri);
+            }
+
+            CustomGUI.EndHorizontal();
+
+            CustomGUI.BeginHorizontal();
+            _settings.gitlabSource.projectId =
+                CustomGUI.TextField("Project ID", _settings.gitlabSource.projectId, "", GUILayout.MaxWidth(300));
+
+            CustomGUI.BeginDisabledGroup(_settings.gitlabSource.IsProjectIdMatchingRepoUrl());
+            if (CustomGUI.Button("Fetch Project ID from repo"))
+            {
+                _settings.gitlabSource.AutoDetectProjectId();
+            }
+
+            CustomGUI.EndDisabledGroup();
+
+            CustomGUI.EndHorizontal();
+
+            CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(_settings.gitlabSource.projectId));
+
+            CustomGUI.BeginHorizontal();
+            _settings.gitlabSource.branch = CustomGUI.Popup("Branch", _settings.gitlabSource.Branches, _settings.gitlabSource.branch);
+            if (CustomGUI.Button("Refresh"))
+            {
+                _settings.gitlabSource.AutoDetectBranches();
+            }
+
+            CustomGUI.EndHorizontal();
+            CustomGUI.EndDisabledGroup();
+
+            CustomGUI.EndDisabledGroup();
+        }
+
+        public void Reset()
+        {
+            _lastAppliedRepoUrl = string.Empty;
+        }
+    }
+}

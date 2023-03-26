@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace EduXR.xAPI.Editor
@@ -36,6 +40,25 @@ namespace EduXR.xAPI.Editor
             normal = new GUIStyleState()
             {
                 textColor = Color.red
+            },
+            hover = new GUIStyleState()
+            {
+                textColor = Color.red
+            }
+        };
+        
+        private static readonly GUIStyle WarningStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 11,
+            wordWrap = true,
+            richText = true,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.yellow
+            },
+            hover = new GUIStyleState()
+            {
+                textColor = Color.yellow
             }
         };
 
@@ -46,6 +69,15 @@ namespace EduXR.xAPI.Editor
                 GUILayout.Height(30),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
+        }
+
+        public static bool YesNoPopup(string label, bool value)
+        {
+            var v = value ? "Yes" : "No";
+            BeginHorizontal();
+            v = Popup(label, new[] { "Yes", "No" }, v);
+            EndHorizontal();
+            return v == "Yes";
         }
 
         public static bool StateButton(string normalText, bool isStateMode, string stateText,
@@ -71,6 +103,9 @@ namespace EduXR.xAPI.Editor
 
         public static void Error(string text)
             => GUILayout.Label(text, ErrorStyle, GUILayout.ExpandWidth(true));
+        
+        public static void Warning(string text)
+            => GUILayout.Label(text, WarningStyle, GUILayout.ExpandWidth(true));
 
         public static void Space(int lines = 1)
         {
@@ -78,10 +113,10 @@ namespace EduXR.xAPI.Editor
                 EditorGUILayout.Space();
         }
 
-        public static string Popup(string label, IEnumerable<string> options, string value)
+        public static string Popup(string label, IEnumerable<string> selectionOptions, string value,
+            params GUILayoutOption[] options)
         {
-            var opts = new[] { "" };
-            opts = opts.Concat(options).ToArray();
+            var opts = selectionOptions.Prepend("").ToArray();
 
             if (string.IsNullOrEmpty(value))
                 value = "";
@@ -89,12 +124,17 @@ namespace EduXR.xAPI.Editor
             var optsIndex = Array.IndexOf(opts, value);
             if (optsIndex < 0)
                 optsIndex = 0;
+            
+            var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
 
-            return opts[EditorGUILayout.Popup(label, optsIndex, opts)];
+            return opts[EditorGUILayout.Popup(label, optsIndex, opts, newOptions)];
         }
 
-        public static T Popup<T>(string label, T value) where T : Enum
-            => (T)EditorGUILayout.EnumPopup(label, value, GUILayout.MaxWidth(300));
+        public static T Popup<T>(string label, T value, params GUILayoutOption[] options) where T : Enum
+        {
+            var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
+            return (T)EditorGUILayout.EnumPopup(label, value, newOptions);
+        }
 
         public static void Divider(int spaceLines = 1)
         {
@@ -115,6 +155,8 @@ namespace EduXR.xAPI.Editor
 
         public static void BeginHorizontal() => EditorGUILayout.BeginHorizontal();
         public static void EndHorizontal() => EditorGUILayout.EndHorizontal();
+        public static void BeginVertical() => EditorGUILayout.BeginVertical();
+        public static void EndVertical() => EditorGUILayout.EndVertical();
         public static void BeginDisabledGroup(bool conditions) => EditorGUI.BeginDisabledGroup(conditions);
         public static void EndDisabledGroup() => EditorGUI.EndDisabledGroup();
     }
