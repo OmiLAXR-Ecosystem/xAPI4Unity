@@ -21,17 +21,16 @@ namespace EduXR.xAPI.Editor
                                                 (settings.fetcher.selectedType == FetcherType.CommandLine && !string.IsNullOrEmpty(settings.fetcher.cliPath));
         
         private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
-
-        [MenuItem("EduXR / xAPI / Transform JSON => C#")]
-        public static void QuickFetchDefinitions()
-        {
-        }
-
+        
         [MenuItem("EduXR / xAPI / Fetcher")]
         public static void ShowWindow()
         {
             GetWindow<FetcherWindow>("xAPI Fetcher").Show();
         }
+
+        [MenuItem("EduXR / xAPI / Fetcher: Transform JSON => C#")]
+        public static void QuickFetch()
+            => ExecuteFetcher();
         
         private void SourceType_View()
         {
@@ -227,6 +226,12 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.Space();
 
+            CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(settings.localSource.path));
+            if (CustomGUI.Button("Edit xAPI Definitions"))
+            {
+                DesignerWindow.ShowWindow();
+            }
+            CustomGUI.EndDisabledGroup();
             
             CustomGUI.BeginDisabledGroup(!IsTransformationPossible);
             if (CustomGUI.Button("Transform JSON => C#"))
@@ -305,9 +310,9 @@ namespace EduXR.xAPI.Editor
         }
 
 
-        private string ComposeArguments() => string.Join(' ', GetArguments().Select(a => $"-{a.Key} {a.Value}"));
+        private static string ComposeArguments() => string.Join(' ', GetArguments().Select(a => $"-{a.Key} {a.Value}"));
 
-        private void ExecuteFetcher()
+        public static void ExecuteFetcher()
             => ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
 
         private static string SafePath(string path) => $"\"{path}\"";

@@ -1,0 +1,25 @@
+{
+    "name": "com.rwth-aachen-university.xapi4unity",
+    "version": "1.0.0",
+    "displayName": "xAPI4Unity",
+    "description": "This is an package with has editor tools to use work with xAPI definitions more easy. Developers can design xAPI definitions and transform them directly to C# code.",
+    "unity": "2021.3",
+    "unityRelease": "15f1",
+    "documentationUrl": "https://gitlab.com/learntech-rwth/eduxr-framework/xapi-4-unity/-/wikis/",
+    "changelogUrl": "https://gitlab.com/learntech-rwth/eduxr-framework/xapi-4-unity/-/blob/main/CHANGELOG",
+    "licensesUrl": "https://gitlab.com/learntech-rwth/eduxr-framework/xapi-4-unity/-/blob/main/LICENSE",
+    "dependencies": {
+   },
+   "keywords": [
+      "xAPI",
+      "Registry",
+      "Definitions Design",
+      "Learning Analytics",
+      "Unity Editor"
+    ],
+    "author": {
+      "name": "Sergej Görzen",
+      "email": "goerzen@cs.rwth-aachen.de",
+      "url": "https://elearn.rwth-aachen.de/goerzen"
+    }
+  }
