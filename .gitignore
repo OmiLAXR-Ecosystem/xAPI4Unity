@@ -42,5 +42,5 @@ Assets/StreamingAssets/crashlytics-build.properties
 .idea
 Tools
 Logs
-Assets/xapi*
-Assets/xAPI.Registry*
+Assets/xapi
+Assets/xAPI.Registry
