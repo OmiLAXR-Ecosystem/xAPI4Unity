@@ -14,6 +14,7 @@ namespace EduXR.xAPI.Editor
         public bool IsBusy { get; private set; }
         public string RepoDirectory => Path.Join(Directory, "xapi");
         public bool IsCloned => IsValidRepo(RepoDirectory);
+        
         public GitHelper(string repoUrl, string directory)
         {
             Url = repoUrl;

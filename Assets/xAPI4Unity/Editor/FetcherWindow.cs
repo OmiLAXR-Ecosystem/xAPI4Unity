@@ -11,6 +11,7 @@ namespace EduXR.xAPI.Editor
 {
     public class FetcherWindow : EditorWindow
     {
+        
         private static Settings settings => Settings.instance;
         private bool _isDownloading = false;
 

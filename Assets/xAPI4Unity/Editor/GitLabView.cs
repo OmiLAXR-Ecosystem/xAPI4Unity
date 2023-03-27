@@ -59,7 +59,6 @@ namespace EduXR.xAPI.Editor
             }
 
             CustomGUI.EndDisabledGroup();
-
             CustomGUI.Horizontal.End();
 
             CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(_settings.gitlabSource.projectId));
