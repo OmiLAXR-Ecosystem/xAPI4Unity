@@ -1,6 +1,4 @@
-using System;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -8,8 +6,6 @@ namespace EduXR.xAPI.Editor
 {
     public class DesignerWindow: EditorWindow
     {
-        [SerializeField] private TreeViewState treeViewState;
-
         private DefinitionsTreeView _definitionsTreeView;
         
         [MenuItem("EduXR / xAPI / Designer")]
@@ -17,16 +13,6 @@ namespace EduXR.xAPI.Editor
         {
             GetWindow<DesignerWindow>("xAPI Designer").Show();
         }
-
-
-        private void OnEnable()
-        {
-            if (treeViewState == null)
-                treeViewState = new TreeViewState();
-
-            _definitionsTreeView = new DefinitionsTreeView(treeViewState);
-        }
-
 
         public void OnGUI()
         {
@@ -54,8 +40,9 @@ namespace EduXR.xAPI.Editor
            var leftPane = new VisualElement();
            leftPane.Add(new IMGUIContainer(() =>
            {
-               _definitionsTreeView.OnGUI(new Rect(0, 20, Math.Max(position.width / 2, 600), position.height));
+               _definitionsTreeView.OnGUI(new Rect(0, 20, 250, position.height));
            }));
+           
            
            splitView.Add(leftPane);
            
