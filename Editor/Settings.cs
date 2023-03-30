@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace EduXR.xAPI.Editor
 {
@@ -86,12 +84,6 @@ namespace EduXR.xAPI.Editor
     {
         public class FetcherArguments : Dictionary<string, string>
         {
-            public FetcherArguments From(Dictionary<string, string> dict)
-            {
-                var rtn = new FetcherArguments();
-                rtn.AddRange(dict);
-                return rtn;
-            }
         }
 
         [SerializeField] public FetcherType selectedType = DefaultValues.FetcherType;
