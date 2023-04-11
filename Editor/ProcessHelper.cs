@@ -24,8 +24,12 @@ namespace EduXR.xAPI.Editor
             {
                 StartInfo = startInfo
             };
-            process.OutputDataReceived += Process_OutputDataReceived;
-            process.ErrorDataReceived += Process_ErrorDataReceived;
+
+            if (!showShell)
+            {
+                process.OutputDataReceived += Process_OutputDataReceived;
+                process.ErrorDataReceived += Process_ErrorDataReceived;
+            }
 
             configure?.Invoke(process);
             

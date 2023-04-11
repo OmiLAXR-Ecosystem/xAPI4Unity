@@ -24,6 +24,15 @@ namespace EduXR.xAPI.Editor
         public const bool AsmDef = true;
         public const string Version = "1.0.0";
 
+        public const string DefaultAsmDefMeta = @"fileFormatVersion: 2
+guid: 5b80f9e8c84ce594bbd1284cff4292dd
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+";
+
         public static Dictionary<PlatformID, string> Filenames = new Dictionary<PlatformID, string>()
         {
             [PlatformID.MacOSX] = "osx-x64",

@@ -340,7 +340,21 @@ namespace EduXR.xAPI.Editor
         private static string ComposeArguments() => string.Join(' ', GetArguments().Select(a => $"-{a.Key} {a.Value}"));
 
         public static void ExecuteFetcher()
-            => ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
+        {
+            var p = Path.Combine(settings.fetcher.outputPath, settings.@namespace);
+            // clear dir
+            if (Directory.Exists(p))
+                Directory.Delete(p, true);
+
+            var f = Path.Combine(p, settings.AsmDefMetaFilename);
+            if (File.Exists(f))
+                File.Delete(f);
+
+            ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
+
+            File.WriteAllText(f, DefaultValues.DefaultAsmDefMeta);
+            AssetDatabase.Refresh();
+        }
 
         private static string SafePath(string path) => $"\"{path}\"";
 

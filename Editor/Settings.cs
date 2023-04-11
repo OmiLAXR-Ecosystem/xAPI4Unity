@@ -26,9 +26,12 @@ namespace EduXR.xAPI.Editor
         [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
         [SerializeReference] public GitLabSourceSettings gitlabSource = new GitLabSourceSettings();
 
-        [SerializeReference] public string @namespace = DefaultValues.Namespace;
+        [SerializeField] public string @namespace = DefaultValues.Namespace;
         [SerializeReference] public PackageType packageType = DefaultValues.PackageType;
 
+        public string AsmDefFilename => @namespace + ".asmdef"; 
+        public string AsmDefMetaFilename => AsmDefFilename + ".meta"; 
+        
         public void Reset()
         {
             EditorPrefs.DeleteKey(SettingsKey);
