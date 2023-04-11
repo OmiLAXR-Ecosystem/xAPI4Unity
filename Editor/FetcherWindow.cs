@@ -183,7 +183,7 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.BeginDisabledGroup(true);
             settings.fetcher.outputPath =
-                CustomGUI.TextField("Result output path", settings.fetcher.outputPath, DefaultValues.OutputPath);
+                CustomGUI.TextField("C# files output path", settings.fetcher.outputPath, DefaultValues.OutputPath);
             CustomGUI.EndDisabledGroup();
             
             if (CustomGUI.Button("Open in explorer"))
@@ -193,7 +193,8 @@ namespace EduXR.xAPI.Editor
 
             if (CustomGUI.Button("Browse folder"))
             {
-                
+                settings.fetcher.outputPath = EditorUtility.OpenFolderPanel("Browse output folder for C# files", settings.fetcher.outputPath, "");
+                GUI.FocusControl(null);
             }
 
             CustomGUI.Horizontal.End();
