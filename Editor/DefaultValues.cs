@@ -48,7 +48,7 @@ namespace EduXR.xAPI.Editor
         
         // todo also osx and linux
         public static string CliPath => Path.Join(CliRoot, ExeFilename);
-        public static string CliExeExtension => Path.GetExtension(CliPath);
+        public static string CliExeExtension => Path.GetExtension(CliPath).Replace(".", "");
         public static string OutputPath => AssetRoot;
 
         public static void EnsureFolders()

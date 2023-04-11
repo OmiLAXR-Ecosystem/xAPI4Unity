@@ -57,6 +57,32 @@ namespace EduXR.xAPI.Editor
             fontSize = 14,
         };
 
+        private static readonly GUIStyle StepLabelStyleGreen = new GUIStyle(EditorStyles.whiteLargeLabel)
+        {
+            fontSize = 14,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.green
+            },
+            hover = new GUIStyleState()
+            {
+                textColor = Color.green
+            }
+        };
+        
+        private static readonly GUIStyle StepLabelStyleRed = new GUIStyle(EditorStyles.whiteLargeLabel)
+        {
+            fontSize = 14,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.red
+            },
+            hover = new GUIStyleState()
+            {
+                textColor = Color.red
+            }
+        };
+        
         private static readonly GUIStyle ButtonStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 12,
@@ -110,13 +136,13 @@ namespace EduXR.xAPI.Editor
             }).Concat(options).ToArray());
         }
 
-        public static bool YesNoPopup(string label, bool value)
+        public static bool YesNoPopup(string label, bool value, string yesWord = "Yes", string noWord = "No")
         {
-            var v = value ? "Yes" : "No";
+            var v = value ? yesWord : noWord;
             Horizontal.Begin();
-            v = Popup(label, new[] { "Yes", "No" }, v);
+            v = Popup(label, new[] { yesWord, noWord }, v);
             Horizontal.End();
-            return v == "Yes";
+            return v == yesWord;
         }
 
         public static bool StateButton(string normalText, bool isStateMode, string stateText,
@@ -128,11 +154,17 @@ namespace EduXR.xAPI.Editor
             return result;
         }
 
+        private const string CorrectMark = "✓";
+        private const string WrongMark = "✗";
+
         public static void Title(string text)
             => GUILayout.Label(text, TitleLabelStyle);
 
         public static void Subtitle(string text)
             => GUILayout.Label(text, SubtitleLabelStyle);
+
+        public static void Step(string text, bool checkedCondition)
+            => GUILayout.Label(text + " " + (checkedCondition ? CorrectMark : WrongMark), checkedCondition ? StepLabelStyleGreen : StepLabelStyleRed);
 
         public static void Label(string text)
             => GUILayout.Label(text);

@@ -11,7 +11,6 @@ namespace EduXR.xAPI.Editor
 {
     public class FetcherWindow : EditorWindow
     {
-        
         private static Settings settings => Settings.instance;
         private bool _isDownloading = false;
 
@@ -50,7 +49,7 @@ namespace EduXR.xAPI.Editor
 
         private void xAPI_Source_View()
         {
-            CustomGUI.Subtitle("xAPI JSON Definitions Location");
+            CustomGUI.Subtitle("2) xAPI JSON Definitions Location");
             
             switch (settings.fetcher.selectedType)
             {
@@ -74,10 +73,10 @@ namespace EduXR.xAPI.Editor
 
         public void Fetcher_View()
         {
-            CustomGUI.Subtitle("Select your tool");
-            CustomGUI.Description(
-                "You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
-
+            CustomGUI.Subtitle("1) Select your tool");
+            //CustomGUI.Description("You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
+            CustomGUI.Description("Here you can choose whether you want to use the CLI or the WebService (currently not available). This tool is needed to transform JSON files to C#.");
+            
             CustomGUI.Horizontal.Begin();
            settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", settings.fetcher.selectedType);
 
@@ -121,22 +120,23 @@ namespace EduXR.xAPI.Editor
 
             if (settings.fetcher.selectedType == FetcherType.CommandLine)
             {
+                CustomGUI.Description("Choose the path of the fetcher tool executable. Go to step 2 if the path is correct.");
+
                 CustomGUI.Horizontal.Begin();
                 CustomGUI.BeginDisabledGroup(true);
                 settings.fetcher.cliPath = CustomGUI.TextField("Executable path", settings.fetcher.cliPath, DefaultValues.CliPath);
                 CustomGUI.EndDisabledGroup();
-                if (CustomGUI.Button("Open in browser"))
+                if (CustomGUI.Button("Open in explorer"))
                 {
                     Process.Start(Path.GetDirectoryName(settings.fetcher.cliPath));
                 }
                 if (CustomGUI.Button("Browse executable"))
                 {
                     settings.fetcher.cliPath =
-                        EditorUtility.OpenFilePanel("Browse executable", "", DefaultValues.CliExeExtension);
+                        EditorUtility.OpenFilePanel("Browse executable", Path.GetDirectoryName(settings.fetcher.cliPath), DefaultValues.CliExeExtension);
                     GUI.FocusControl(null);
                 }
                 CustomGUI.Horizontal.End();
-                CustomGUI.Description("Choose the path of the fetcher tool executable.");
             }
             else
             {
@@ -161,7 +161,10 @@ namespace EduXR.xAPI.Editor
 
         private void Fetcher_Args_View()
         {
-            CustomGUI.Subtitle("Fetcher configuration");
+            var csharpLocation = SafePath(Path.Join(settings.fetcher.outputPath, settings.@namespace).Replace("\"", ""));
+
+            CustomGUI.Subtitle("3) Fetcher configuration");
+            CustomGUI.Description($"You can configure here where your transformed C# files should be placed. Currently your files will be placed at {csharpLocation}. Click on 'Browse folder' to change the path.");
 
             /*
             settings.@namespace = CustomGUI.TextField("Namespace", settings.@namespace.Replace(" ", "_").Trim(),
@@ -177,11 +180,20 @@ namespace EduXR.xAPI.Editor
             */
             
             CustomGUI.Horizontal.Begin();
+            
+            CustomGUI.BeginDisabledGroup(true);
             settings.fetcher.outputPath =
                 CustomGUI.TextField("Result output path", settings.fetcher.outputPath, DefaultValues.OutputPath);
+            CustomGUI.EndDisabledGroup();
+            
             if (CustomGUI.Button("Open in explorer"))
             {
                 Process.Start(settings.fetcher.outputPath);
+            }
+
+            if (CustomGUI.Button("Browse folder"))
+            {
+                
             }
 
             CustomGUI.Horizontal.End();
@@ -189,24 +201,7 @@ namespace EduXR.xAPI.Editor
 
         private void OnGUI()
         {
-            Fetcher_View();
-
-            CustomGUI.Divider();
-
-            CustomGUI.BeginDisabledGroup(settings.fetcher.selectedType != FetcherType.CommandLine);
-
-            xAPI_Source_View();
-            
-            CustomGUI.Space();
-
-            Fetcher_Args_View();
-            
-            
-            CustomGUI.Divider();
-            
-            PreviewView();
-            
-            CustomGUI.Divider();
+            CustomGUI.Title("xAPI Definitions Fetcher");
             
             CustomGUI.Horizontal.Begin();
             
@@ -227,15 +222,45 @@ namespace EduXR.xAPI.Editor
             
             CustomGUI.Space();
 
-            CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(settings.localSource.path));
-            if (CustomGUI.Button("Edit xAPI Definitions"))
+            //CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(settings.localSource.path));
+            CustomGUI.BeginDisabledGroup(true);
+            if (CustomGUI.Button("Edit xAPI Definitions (coming soon)"))
             {
                 DesignerWindow.ShowWindow();
             }
             CustomGUI.EndDisabledGroup();
             
+            CustomGUI.Horizontal.End();
+            CustomGUI.EndDisabledGroup();
+            
+            CustomGUI.Divider();
+            CustomGUI.Space(2);
+
+            Fetcher_View();
+
+            CustomGUI.Divider();
+
+            CustomGUI.BeginDisabledGroup(settings.fetcher.selectedType != FetcherType.CommandLine);
+
+            xAPI_Source_View();
+            
+            CustomGUI.Space();
+
+            Fetcher_Args_View();
+            
+            
+            CustomGUI.Divider();
+            
+            PreviewView();
+            
+            CustomGUI.Divider();
+
+            CustomGUI.Subtitle("5) Do transformation!");
+            
+            CustomGUI.Horizontal.Begin();
+            
             CustomGUI.BeginDisabledGroup(!IsTransformationPossible);
-            if (CustomGUI.Button("Transform JSON => C#"))
+            if (CustomGUI.Button("Transform JSON => C#", new []{ GUILayout.MaxWidth(1000), GUILayout.Height(50), GUILayout.ExpandWidth(true) }))
             {
                 GUI.FocusControl(null);
                 ExecuteFetcher();
@@ -249,7 +274,7 @@ namespace EduXR.xAPI.Editor
 
         private void PreviewView()
         {
-            CustomGUI.Title("Transformation Preview");
+            CustomGUI.Subtitle("4) Check your settings");
 
             var arguments = GetArguments();
 
@@ -261,7 +286,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Label("C# Namespace: " + arguments["namespace"]);
             CustomGUI.Label("Binary: DLL will be not created.");
 
-            settings.fetcher.asmDef = CustomGUI.YesNoPopup("Create .asmdef file", settings.fetcher.asmDef);
+            settings.fetcher.asmDef = CustomGUI.YesNoPopup("Create .asmdef file", settings.fetcher.asmDef, "Yes (recommended)");
             settings.fetcher.version = CustomGUI.TextField("Assign a version", settings.fetcher.version, DefaultValues.Version, GUILayout.MaxWidth(200));
             
             var cmdString = ComposeArguments();
