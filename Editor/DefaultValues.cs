@@ -11,8 +11,8 @@ namespace EduXR.xAPI.Editor
     public static class DefaultValues
     {
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
-        public const string FetcherAPIBase = "http://localhost:8083/";
-        //public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
+        //public const string FetcherAPIBase = "http://localhost:8083/";
+        public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
         //public const string FetcherAPIBase = "https://localhost:5000/";
         public const FetcherType FetcherType = Editor.FetcherType.CommandLine;
         public const string Namespace = "xAPI.Registry";
