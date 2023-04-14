@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,9 +15,20 @@ namespace EduXR.xAPI.Editor {
             _url = url;
         }
 
+        private readonly Dictionary<PlatformID, string> ZipNames = new Dictionary<PlatformID, string>()
+        {
+            [PlatformID.Unix] = "fetcher-cli-linux.zip",
+            [PlatformID.MacOSX] = "fetcher-cli-mac.zip",
+            [PlatformID.Win32NT] = "fetcher-cli-win.zip",
+            [PlatformID.Win32S] = "fetcher-cli-win.zip",
+            [PlatformID.Win32Windows] = "fetcher-cli-win.zip",
+            [PlatformID.WinCE] = "fetcher-cli-win.zip",
+        }; 
+        
         public IEnumerator DownloadExe(string outPath, Action<byte[]> onFinish = null)
         {
-            var fileUri = Path.Join(_url, "static/fetcher-cli-mac.zip");//"download/fetcher-cli.zip?os=Auto");
+            var zipName = ZipNames[Environment.OSVersion.Platform];
+            var fileUri = Path.Join(_url, "static/" + zipName);
             var savePath = Path.Join(outPath, ZipName);
             using (var webRequest = UnityWebRequest.Get(fileUri))
             {

@@ -63,6 +63,8 @@ namespace EduXR.xAPI.Editor
             configure?.Invoke(process);
             
             process.Start();
+
+            process.WaitForExit();
             
             if (!showShell) 
                 process.BeginOutputReadLine();

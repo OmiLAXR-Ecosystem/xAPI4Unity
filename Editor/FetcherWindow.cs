@@ -384,11 +384,11 @@ namespace EduXR.xAPI.Editor
 
             if (File.Exists(f))
                 File.Delete(f);*/
+
+            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+               ProcessHelper.AllowExecute(settings.fetcher.cliPath);
             
-           if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-               ProcessHelper.AllowExecute(settings.fetcher.cliPath); 
-          
-           ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
+            ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
 
             File.WriteAllText(f, DefaultValues.DefaultAsmDefMeta);
             
