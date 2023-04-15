@@ -15,7 +15,7 @@ namespace EduXR.xAPI.Editor {
             _url = url;
         }
 
-        private readonly Dictionary<PlatformID, string> ZipNames = new Dictionary<PlatformID, string>()
+        private readonly Dictionary<PlatformID, string> _zipNames = new Dictionary<PlatformID, string>()
         {
             [PlatformID.Unix] = "fetcher-cli-linux.zip",
             [PlatformID.MacOSX] = "fetcher-cli-mac.zip",
@@ -27,8 +27,9 @@ namespace EduXR.xAPI.Editor {
         
         public IEnumerator DownloadExe(string outPath, Action<byte[]> onFinish = null)
         {
-            var zipName = ZipNames[Environment.OSVersion.Platform];
+            var zipName = _zipNames[Environment.OSVersion.Platform];
             var fileUri = Path.Join(_url, "static/" + zipName);
+            Debug.Log("Request cli from " + fileUri);
             var savePath = Path.Join(outPath, ZipName);
             using (var webRequest = UnityWebRequest.Get(fileUri))
             {

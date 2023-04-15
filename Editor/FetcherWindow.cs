@@ -137,8 +137,7 @@ namespace EduXR.xAPI.Editor
             }
 
             CustomGUI.Horizontal.End();
-
-
+            
             if (settings.fetcher.selectedType == FetcherType.CommandLine)
             {
                 CustomGUI.Description(
@@ -185,7 +184,7 @@ namespace EduXR.xAPI.Editor
             }
         }
 
-        private void Fetcher_Args_View()
+        private static void Fetcher_Args_View()
         {
             var csharpLocation =
                 SafePath(Path.Join(settings.fetcher.outputPath, settings.@namespace).Replace("\"", ""));
@@ -193,19 +192,6 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Subtitle("3) Fetcher configuration");
             CustomGUI.Description(
                 $"You can configure here where your transformed C# files should be placed. Currently your files will be placed at {csharpLocation}. Click on 'Browse folder' to change the path.");
-
-            /*
-            settings.@namespace = CustomGUI.TextField("Namespace", settings.@namespace.Replace(" ", "_").Trim(),
-                DefaultValues.Namespace);
-
-            CustomGUI.Space();
-
-            CustomGUI.BeginDisabledGroup(true);
-            settings.packageType = CustomGUI.Popup("Package Type", settings.packageType);
-            CustomGUI.EndDisabledGroup();
-            
-            CustomGUI.Space();
-            */
 
             CustomGUI.Horizontal.Begin();
 
@@ -311,7 +297,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.EndDisabledGroup();
         }
 
-        private void PreviewView()
+        private static void PreviewView()
         {
             CustomGUI.Subtitle("4) Check your settings");
 
