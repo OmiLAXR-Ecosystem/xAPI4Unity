@@ -218,7 +218,6 @@ namespace EduXR.xAPI.Editor
             if (curControlName != string.Empty)
                 Debug.Log(curControlName);
             
-            Debug.Log(Event.current.mousePosition);
         }
 
         private void OnGUI()
