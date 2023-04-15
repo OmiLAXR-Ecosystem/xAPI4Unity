@@ -10,6 +10,8 @@ namespace EduXR.xAPI.Editor
         
         public readonly GitHelper Git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
 
+        public event OnTriggeredControlHandler OnTriggeredControl;
+
         public LocalSourceView(Settings settings)
         {
             _settings = settings;
@@ -20,20 +22,21 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(true);
-            _settings.localSource.path = CustomGUI.TextField("Path to xapi repository", _settings.localSource.path);
+            _settings.localSource.path = CustomGUI.TextField("Path to xapi repository", _settings.localSource.path, default, OnTriggeredControl);
             CustomGUI.EndDisabledGroup();
             
             CustomGUI.BeginDisabledGroup(Git.IsBusy);
             
             CustomGUI.BeginDisabledGroup(!Git.IsCloned);
-            if (CustomGUI.Button("Open in browser"))
+            if (CustomGUI.Button("Open in browser", OnTriggeredControl))
             {
                 Process.Start(_settings.localSource.path);
             }
             CustomGUI.EndDisabledGroup();
             
-            if (CustomGUI.Button("Browse path"))
+            if (CustomGUI.Button("Browse path", OnTriggeredControl))
             {
+                // todo on changed
                 _settings.localSource.path =
                     EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", _settings.fetcher.localPath, "xapi");
                 if (string.IsNullOrEmpty(_settings.localSource.path))
@@ -42,7 +45,7 @@ namespace EduXR.xAPI.Editor
             }
 
             CustomGUI.BeginDisabledGroup(Git.IsCloned);
-            if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning..."))
+            if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning...", OnTriggeredControl))
             {
                 Git.Clone(_settings.localSource.GetNewBranchName());
                 _settings.localSource.path = Git.RepoDirectory;

@@ -9,6 +9,7 @@ namespace EduXR.xAPI.Editor
 
         private readonly Settings _settings;
 
+        public event OnTriggeredControlHandler OnTriggeredControl;
         public GitLabView(Settings settings)
         {
             _settings = settings;
@@ -25,10 +26,10 @@ namespace EduXR.xAPI.Editor
         public void Show()
         {
             CustomGUI.Horizontal.Begin();
-            _settings.gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", _settings.gitlabSource.repoUrl);
+            _settings.gitlabSource.repoUrl = CustomGUI.TextField("GitLab Repository", _settings.gitlabSource.repoUrl, default, OnTriggeredControl);
 
             CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl == _lastAppliedRepoUrl);
-            if (CustomGUI.Button("Apply"))
+            if (CustomGUI.Button("Apply", OnTriggeredControl))
             {
                 ApplyGitLabRepo();
             }
@@ -40,8 +41,8 @@ namespace EduXR.xAPI.Editor
             CustomGUI.BeginDisabledGroup(_settings.gitlabSource.repoUrl != _lastAppliedRepoUrl);
 
             CustomGUI.Horizontal.Begin();
-            _settings.gitlabSource.accessKey = CustomGUI.TextField("Access token", _settings.gitlabSource.accessKey);
-            if (CustomGUI.Button("Create one"))
+            _settings.gitlabSource.accessKey = CustomGUI.TextField("Access token", _settings.gitlabSource.accessKey, default, OnTriggeredControl);
+            if (CustomGUI.Button("Create one", OnTriggeredControl))
             {
                 Process.Start(_settings.gitlabSource.AccessTokenUri);
             }
@@ -50,10 +51,10 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.Horizontal.Begin();
             _settings.gitlabSource.projectId =
-                CustomGUI.TextField("Project ID", _settings.gitlabSource.projectId, "", GUILayout.MaxWidth(300));
+                CustomGUI.TextField("Project ID", _settings.gitlabSource.projectId, "", OnTriggeredControl, GUILayout.MaxWidth(300));
 
             CustomGUI.BeginDisabledGroup(_settings.gitlabSource.IsProjectIdMatchingRepoUrl());
-            if (CustomGUI.Button("Fetch Project ID from repo"))
+            if (CustomGUI.Button("Fetch Project ID from repo", OnTriggeredControl))
             {
                 _settings.gitlabSource.AutoDetectProjectId();
             }
@@ -64,7 +65,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.BeginDisabledGroup(string.IsNullOrEmpty(_settings.gitlabSource.projectId));
 
             CustomGUI.Horizontal.Begin();
-            _settings.gitlabSource.branch = CustomGUI.Popup("Branch", _settings.gitlabSource.Branches, _settings.gitlabSource.branch);
+            _settings.gitlabSource.branch = CustomGUI.Popup("Branch", _settings.gitlabSource.Branches, _settings.gitlabSource.branch, OnTriggeredControl);
             if (CustomGUI.Button("Refresh"))
             {
                 _settings.gitlabSource.AutoDetectBranches();

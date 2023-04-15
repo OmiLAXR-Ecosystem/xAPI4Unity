@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
+using Button = UnityEngine.UI.Button;
 
 namespace EduXR.xAPI.Editor
 {
@@ -127,13 +130,18 @@ namespace EduXR.xAPI.Editor
             }
         };
 
-        public static bool Button(string text, params GUILayoutOption[] options)
+        public static bool Button(string text, OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
-            return GUILayout.Button(text, ButtonStyle, (new[]
+            var down = GUILayout.Button(text, ButtonStyle, (new[]
             {
                 GUILayout.Height(30),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
+
+            if (down)
+                callback?.Invoke(typeof(Button), text, null);
+            
+            return down;
         }
 
         public static bool YesNoPopup(string label, bool value, string yesWord = "Yes", string noWord = "No")
@@ -146,10 +154,10 @@ namespace EduXR.xAPI.Editor
         }
 
         public static bool StateButton(string normalText, bool isStateMode, string stateText,
-            params GUILayoutOption[] options)
+            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
             BeginDisabledGroup(isStateMode);
-            var result = Button(isStateMode ? stateText : normalText, options);
+            var result = Button(isStateMode ? stateText : normalText, callback, options);
             EndDisabledGroup();
             return result;
         }
@@ -185,7 +193,7 @@ namespace EduXR.xAPI.Editor
         }
 
         public static string Popup(string label, IEnumerable<string> selectionOptions, string value,
-            params GUILayoutOption[] options)
+            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
             var opts = selectionOptions.Prepend("").ToArray();
 
@@ -198,13 +206,19 @@ namespace EduXR.xAPI.Editor
             
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
 
-            return opts[EditorGUILayout.Popup(label, optsIndex, opts, newOptions)];
+            var newValue = opts[EditorGUILayout.Popup(label, optsIndex, opts, newOptions)];
+            if (newValue != value)
+                callback?.Invoke(typeof(Dropdown), label, newValue);
+            return newValue;
         }
 
-        public static T Popup<T>(string label, T value, params GUILayoutOption[] options) where T : Enum
+        public static T Popup<T>(string label, T value, OnTriggeredControlHandler callback, params GUILayoutOption[] options) where T : Enum
         {
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
-            return (T)EditorGUILayout.EnumPopup(label, value, newOptions);
+            var newValue = (T)EditorGUILayout.EnumPopup(label, value, newOptions);
+            if (!value.Equals(newValue))
+                callback?.Invoke(typeof(Dropdown), label, newValue.ToString());
+            return newValue;
         }
 
         public static void Divider(int spaceLines = 1)
@@ -218,11 +232,18 @@ namespace EduXR.xAPI.Editor
         }
 
         public static string TextField(string label, string text, string defaultText = "",
-            params GUILayoutOption[] options)
-            => EditorGUILayout.TextField(label, string.IsNullOrEmpty(text) ? defaultText : text, (new[]
+            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+        {
+            var newText = EditorGUILayout.TextField(label, string.IsNullOrEmpty(text) ? defaultText : text, (new[]
             {
                 GUILayout.MinWidth(250)
             }).Concat(options).ToArray());
+
+            if (newText != text)
+                callback?.Invoke(typeof(TextField), label, newText);
+            
+            return newText;
+        }
 
 
         public static void BeginVertical() => EditorGUILayout.BeginVertical();
