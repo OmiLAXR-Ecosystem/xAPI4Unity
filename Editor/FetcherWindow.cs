@@ -319,7 +319,9 @@ namespace EduXR.xAPI.Editor
 
             var csharpLocation = SafePath(Path.Join(arguments["output"], arguments["namespace"]).Replace("\"", ""));
 
-            CustomGUI.Label("JSON definitions files: " + arguments["path"]);
+            if (arguments.TryGetValue("path", out var argument))
+                CustomGUI.Label("JSON definitions files: " + argument);
+            
             CustomGUI.Label("Target language: " + arguments["lang"]);
             CustomGUI.Label("C# files location: " + csharpLocation);
             CustomGUI.Label("C# Namespace: " + arguments["namespace"]);
