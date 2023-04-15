@@ -154,6 +154,7 @@ namespace EduXR.xAPI.Editor
                     Process.Start(Path.GetDirectoryName(settings.fetcher.cliPath));
                 }
 
+                GUI.SetNextControlName("BrowseCliButton");
                 if (CustomGUI.Button("Browse executable"))
                 {
                     settings.fetcher.cliPath =
@@ -226,6 +227,12 @@ namespace EduXR.xAPI.Editor
             }
 
             CustomGUI.Horizontal.End();
+            
+            var curControlName = GUI.GetNameOfFocusedControl();
+            if (curControlName != string.Empty)
+                Debug.Log(curControlName);
+            
+            Debug.Log(Event.current.mousePosition);
         }
 
         private void OnGUI()
