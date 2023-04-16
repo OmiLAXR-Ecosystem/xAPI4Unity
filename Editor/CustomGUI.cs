@@ -130,16 +130,19 @@ namespace EduXR.xAPI.Editor
             }
         };
 
-        public static bool Button(string text, OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+        public static bool Button(string text, OnTriggeredControlHandler callback = null,
+            params GUILayoutOption[] options)
+            => Button(new GUIContent(text), callback, options);
+        public static bool Button(GUIContent textContent, OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
-            var down = GUILayout.Button(text, ButtonStyle, (new[]
+            var down = GUILayout.Button(textContent, ButtonStyle, (new[]
             {
                 GUILayout.Height(30),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
 
             if (down)
-                callback?.Invoke(typeof(Button), text, null);
+                callback?.Invoke(typeof(Button), textContent.text, null);
             
             return down;
         }

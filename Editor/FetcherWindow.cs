@@ -236,6 +236,7 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Horizontal.Begin();
 
             CustomGUI.BeginDisabledGroup(!Settings.IsDirty());
+            
             if (CustomGUI.Button("Save settings", OnTriggeredControl))
             {
                 GUI.FocusControl(null);
