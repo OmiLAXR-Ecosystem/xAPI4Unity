@@ -15,19 +15,19 @@ namespace EduXR.xAPI.Editor
 {
     public class FetcherWindow : EditorWindow
     {
-        private static Settings settings => Settings.instance;
+        private static Settings Settings => Settings.instance;
         private bool _isDownloading;
 
         public static FetcherWindow Instance { get; private set; }
 
-        private readonly GitLabView _gitLabView = new GitLabView(settings);
-        private readonly LocalSourceView _localSourceView = new LocalSourceView(settings);
+        private readonly GitLabView _gitLabView = new GitLabView(Settings);
+        private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings);
 
-        private static bool IsTransformationPossible => GitHelper.IsValidRepo(settings.localSource.path) &&
-                                                        (settings.fetcher.selectedType == FetcherType.CommandLine &&
-                                                         !string.IsNullOrEmpty(settings.fetcher.cliPath));
+        private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path) &&
+                                                        (Settings.fetcher.selectedType == FetcherType.CommandLine &&
+                                                         !string.IsNullOrEmpty(Settings.fetcher.cliPath));
 
-        private FetcherApiService FetcherService() => new FetcherApiService(settings.fetcher.selectedUrl);
+        private static FetcherApiService FetcherService() => new FetcherApiService(Settings.fetcher.selectedUrl);
 
         public event OnTriggeredControlHandler OnTriggeredControl;
 
@@ -61,7 +61,7 @@ namespace EduXR.xAPI.Editor
 
         private void SourceType_View()
         {
-            switch (settings.fetcher.selectedSourceType)
+            switch (Settings.fetcher.selectedSourceType)
             {
                 case SourceType.Local:
                     _localSourceView.Show();
@@ -78,7 +78,7 @@ namespace EduXR.xAPI.Editor
         {
             CustomGUI.Subtitle("2) xAPI JSON Definitions Location");
 
-            switch (settings.fetcher.selectedType)
+            switch (Settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
                     break;
@@ -86,10 +86,10 @@ namespace EduXR.xAPI.Editor
                     CustomGUI.Description(
                         "Here you can select where you want to fetch the xAPI definitions from. You can select between GitLab and Local.");
 
-                    if (settings.fetcher.selectedType == FetcherType.CommandLine)
+                    if (Settings.fetcher.selectedType == FetcherType.CommandLine)
                     {
-                        settings.fetcher.selectedSourceType =
-                            CustomGUI.Popup("Source type", settings.fetcher.selectedSourceType, OnTriggeredControl);
+                        Settings.fetcher.selectedSourceType =
+                            CustomGUI.Popup("Source type", Settings.fetcher.selectedSourceType, OnTriggeredControl);
                     } 
                     else
                         CustomGUI.Popup("Source type", SourceType.Local, OnTriggeredControl);
@@ -101,7 +101,7 @@ namespace EduXR.xAPI.Editor
             }
         }
 
-        public void Fetcher_View()
+        private void Fetcher_View()
         {
             CustomGUI.Subtitle("1) Select your tool");
             //CustomGUI.Description("You can choose between two fetcher tools. The web service can be used directly. The Command Line tool has to downloaded first but can be used for local repositories.");
@@ -109,9 +109,9 @@ namespace EduXR.xAPI.Editor
                 "Here you can choose whether you want to use the CLI or the WebService (currently not available). This tool is needed to transform JSON files to C#.");
 
             CustomGUI.Horizontal.Begin();
-            settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", settings.fetcher.selectedType, OnTriggeredControl);
+            Settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", Settings.fetcher.selectedType, OnTriggeredControl);
 
-            switch (settings.fetcher.selectedType)
+            switch (Settings.fetcher.selectedType)
             {
                 case FetcherType.WebService:
                     break;
@@ -133,7 +133,7 @@ namespace EduXR.xAPI.Editor
                                 var ext = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "";
                                 var cliPath = Path.Join(outPath, "xAPI_Definitions_Fetcher.CLI" + ext);
 
-                                settings.fetcher.cliPath = cliPath;
+                                Settings.fetcher.cliPath = cliPath;
 
                                 _isDownloading = false;
                                 
@@ -150,28 +150,28 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.Horizontal.End();
             
-            if (settings.fetcher.selectedType == FetcherType.CommandLine)
+            if (Settings.fetcher.selectedType == FetcherType.CommandLine)
             {
                 CustomGUI.Description(
                     "Choose the path of the fetcher tool executable. Go to step 2 if the path is correct.");
 
                 CustomGUI.Horizontal.Begin();
                 CustomGUI.BeginDisabledGroup(true);
-                settings.fetcher.cliPath =
-                    CustomGUI.TextField("Executable path", settings.fetcher.cliPath, DefaultValues.CliPath, OnTriggeredControl);
+                Settings.fetcher.cliPath =
+                    CustomGUI.TextField("Executable path", Settings.fetcher.cliPath, DefaultValues.CliPath, OnTriggeredControl);
                 CustomGUI.EndDisabledGroup();
                 if (CustomGUI.Button("Open in explorer", OnTriggeredControl))
                 {
-                    Process.Start(Path.GetDirectoryName(settings.fetcher.cliPath)!);
+                    Process.Start(Path.GetDirectoryName(Settings.fetcher.cliPath)!);
                 }
 
                 GUI.SetNextControlName("BrowseCliButton");
                 if (CustomGUI.Button("Browse executable", OnTriggeredControl))
                 {
                     // todo changed path
-                    settings.fetcher.cliPath =
+                    Settings.fetcher.cliPath =
                         EditorUtility.OpenFilePanel("Browse executable",
-                            Path.GetDirectoryName(settings.fetcher.cliPath), DefaultValues.CliExeExtension);
+                            Path.GetDirectoryName(Settings.fetcher.cliPath), DefaultValues.CliExeExtension);
                     GUI.FocusControl(null);
                 }
 
@@ -183,13 +183,13 @@ namespace EduXR.xAPI.Editor
                 CustomGUI.Horizontal.Begin();
 
                 CustomGUI.BeginDisabledGroup(true);
-                settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", settings.fetcher.selectedUrl,
+                Settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", Settings.fetcher.selectedUrl,
                     DefaultValues.FetcherAPIBase, OnTriggeredControl);
                 CustomGUI.EndDisabledGroup();
 
                 if (CustomGUI.Button("Open in browser", OnTriggeredControl))
                 {
-                    Process.Start(settings.fetcher.selectedUrl);
+                    Process.Start(Settings.fetcher.selectedUrl);
                 }
 
                 CustomGUI.Horizontal.End();
@@ -200,7 +200,7 @@ namespace EduXR.xAPI.Editor
         private void Fetcher_Args_View()
         {
             var csharpLocation =
-                SafePath(Path.Join(settings.fetcher.outputPath, settings.@namespace).Replace("\"", ""));
+                SafePath(Path.Join(Settings.fetcher.outputPath, Settings.@namespace).Replace("\"", ""));
 
             CustomGUI.Subtitle("3) Fetcher configuration");
             CustomGUI.Description(
@@ -209,20 +209,20 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Horizontal.Begin();
 
             CustomGUI.BeginDisabledGroup(true);
-            settings.fetcher.outputPath =
-                CustomGUI.TextField("C# files output path", settings.fetcher.outputPath, DefaultValues.OutputPath, OnTriggeredControl);
+            Settings.fetcher.outputPath =
+                CustomGUI.TextField("C# files output path", Settings.fetcher.outputPath, DefaultValues.OutputPath, OnTriggeredControl);
             CustomGUI.EndDisabledGroup();
 
             if (CustomGUI.Button("Open in explorer", OnTriggeredControl))
             {
-                Process.Start(settings.fetcher.outputPath);
+                Process.Start(Settings.fetcher.outputPath);
             }
 
             if (CustomGUI.Button("Browse folder", OnTriggeredControl))
             {
                 // todo changed
-                settings.fetcher.outputPath = EditorUtility.OpenFolderPanel("Browse output folder for C# files",
-                    settings.fetcher.outputPath, "");
+                Settings.fetcher.outputPath = EditorUtility.OpenFolderPanel("Browse output folder for C# files",
+                    Settings.fetcher.outputPath, "");
                 GUI.FocusControl(null);
             }
 
@@ -254,7 +254,7 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.Space();
 
-            CustomGUI.BeginDisabledGroup(true || !GitHelper.IsValidRepo(settings.localSource.path));
+            CustomGUI.BeginDisabledGroup(true || !GitHelper.IsValidRepo(Settings.localSource.path));
             if (CustomGUI.Button("Edit xAPI Definitions (coming soon)", OnTriggeredControl))
             {
                 DesignerWindow.ShowWindow();
@@ -272,7 +272,7 @@ namespace EduXR.xAPI.Editor
 
             CustomGUI.Divider();
 
-            CustomGUI.BeginDisabledGroup(settings.fetcher.selectedType != FetcherType.CommandLine);
+            CustomGUI.BeginDisabledGroup(Settings.fetcher.selectedType != FetcherType.CommandLine);
 
             xAPI_Source_View();
 
@@ -323,9 +323,9 @@ namespace EduXR.xAPI.Editor
             CustomGUI.Label("C# Namespace: " + arguments["namespace"]);
             CustomGUI.Label("Binary: DLL will be not created.");
 
-            settings.fetcher.asmDef =
-                CustomGUI.YesNoPopup("Create .asmdef file", settings.fetcher.asmDef, "Yes (recommended)");
-            settings.fetcher.version = CustomGUI.TextField("Assign a version", settings.fetcher.version,
+            Settings.fetcher.asmDef =
+                CustomGUI.YesNoPopup("Create .asmdef file", Settings.fetcher.asmDef, "Yes (recommended)");
+            Settings.fetcher.version = CustomGUI.TextField("Assign a version", Settings.fetcher.version,
                 DefaultValues.Version, OnTriggeredControl, GUILayout.MaxWidth(200));
 
             var cmdString = ComposeArguments();
@@ -350,22 +350,22 @@ namespace EduXR.xAPI.Editor
         {
             var arguments = new Dictionary<string, string>();
 
-            if (settings.fetcher.selectedSourceType == SourceType.Local)
+            if (Settings.fetcher.selectedSourceType == SourceType.Local)
             {
-                arguments["path"] = SafePath(settings.localSource.path);
+                arguments["path"] = SafePath(Settings.localSource.path);
             }
             else
             {
-                arguments["projectId"] = settings.gitlabSource.projectId;
-                arguments["privateKey"] = settings.gitlabSource.accessKey;
-                arguments["branch"] = settings.gitlabSource.branch;
+                arguments["projectId"] = Settings.gitlabSource.projectId;
+                arguments["privateKey"] = Settings.gitlabSource.accessKey;
+                arguments["branch"] = Settings.gitlabSource.branch;
             }
 
-            arguments["source"] = settings.fetcher.selectedSourceType.ToString();
-            arguments["output"] = SafePath(settings.fetcher.outputPath);
-            arguments["namespace"] = settings.@namespace;
-            arguments["asmDef"] = settings.fetcher.asmDef ? "yes" : "no";
-            arguments["version"] = settings.fetcher.version;
+            arguments["source"] = Settings.fetcher.selectedSourceType.ToString();
+            arguments["output"] = SafePath(Settings.fetcher.outputPath);
+            arguments["namespace"] = Settings.@namespace;
+            arguments["asmDef"] = Settings.fetcher.asmDef ? "yes" : "no";
+            arguments["version"] = Settings.fetcher.version;
             arguments["sdk"] = "dotnet4.8";
 
             // Further settings
@@ -378,22 +378,18 @@ namespace EduXR.xAPI.Editor
 
         private static string ComposeArguments() => string.Join(' ', GetArguments().Select(a => $"-{a.Key} {a.Value}"));
 
+        /// <summary>
+        /// Triggers to run the CLI command to transforms JSON to C#.
+        /// </summary>
         public static void ExecuteFetcher()
         {
-            var p = Path.Combine(settings.fetcher.outputPath, settings.@namespace);
-            var f = Path.Combine(p, settings.AsmDefMetaFilename);
-
-            // clear dir
-            /*if (Directory.Exists(p))
-                Directory.Delete(p, true);
-
-            if (File.Exists(f))
-                File.Delete(f);*/
+            var p = Path.Combine(Settings.fetcher.outputPath, Settings.@namespace);
+            var f = Path.Combine(p, Settings.AsmDefMetaFilename);
 
             if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-               ProcessHelper.AllowExecute(settings.fetcher.cliPath);
+               ProcessHelper.AllowExecute(Settings.fetcher.cliPath);
             
-            ProcessHelper.Cmd(SafePath(settings.fetcher.cliPath), ComposeArguments(), true);
+            ProcessHelper.Cmd(SafePath(Settings.fetcher.cliPath), ComposeArguments(), true);
 
             File.WriteAllText(f, DefaultValues.DefaultAsmDefMeta);
             
@@ -403,19 +399,11 @@ namespace EduXR.xAPI.Editor
         private static string SafePath(string path) => $"\"{path}\"";
 
         private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Debug.LogError(e.Data);
-        }
+            => Debug.LogError(e.Data);
 
         private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Debug.Log(e.Data);
-        }
-
-        #region Load, Save & Reset Settings
+            => Debug.Log(e.Data);
 
         protected void OnEnable() => Settings.instance.Load();
-
-        #endregion
     }
 }
