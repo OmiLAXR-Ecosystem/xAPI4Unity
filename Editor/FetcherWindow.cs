@@ -375,6 +375,14 @@ namespace xAPI4Unity.Editor
             return arguments;
         }
 
+        private void OnDisable()
+        {
+            // Ask the user if they really want to close the window
+            var wantsSave = EditorUtility.DisplayDialog("Saving your settings?", "Do you want to save your settings before closing this window?", "Yes", "No");
+        
+            if (wantsSave)
+                Settings.instance.Save();
+        }
 
         private static string ComposeArguments() => string.Join(' ', GetArguments().Select(a => $"-{a.Key} {a.Value}"));
 
