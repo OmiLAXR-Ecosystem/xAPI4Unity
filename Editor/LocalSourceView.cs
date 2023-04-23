@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,7 +23,7 @@ namespace xAPI4Unity.Editor
             CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(true);
-            _settings.localSource.path = CustomGUI.TextField("Path to xapi repository", _settings.localSource.path, default, OnTriggeredControl);
+            _settings.localSource.path = CustomGUI.TextField("Path to xAPI repository", _settings.localSource.path, Path.GetDirectoryName(_settings.localSource.path), OnTriggeredControl);
             CustomGUI.EndDisabledGroup();
             
             CustomGUI.BeginDisabledGroup(Git.IsBusy);
@@ -44,6 +45,8 @@ namespace xAPI4Unity.Editor
                 GUI.FocusControl(null);
             }
 
+            Git.Directory = Path.GetDirectoryName(_settings.localSource.path);
+            
             CustomGUI.BeginDisabledGroup(Git.IsCloned);
             if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning...", OnTriggeredControl))
             {

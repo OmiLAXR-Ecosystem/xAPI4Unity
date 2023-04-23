@@ -10,7 +10,7 @@ namespace xAPI4Unity.Editor
     {
         private Process _processHandle;
         public readonly string Url;
-        public readonly string Directory;
+        public string Directory;
         public bool IsBusy { get; private set; }
         public string RepoDirectory => Path.Join(Directory, "xapi");
         public bool IsCloned => IsValidRepo(RepoDirectory);
@@ -20,6 +20,7 @@ namespace xAPI4Unity.Editor
             Url = repoUrl;
             Directory = directory;
         }
+        
 
         public static bool IsValidRepo(string repoPath) =>
             Dir.Exists(repoPath) && Dir.Exists(Path.Join(repoPath, "definitions"));

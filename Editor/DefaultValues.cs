@@ -38,7 +38,6 @@ AssemblyDefinitionImporter:
 
         public static string ProjectRoot => Directory.GetCurrentDirectory();
         public static string AssetRoot => Path.Join(ProjectRoot, "Assets");
-
         public static string CliRoot => Path.Join(ProjectRoot, "Tools");
         
         // todo also osx and linux

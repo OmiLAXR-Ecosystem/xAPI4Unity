@@ -1,12 +1,16 @@
+using System;
+using System.IO;
+using System.Linq;
 using UnityEditor;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace xAPI4Unity.Editor
 {
     public class DesignerWindow: EditorWindow
     {
-        private DefinitionsTreeView _definitionsTreeView;
+        private static Settings Settings => Settings.instance;
+        private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings.instance);
+
+        private string _selectedContext = "";
         
         [MenuItem("EduXR / xAPI / Designer")]
         public static void ShowWindow()
@@ -16,40 +20,22 @@ namespace xAPI4Unity.Editor
 
         public void OnGUI()
         {
-           /* CustomGUI.Horizontal.Wrap(() =>
-            {
-                CustomGUI.BeginVertical();
-                CustomGUI.Title("Definitions");
-                
-                _definitionsTreeView.OnGUI(new Rect(0, 20, Math.Max(position.width / 2, 600), position.height));
-                CustomGUI.EndVertical();
+            CustomGUI.Title("xAPI Definitions Designer");
             
-                CustomGUI.BeginVertical();
-                CustomGUI.Label("TEST");
-                CustomGUI.EndVertical();
-            });*/
-           
-           // https://docs.unity3d.com/Manual/UIE-HowTo-CreateEditorWindow.html
-           // Create a two-pane view with the left pane being fixed with
-           var splitView = new TwoPaneSplitView(0, 250, TwoPaneSplitViewOrientation.Horizontal);
+            _localSourceView.Show();
+            
+            CustomGUI.Divider();
+            CustomGUI.Space();
 
-            // Add the view to the visual tree by adding it as a child to the root element
-           rootVisualElement.Add(splitView);
-
-            // A TwoPaneSplitView always needs exactly two child elements
-           var leftPane = new VisualElement();
-           leftPane.Add(new IMGUIContainer(() =>
-           {
-               _definitionsTreeView.OnGUI(new Rect(0, 20, 250, position.height));
-           }));
-           
-           
-           splitView.Add(leftPane);
-           
-           
-           
-           var rightPane = new VisualElement();
-           splitView.Add(rightPane);
+            var contexts = GetContexts();
+            _selectedContext = CustomGUI.Popup("Context", contexts, _selectedContext);
         }
+
+        private string[] GetContexts()
+        {
+            var dirs = Directory.GetDirectories(Path.Combine(Settings.localSource.path, "definitions"));
+            return dirs.Select(dir => Path.GetFileName(dir)).ToArray();
+        }
+        private void SelectContext(string context) {}
     }
 }
