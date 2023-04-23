@@ -63,7 +63,7 @@ namespace xAPI4Unity.Editor
         {
             DefaultValues.EnsureFolders();
 
-            var data = EditorPrefs.GetString(SettingsKey, JsonUtility.ToJson(instance, false));
+            var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(instance, false));
             // Then we apply them to this window
             JsonUtility.FromJsonOverwrite(data, instance);
 
@@ -75,7 +75,7 @@ namespace xAPI4Unity.Editor
         {
             var data = JsonUtility.ToJson(this, false);
             // And we save it
-            EditorPrefs.SetString(SettingsKey, data);
+            PlayerPrefs.SetString(SettingsKey, data);
             _savedInstance = instance.Clone<Settings>();
         }
 
@@ -147,10 +147,7 @@ namespace xAPI4Unity.Editor
             var pid = FetchProjectId();
             if (!pid.HasValue) return;
             projectId = pid.Value.ToString();
-            if (!_projectIds.ContainsKey(repoUrl))
-            {
-                _projectIds.Add(repoUrl, pid.Value);
-            }
+            _projectIds.TryAdd(repoUrl, pid.Value);
         }
 
         /// <summary>
