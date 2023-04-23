@@ -1,6 +1,6 @@
 {
     "name": "com.rwth.unity.eduxr.xapi4unity",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "displayName": "xAPI4Unity",
     "description": "This is an package with has editor tools to use work with xAPI definitions more easy. Developers can design xAPI definitions and transform them directly to C# code.",
     "unity": "2021.3",

@@ -17,6 +17,8 @@ namespace xAPI4Unity.Editor
     {
         private static Settings Settings => Settings.instance;
         private bool _isDownloading;
+        
+        private Vector2 _scrollPosition = Vector2.zero;
 
         public static FetcherWindow Instance { get; private set; }
 
@@ -268,6 +270,7 @@ namespace xAPI4Unity.Editor
             CustomGUI.Divider();
             CustomGUI.Space(2);
 
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition);
             Fetcher_View();
 
             CustomGUI.Divider();
@@ -305,6 +308,7 @@ namespace xAPI4Unity.Editor
 
             CustomGUI.Horizontal.End();
             CustomGUI.EndDisabledGroup();
+            GUILayout.EndScrollView();
         }
 
         private void PreviewView()
