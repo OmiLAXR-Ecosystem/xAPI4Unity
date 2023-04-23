@@ -4,7 +4,7 @@ using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class TreeIMGUI<T> where T : ITreeIMGUIData
 	{

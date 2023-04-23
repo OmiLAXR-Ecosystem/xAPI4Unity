@@ -4,7 +4,7 @@ using System.IO;
 
 using Dir = System.IO.Directory;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class GitHelper
     {

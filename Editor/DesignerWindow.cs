@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class DesignerWindow: EditorWindow
     {

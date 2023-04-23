@@ -1,6 +1,6 @@
 using UnityEditor;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class AssetTree 
     {

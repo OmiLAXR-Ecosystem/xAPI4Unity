@@ -7,7 +7,7 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 using File = UnityEngine.Windows.File;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public static class ProcessHelper
     {

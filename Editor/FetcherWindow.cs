@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class FetcherWindow : EditorWindow
     {

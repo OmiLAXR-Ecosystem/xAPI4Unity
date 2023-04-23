@@ -1,4 +1,4 @@
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public enum SourceType
     {

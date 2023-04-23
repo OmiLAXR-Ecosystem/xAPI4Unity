@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class DefinitionsTree
     {

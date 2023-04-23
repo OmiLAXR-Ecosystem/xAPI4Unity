@@ -3,7 +3,7 @@ using System.Net;
 using System.Text;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public static class EditorHttpHelper
     {

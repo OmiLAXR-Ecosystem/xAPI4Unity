@@ -5,7 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace EduXR.xAPI.Editor {
+namespace xAPI4Unity.Editor {
     public class FetcherApiService
     {
         public const string ZipName = "fetcher-cli.zip";

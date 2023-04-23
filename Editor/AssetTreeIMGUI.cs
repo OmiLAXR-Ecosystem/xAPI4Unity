@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class AssetTreeIMGUI : TreeIMGUI<AssetData>
     {

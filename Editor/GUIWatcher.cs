@@ -8,7 +8,7 @@ using UnityEditor.Analytics;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     [InitializeOnLoad]
     public class GUIWatcher : EditorWindow

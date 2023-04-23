@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public interface ISettings
     {
@@ -17,7 +17,7 @@ namespace EduXR.xAPI.Editor
     [Serializable]
     public class Settings : ISettings
     {
-        private const string SettingsKey = "EduXR.xAPI";
+        private const string SettingsKey = "xAPI4Unity";
 
         public static Settings instance = new Settings();
         private static Settings _savedInstance = new Settings();

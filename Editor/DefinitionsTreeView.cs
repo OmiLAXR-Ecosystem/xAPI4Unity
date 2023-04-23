@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEditor.IMGUI.Controls;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public class DefinitionsTreeView : TreeView
     {

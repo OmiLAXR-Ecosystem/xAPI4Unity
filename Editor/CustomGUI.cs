@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.UIElements;
 using Button = UnityEngine.UI.Button;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public static class CustomGUI
     {

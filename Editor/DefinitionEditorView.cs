@@ -1,7 +1,7 @@
 ﻿using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public static class DefinitionEditorView 
     {

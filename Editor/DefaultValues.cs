@@ -6,7 +6,7 @@ using Unity.IO.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
-namespace EduXR.xAPI.Editor
+namespace xAPI4Unity.Editor
 {
     public static class DefaultValues
     {
