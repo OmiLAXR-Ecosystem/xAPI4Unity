@@ -43,7 +43,7 @@ namespace xAPI4Unity.Editor
             => OnTriggeredControl?.Invoke(type, label, value);
         
         [MenuItem("EduXR / xAPI / Open Fetcher Window")]
-        private static void ShowWindow()
+        public static void ShowWindow()
         {
 #if UNITY_STANDALONE
             Instance = GetWindow<FetcherWindow>("xAPI Fetcher");
@@ -256,12 +256,11 @@ namespace xAPI4Unity.Editor
 
             CustomGUI.Space();
 
-            CustomGUI.BeginDisabledGroup(true || !GitHelper.IsValidRepo(Settings.localSource.path));
-            if (CustomGUI.Button("Edit xAPI Definitions (coming soon)", OnTriggeredControl))
+            CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(Settings.localSource.path));
+            if (CustomGUI.Button("Edit and Create xAPI Definitions", OnTriggeredControl))
             {
                 DesignerWindow.ShowWindow();
             }
-
             CustomGUI.EndDisabledGroup();
 
             CustomGUI.Horizontal.End();

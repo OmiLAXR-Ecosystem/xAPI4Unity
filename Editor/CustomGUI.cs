@@ -93,6 +93,29 @@ namespace xAPI4Unity.Editor
             margin = new RectOffset(5, 5, -5, 0)
         };
 
+        private static readonly GUIStyle ListboxItemStyle = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 12,
+            padding = new RectOffset(10, 10, 5, 5),
+            margin = new RectOffset(5, 5, 0, 0),
+            border = new RectOffset(1,1,1,1),
+            alignment = TextAnchor.MiddleLeft,
+        };
+        private static readonly GUIStyle ListboxSelectedItemStyle = new GUIStyle(GUI.skin.button)
+        {
+            fontSize = 12,
+            padding = new RectOffset(10, 10, 5, 5),
+            margin = new RectOffset(5, 5, 0, 0),
+            border = new RectOffset(1,1,1,1),
+            alignment = TextAnchor.MiddleLeft,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.white,
+                background = MakeTex(2, 2, new Color(1f, 1f, 1f, 0.3f)),
+            },
+            
+        };
+
         private static readonly GUIStyle TextStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 11,
@@ -129,6 +152,48 @@ namespace xAPI4Unity.Editor
                 textColor = Color.yellow
             }
         };
+
+        private static Texture2D MakeTex(int width, int height, Color color)
+        {
+            var pixels = new Color[width * height];
+
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = color;
+            }
+
+            var result = new Texture2D(width, height);
+            result.SetPixels(pixels);
+            result.Apply();
+
+            return result;
+        }
+        
+        
+        public static int Listbox(string label, string[] entries, ref Vector2 scrollPosition, int selectedIndex, int width, int height, bool alwaysShowHorizontal = false,
+            bool alwaysShowVertical = false, Action<string> onClick = null)
+        {
+            BeginVertical();
+            Label(label);
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, 
+                alwaysShowHorizontal, alwaysShowVertical, 
+                GUILayout.Height(height), GUILayout.Width(width));
+
+            for (var i = 0; i < entries.Length; i++)
+            {
+                if (GUILayout.Button(entries[i], i == selectedIndex ? ListboxSelectedItemStyle : ListboxItemStyle))
+                {
+                    selectedIndex = i;
+                    onClick?.Invoke(entries[i]);
+                }
+            }
+            if (entries.Length < 1)
+                Label("No items.");
+            
+            EditorGUILayout.EndScrollView();
+            EndVertical();
+            return selectedIndex;
+        }
 
         public static bool Button(string text, OnTriggeredControlHandler callback = null,
             params GUILayoutOption[] options)

@@ -9,7 +9,8 @@
     "changelogUrl": "https://gitlab.com/learntech-rwth/eduxr-framework/xapi-4-unity/-/blob/main/CHANGELOG",
     "licensesUrl": "https://gitlab.com/learntech-rwth/eduxr-framework/xapi-4-unity/-/blob/main/LICENSE",
     "dependencies": {
-      "com.unity.editorcoroutines": "1.0.0"
+      "com.unity.editorcoroutines": "1.0.0",
+      "com.unity.nuget.newtonsoft-json": "3.0.2"
    },
    "keywords": [
       "xAPI",
