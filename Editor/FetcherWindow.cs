@@ -42,7 +42,7 @@ namespace xAPI4Unity.Editor
         private void FireTriggeredControl(Type type, string label, string value)
             => OnTriggeredControl?.Invoke(type, label, value);
         
-        [MenuItem("EduXR / xAPI / Open Fetcher Window")]
+        [MenuItem("OmiLAXR / xAPI / Open Fetcher Window")]
         public static void ShowWindow()
         {
 #if UNITY_STANDALONE
@@ -57,7 +57,7 @@ namespace xAPI4Unity.Editor
             Instance.Show(true);
         }
 
-        [MenuItem("EduXR / xAPI / Quick transform JSON => C#")]
+        [MenuItem("OmiLAXR / xAPI / Quick transform JSON => C#")]
         public static void QuickFetch()
             => ExecuteFetcher();
 
