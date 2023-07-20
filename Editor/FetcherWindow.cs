@@ -46,15 +46,13 @@ namespace xAPI4Unity.Editor
         [MenuItem("OmiLAXR / xAPI / Open Fetcher Window")]
         public static void ShowWindow()
         {
-#if UNITY_STANDALONE
             Instance = GetWindow<FetcherWindow>("xAPI Fetcher");
 #if UNITY_5_1 || UNITY_5_2 || UNITY_5_3 || UNITY_5_3_OR_NEWER
             Instance.titleContent = new GUIContent("xAPI Fetcher");
 #else
-            _window.title = "xAPI Fetcher";
+            Instance.title = "xAPI Fetcher";
 #endif
             Instance.minSize = new Vector2(1000, 770);
-#endif
             Instance.Show(true);
         }
 
