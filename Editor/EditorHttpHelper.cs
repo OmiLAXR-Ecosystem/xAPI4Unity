@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Net;
 using System.Text;
@@ -37,3 +38,4 @@ namespace xAPI4Unity.Editor
             => new WebClient().DownloadFileAsync(new Uri(fileUri), fileName);
     }
 }
+#endif

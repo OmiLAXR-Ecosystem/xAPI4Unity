@@ -1,10 +1,7 @@
-using System;
+#if UNITY_EDITOR
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
-using UnityEditor.Analytics;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
@@ -122,3 +119,5 @@ namespace xAPI4Unity.Editor
         private static void Log(object message) => Debug.Log(message.ToString());
     }
 }
+
+#endif

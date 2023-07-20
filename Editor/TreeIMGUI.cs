@@ -1,8 +1,6 @@
-
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor
 {
@@ -97,3 +95,4 @@ namespace xAPI4Unity.Editor
 
 	}
 }
+#endif

@@ -1,5 +1,4 @@
-﻿using UnityEditor.IMGUI.Controls;
-using UnityEngine;
+﻿
 
 namespace xAPI4Unity.Editor
 {
