@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using UnityEditor;
 
 namespace xAPI4Unity.Editor
@@ -85,4 +84,3 @@ namespace xAPI4Unity.Editor
 
     }
 }
-#endif

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-#if UNITY_EDITOR
 using UnityEditor.IMGUI.Controls;
 
 namespace xAPI4Unity.Editor
@@ -241,4 +240,3 @@ namespace xAPI4Unity.Editor
         }
     }
 }
-#endif

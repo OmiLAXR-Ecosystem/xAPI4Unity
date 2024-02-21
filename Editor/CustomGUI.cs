@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -321,4 +320,3 @@ namespace xAPI4Unity.Editor
         public static void EndDisabledGroup() => EditorGUI.EndDisabledGroup();
     }
 }
-#endif

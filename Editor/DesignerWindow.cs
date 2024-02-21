@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -231,4 +230,3 @@ namespace xAPI4Unity.Editor
                 Path.Combine(Group.Extensions.ToString().ToLower(), extensionType.ToString().ToLower()));
     }
 }
-#endif
