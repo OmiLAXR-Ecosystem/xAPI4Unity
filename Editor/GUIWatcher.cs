@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -119,5 +118,3 @@ namespace xAPI4Unity.Editor
         private static void Log(object message) => Debug.Log(message.ToString());
     }
 }
-
-#endif

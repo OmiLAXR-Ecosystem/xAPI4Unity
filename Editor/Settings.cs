@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -234,4 +233,3 @@ namespace xAPI4Unity.Editor
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.Replace(".", "_")}-{gitCloneAmount++}";
     }
 }
-#endif
