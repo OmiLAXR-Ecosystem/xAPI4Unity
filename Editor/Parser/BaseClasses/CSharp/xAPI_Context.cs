@@ -1,0 +1,38 @@
+﻿namespace xAPI.Registry
+{
+    /// <summary>
+    /// Version: 1.0.0
+    /// </summary>
+    public abstract class xAPI_Context
+    {
+        public readonly string ContextName;
+    
+        public xAPI_Context(string name) {
+            ContextName = name;
+        }
+    
+        private object GetPropertyValue(object obj, string name) {
+            return obj.GetType().GetProperty(name).GetValue(obj);
+        }
+    
+        public xAPI_Activity GetActivity(string name) {
+            var activities = GetPropertyValue(this, "activities");
+            return (xAPI_Activity)GetPropertyValue(activities, name);
+        }
+    
+        public xAPI_Activities GetActivities(string name) {
+            var activities = GetPropertyValue(this, "activities");
+            return (xAPI_Activities)GetPropertyValue(activities, name);
+        }
+    
+        public xAPI_Verb GetVerb(string name) {
+            var verbs = GetPropertyValue(this, "verbs");
+            return (xAPI_Verb)GetPropertyValue(verbs, name);
+        }
+    
+        public xAPI_Verbs GetVerbs(string name) {
+            var verbs = GetPropertyValue(this, "verbs");
+            return (xAPI_Verbs)GetPropertyValue(verbs, name);
+        }
+    }
+}

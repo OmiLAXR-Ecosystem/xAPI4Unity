@@ -1,0 +1,63 @@
+﻿using System;
+
+namespace xAPI.Registry
+{
+    /// <summary>
+    /// Version: 1.0.0
+    /// </summary>
+    public struct xAPI_Body
+    {
+        public readonly xAPI_Verb verb;
+        public readonly xAPI_Activity activity;
+        public readonly xAPI_Extensions activityExtensions;
+        public readonly xAPI_Extensions contextExtensions;
+        public readonly xAPI_Extensions resultExtensions;
+        public readonly DateTime timestamp;
+        public readonly bool? completion;
+        public readonly bool? success;
+
+        public readonly double? maxScore;
+        public readonly double? minScore;
+        public readonly double? rawScore;
+        public readonly double? scaledScore;
+
+        public readonly xAPI_Actor? instructor;
+
+        public xAPI_Body(
+            xAPI_Verb verb,
+            xAPI_Activity activity,
+            xAPI_Extensions activityExtensions = null,
+            xAPI_Extensions contextExtensions = null,
+            xAPI_Extensions resultExtensions = null,
+            bool? completion = null,
+            bool? success = null,
+            double? maxScore = null,
+            double? minScore = null,
+            double? rawScore = null,
+            double? scaledScore = null,
+            xAPI_Actor? instructor = null,
+            DateTime? timestamp = null)
+        {
+            this.maxScore = maxScore;
+            this.minScore = minScore;
+            this.rawScore = rawScore;
+            this.scaledScore = scaledScore;
+            this.success = success;
+            this.completion = completion;
+            this.verb = verb;
+            this.activity = activity;
+            this.activityExtensions = activityExtensions;
+            this.resultExtensions = resultExtensions;
+            this.contextExtensions = contextExtensions;
+            this.instructor = instructor;
+            this.timestamp = timestamp.HasValue ? timestamp.Value : DateTime.Now;
+        }
+
+        public override string ToString()
+        {
+            var score = $"[max={maxScore}, min={minScore}, raw={rawScore}, scaled={scaledScore}]";
+            return
+                $"[xAPI_Body: verb={verb}, activity={activity}, score={score}, success={success}, completion={completion}, instructor={instructor}, extensions=[activity={activityExtensions}, context={contextExtensions}, result={resultExtensions}], timestamp={timestamp}]";
+        }
+    }
+}

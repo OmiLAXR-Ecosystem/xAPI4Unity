@@ -37,7 +37,7 @@ AssemblyDefinitionImporter:
         public static string CliRoot => Path.Join(ProjectRoot, "Tools");
         
         // todo also osx and linux
-        public static string CliPath => Path.Join(CliRoot, "xAPI_Definitions_Fetcher.CLI" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : ""));
+        public static string CliPath => Path.Join(CliRoot, "xAPI4Unity.Editor.CLI" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : ""));
         public static string CliExeExtension => Path.GetExtension(CliPath).Replace(".", "");
         public static string OutputPath => AssetRoot;
 

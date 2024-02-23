@@ -131,7 +131,7 @@ namespace xAPI4Unity.Editor
                                 File.Delete(zipPath);
 
                                 var ext = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "";
-                                var cliPath = Path.Join(outPath, "xAPI_Definitions_Fetcher.CLI" + ext);
+                                var cliPath = Path.Join(outPath, "xAPI4Unity.Editor.CLI" + ext);
 
                                 Settings.fetcher.cliPath = cliPath;
 
