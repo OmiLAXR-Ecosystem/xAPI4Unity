@@ -12,10 +12,16 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     public class FileManager : IOManager
     {
+        private readonly string _rootPath;
         /// <summary>
         /// Key of the manager's source type
         /// </summary>
         public static SourceType SourceKey => SourceType.Local;
+
+        public FileManager(string rootPath)
+        {
+            _rootPath = rootPath;
+        }
 
         /// <summary>
         /// Gets the directories in a path
@@ -73,6 +79,12 @@ namespace xAPI4Unity.Editor.Parser.IO
 
         public override IEnumerable<string> GetAllKeys(string rootPath)
             => GetAllFiles(rootPath).Select(s => s.Replace(rootPath, "").Replace(".json", "")).ToArray();
+
+        public override string[] GetContexts()
+        {
+            var c = ListContexts(_rootPath);
+            return c.Select(a => a.Path).ToArray();
+        }
 
         private IEnumerable<string> GetKeys(string rootPath, IEnumerable<string> includes)
         {

@@ -295,6 +295,11 @@ namespace xAPI4Unity.Editor.Parser.IO
             throw new NotImplementedException();
         }
 
+        public override string[] GetContexts()
+        {
+            throw new NotImplementedException();
+        }
+
         protected override List<FileMeta> ListExtensions(FileMeta contextExtType)
         {
             return GetDefinitionFiles(contextExtType.Path);

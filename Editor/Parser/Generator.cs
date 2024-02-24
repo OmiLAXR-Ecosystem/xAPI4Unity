@@ -74,5 +74,10 @@ namespace xAPI4Unity.Editor.Parser
 
             return path;
         }
+
+        public static void Generate()
+        {
+            
+        }
     }
 }

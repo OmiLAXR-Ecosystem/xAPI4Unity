@@ -10,44 +10,6 @@ namespace xAPI4Unity.Editor.Parser.IO {
     /// </summary>
     public abstract class IOManager {
         /// <summary>
-        /// Creates an IOManager
-        /// </summary>
-        /// <param name="type">Source type</param>
-        /// <param name="projectId">Project ID for GitLab</param>
-        /// <param name="privateKey">Private key for GitLab</param>
-        /// <param name="branch">Branch for GitLab</param>
-        /// <returns>Created IOManager</returns>
-        public static IOManager CreateManager(SourceType? type, string projectId = default, string privateKey = default,
-            string branch = default)
-        {
-            switch (type)
-            {
-                case SourceType.Local:
-                    return new FileManager();
-                case SourceType.GitLab:
-                    return string.IsNullOrEmpty(branch) ? new GitLabManager(projectId, privateKey)
-                        : new GitLabManager(projectId, privateKey, branch);
-                default:
-                    return null;
-            }
-        }
-        
-        public static (IOManager,IOManager) PrepareParser(
-            SourceType source, SourceType dest, string projectId, string branch, string privateKey, Action<string> onLog = null)
-        {
-            var reader = CreateManager(source, projectId, privateKey, branch);
-            if (onLog != null) {
-                reader.OnLog += onLog;
-            }
-            var writer = source == dest ? reader : CreateManager(dest, projectId, privateKey, branch);
-            if (reader != writer && onLog != null) {
-                writer.OnLog += onLog;
-            }
-
-            return (reader, writer);
-        } 
-        
-        /// <summary>
         /// Logging event
         /// </summary>
         public event Action<string> OnLog;
@@ -149,6 +111,8 @@ namespace xAPI4Unity.Editor.Parser.IO {
             }
             return contexts;
         }
+
+        public abstract string[] GetContexts();
 
         /// <summary>
         /// Asynchronously reads the Contents of the Files in all contexts
