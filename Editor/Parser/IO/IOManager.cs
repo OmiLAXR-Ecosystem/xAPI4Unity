@@ -58,7 +58,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
             var contexts = new List<Context>();
             var contextMetas = ListContexts(rootPath, exclude);
             foreach (var contextMeta in contextMetas) {
-                var context = new Context(contextMeta.Name);
+                var context = new Context(contextMeta);
                 context.AddActivities(ListActivities(contextMeta));
                 context.AddExtensions(ListAllExtensions(contextMeta));
                 context.AddVerbs(ListVerbs(contextMeta));
@@ -69,6 +69,8 @@ namespace xAPI4Unity.Editor.Parser.IO {
 
         public abstract List<FileMeta> ListDeep(string rootPath, string[] includes = null);
         public abstract IEnumerable<string> GetAllKeys(string rootPath);
+
+        public abstract IEnumerable<DefinitionFile> GetAllEntries();
 
         /// <summary>
         /// Reads the contexts
@@ -111,9 +113,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
             }
             return contexts;
         }
-
-        public abstract string[] GetContexts();
-
+        
         /// <summary>
         /// Asynchronously reads the Contents of the Files in all contexts
         /// </summary>
@@ -131,7 +131,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
         /// <param name="contextMeta">Context to read</param>
         /// <returns>Context that has been read</returns>
         protected virtual Context ReadContext(FileMeta contextMeta) {
-            var context = new Context(contextMeta.Name);
+            var context = new Context(contextMeta);
             context.AddActivities(ReadActivities(contextMeta));
             context.AddExtensions(ReadExtensions(contextMeta));
             context.AddVerbs(ReadVerbs(contextMeta));
@@ -144,7 +144,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
         /// <param name="contextMeta">Context to read</param>
         /// <returns>Context that has been read</returns>
         protected virtual async Task<Context> ReadContextAsync(FileMeta contextMeta) {
-            var context = new Context(contextMeta.Name);
+            var context = new Context(contextMeta);
             context.AddActivities(await ReadActivitiesAsync(contextMeta));
             context.AddExtensions(await ReadExtensionsAsync(contextMeta));
             context.AddVerbs(await ReadVerbsAsync(contextMeta));

@@ -36,7 +36,7 @@ namespace xAPI4Unity.Editor
             var definitionsPath = Path.Combine(xapiPath, "definitions");
 
             var fm = new FileManager(definitionsPath);
-            foreach (var c in fm.GetContexts())
+            foreach (var c in fm.GetAllEntries())
             {
                 Debug.Log(c);
             }

@@ -69,8 +69,8 @@ namespace xAPI4Unity.Editor.Parser.IO
             return files;
         }
 
-        private static IEnumerable<string> GetAllFiles(string rootPath)
-            => Directory.GetFiles(rootPath, "*.*", SearchOption.AllDirectories);
+        private static IEnumerable<string> GetAllFiles(string rootPath, string pattern = "*.*")
+            => Directory.GetFiles(rootPath, pattern, SearchOption.AllDirectories);
 
         public override List<FileMeta> ListDeep(string rootPath, string[] includes = null)
         {
@@ -80,10 +80,10 @@ namespace xAPI4Unity.Editor.Parser.IO
         public override IEnumerable<string> GetAllKeys(string rootPath)
             => GetAllFiles(rootPath).Select(s => s.Replace(rootPath, "").Replace(".json", "")).ToArray();
 
-        public override string[] GetContexts()
+        public override IEnumerable<DefinitionFile> GetAllEntries()
         {
-            var c = ListContexts(_rootPath);
-            return c.Select(a => a.Path).ToArray();
+            var allFiles = GetAllFiles(_rootPath, "*.json");
+            return allFiles.Select(f => new DefinitionFile(f.Substring(_rootPath.Length + 1), File.ReadAllText(f)));
         }
 
         private IEnumerable<string> GetKeys(string rootPath, IEnumerable<string> includes)
@@ -156,7 +156,7 @@ namespace xAPI4Unity.Editor.Parser.IO
                 var fileMeta = new FileMeta(fileName.ClearName(), filePath);
 
                 // fetch context
-                var context = contexts.ContainsKey(s0) ? contexts[s0] : new Context(s0);
+                var context = contexts[s0];
 
                 Console.WriteLine("s0:{0},s1:{1},s2:{2}", s0, s1, s2);
 

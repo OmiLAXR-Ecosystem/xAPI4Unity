@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -13,7 +14,9 @@ namespace xAPI4Unity.Editor.Parser.IO
         /// <summary>
         /// Name of the context
         /// </summary>
-        public string Name { get; }
+        public string Name => _meta.Name;
+
+        private readonly FileMeta _meta;
 
         /// <summary>
         /// Activity files in the context
@@ -29,14 +32,16 @@ namespace xAPI4Unity.Editor.Parser.IO
         /// Verb files in the context
         /// </summary>
         public List<FileMeta> Verbs { get; } = new List<FileMeta>();
+        
+        public Context(FileMeta meta)
+        {
+            _meta = meta;
+        }
 
-        /// <summary>
-        /// Creates a Context
-        /// </summary>
-        /// <param name="name">Name of the context</param>
+        [Obsolete]
         public Context(string name)
         {
-            Name = name;
+            
         }
 
         /// <summary>

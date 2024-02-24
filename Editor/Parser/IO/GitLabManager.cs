@@ -295,7 +295,7 @@ namespace xAPI4Unity.Editor.Parser.IO
             throw new NotImplementedException();
         }
 
-        public override string[] GetContexts()
+        public override IEnumerable<DefinitionFile> GetAllEntries()
         {
             throw new NotImplementedException();
         }
