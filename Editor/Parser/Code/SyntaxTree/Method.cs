@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A method in the syntax tree
     /// </summary>
-    public sealed class Method : TypedNode<Method> {
+    internal sealed class Method : TypedNode<Method> {
         private MethodBody body;
         private List<Argument> baseArguments = new List<Argument>();
         private List<Parameter> parameters = new List<Parameter>();
@@ -64,3 +65,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

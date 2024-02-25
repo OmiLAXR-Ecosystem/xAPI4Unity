@@ -1,10 +1,11 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor
 {
     [Serializable]
-    public struct DefinitionFile
+    internal struct DefinitionFile
     {
         public Dictionary<string, string> name;
         public Dictionary<string, string> description;
@@ -39,7 +40,7 @@ namespace xAPI4Unity.Editor
         }
     }
 
-    public struct Definition
+    internal struct Definition
     {
         public string name;
         public string description;
@@ -51,3 +52,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

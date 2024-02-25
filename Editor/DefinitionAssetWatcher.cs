@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-#if UNITY_EDITOR
 namespace xAPI4Unity.Editor
 {
-    public class DefinitionAssetWatcher : AssetModificationProcessor
+    internal class DefinitionAssetWatcher : AssetModificationProcessor
     {
         private static string[] OnWillSaveAssets(string[] paths)
         {

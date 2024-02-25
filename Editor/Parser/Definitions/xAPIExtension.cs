@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// Class that represents an xAPI extension
     /// </summary>
-    public sealed class xAPIExtension : xAPIDefinition
+    internal sealed class xAPIExtension : xAPIDefinition
     {
         public string Type { get; set; }
         /// <summary>
@@ -28,3 +29,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         public override string GetDefinitionGroup() => "extensions";
     }
 }
+#endif

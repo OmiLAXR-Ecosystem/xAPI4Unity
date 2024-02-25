@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+﻿#if UNITY_EDITOR
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -12,7 +12,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
     /// <summary>
     /// Class with HTTP access methods
     /// </summary>
-    public static class HttpHelper {
+    internal static class HttpHelper {
         private static readonly string GitLabEndpoint = GetConnectionString("GitLabEndpoint");
 
         private static readonly HttpClient client = new HttpClient();
@@ -292,3 +292,4 @@ namespace xAPI4Unity.Editor.Parser.IO {
         }
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
@@ -7,7 +8,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
     /// <summary>
     /// Serializes C# source code out of a syntax tree
     /// </summary>
-    public class CSharpSerializer : SyntaxTreeSerializer {
+    internal class CSharpSerializer : SyntaxTreeSerializer {
         protected override IDictionary<Modifier, string> Modifiers { get; } = new Dictionary<Modifier, string> {
             [Modifier.Public] = "public",
             [Modifier.Private] = "private",
@@ -185,3 +186,4 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
         }
     }
 }
+#endif

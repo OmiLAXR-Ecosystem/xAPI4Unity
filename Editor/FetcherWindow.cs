@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -418,3 +419,4 @@ namespace xAPI4Unity.Editor
         protected void OnEnable() => Settings.instance.Load();
     }
 }
+#endif

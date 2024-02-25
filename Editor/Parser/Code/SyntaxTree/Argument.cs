@@ -1,8 +1,9 @@
-﻿namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
+﻿#if UNITY_EDITOR
+namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// An argument in the syntax tree
     /// </summary>
-    public class Argument {
+    internal class Argument {
         private object value;
 
         /// <summary>
@@ -33,3 +34,4 @@
         }
     }
 }
+#endif

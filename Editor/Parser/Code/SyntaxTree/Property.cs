@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-
+﻿#if UNITY_EDITOR
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A property in the syntax tree
     /// </summary>
-    public class Property : TypedNode<Property> {
+    internal class Property : TypedNode<Property> {
         
         public Property() { }
 
@@ -12,3 +11,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

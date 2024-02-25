@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor.IMGUI.Controls;
 
 namespace xAPI4Unity.Editor
 {
-    public class DefinitionsTreeView : TreeView
+    internal class DefinitionsTreeView : TreeView
     {
 
         public DefinitionsTreeView(TreeViewState state) : base(state)
@@ -240,3 +241,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

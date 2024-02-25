@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Linq;
 using System.Text;
 
@@ -6,7 +7,7 @@ namespace xAPI4Unity.Editor.Parser {
     /// <summary>
     /// Class with extension functions for strings
     /// </summary>
-    public static class StringExt
+    internal static class StringExt
     {
         public static string ToString(object[] values) => $"[{string.Join(",", values)}]";
         /// <summary>
@@ -65,3 +66,4 @@ namespace xAPI4Unity.Editor.Parser {
         }
     }
 }
+#endif

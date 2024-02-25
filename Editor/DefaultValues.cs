@@ -1,10 +1,11 @@
+#if UNITY_EDITOR
 using System;
 using System.IO;
 using UnityEditor;
 
 namespace xAPI4Unity.Editor
 {
-    public static class DefaultValues
+    internal static class DefaultValues
     {
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
         //public const string FetcherAPIBase = "http://localhost:8083/";
@@ -49,3 +50,4 @@ AssemblyDefinitionImporter:
         }
     }
 }
+#endif

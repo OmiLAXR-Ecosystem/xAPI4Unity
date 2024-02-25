@@ -1,9 +1,10 @@
+#if UNITY_EDITOR
 using System;
 
 namespace xAPI4Unity.Editor.Parser
 {
 
-    public struct GeneratorArguments
+    internal struct GeneratorArguments
     {
         public string Path { get; }
         public string ProjectId { get; }
@@ -33,3 +34,4 @@ namespace xAPI4Unity.Editor.Parser
         }
     }
 }
+#endif

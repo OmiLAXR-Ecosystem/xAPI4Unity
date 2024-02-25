@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-
+﻿#if UNITY_EDITOR
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A property in the syntax tree with a getter
     /// </summary>
-    public sealed class GetableProperty : TypedNode<GetableProperty> {
+    internal sealed class GetableProperty : TypedNode<GetableProperty> {
         private Getter getter;
         
         /// <summary>
@@ -24,3 +23,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

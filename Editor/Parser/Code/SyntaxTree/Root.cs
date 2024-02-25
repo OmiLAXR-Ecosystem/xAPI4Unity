@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// Root of the syntax tree
     /// </summary>
-    public class Root {
+    internal class Root {
         private Class cls;
         private readonly List<Import> imports = new List<Import>();
 
@@ -55,3 +56,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

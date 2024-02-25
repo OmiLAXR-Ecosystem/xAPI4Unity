@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Net;
 using System.Text;
@@ -5,7 +6,7 @@ using UnityEngine;
 
 namespace xAPI4Unity.Editor
 {
-    public static class EditorHttpHelper
+    internal static class EditorHttpHelper
     {
         public static string Get(string uri, string contentType = "application/json")
         {
@@ -37,3 +38,4 @@ namespace xAPI4Unity.Editor
             => new WebClient().DownloadFileAsync(new Uri(fileUri), fileName);
     }
 }
+#endif

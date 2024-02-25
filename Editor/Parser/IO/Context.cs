@@ -1,15 +1,15 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
-
     /// <summary>
     /// Class that represents a context of xAPI definitions
     /// </summary>
-    public class Context
+    internal class Context
     {
         /// <summary>
         /// Name of the context
@@ -154,3 +154,4 @@ namespace xAPI4Unity.Editor.Parser.IO
         }
     }
 }
+#endif

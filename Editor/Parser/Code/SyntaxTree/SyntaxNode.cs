@@ -1,8 +1,9 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
 {
-    public abstract class SyntaxNode<T> where T : SyntaxNode<T>
+    internal abstract class SyntaxNode<T> where T : SyntaxNode<T>
     {
         private readonly List<Modifier> modifiers = new List<Modifier>();
 
@@ -52,3 +53,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
         }
     }
 }
+#endif

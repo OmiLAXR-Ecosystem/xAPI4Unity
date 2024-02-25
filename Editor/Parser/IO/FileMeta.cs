@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 
 namespace xAPI4Unity.Editor.Parser.IO {
     /// <summary>
     /// Struct that represents a file or directory
     /// </summary>
-    public class FileMeta
+    internal class FileMeta
     {
         /// <summary>
         /// Name of the file
@@ -87,3 +88,4 @@ namespace xAPI4Unity.Editor.Parser.IO {
         public override string ToString() => $"[File: Name=\"{Name}\", Path=\"{Path}\", Content=\"{(IsDirectory ? DirContent.ToString() : FileContent)}\"]";
     }
 }
+#endif

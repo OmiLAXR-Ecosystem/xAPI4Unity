@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// An xAPI context
     /// </summary>
-    public class xAPIContext
+    internal class xAPIContext
     {
         /// <summary>
         /// Name of the context
@@ -103,3 +104,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         }
     }
 }
+#endif

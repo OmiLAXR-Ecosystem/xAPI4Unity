@@ -1,8 +1,9 @@
-﻿namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
+﻿#if UNITY_EDITOR
+namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A parameter in the syntax tree
     /// </summary>
-    public sealed class Parameter {
+    internal sealed class Parameter {
         /// <summary>
         /// name of the parameter
         /// </summary>
@@ -43,3 +44,4 @@
         }
     }
 }
+#endif

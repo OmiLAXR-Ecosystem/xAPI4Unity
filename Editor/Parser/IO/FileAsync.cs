@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -10,7 +11,7 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// <summary>
     ///     An async alternative to System.IO.File common usages
     /// </summary>
-    public static class FileAsync
+    internal static class FileAsync
     {
         private const int BUFFER_SIZE = 0x4096;
 
@@ -144,3 +145,4 @@ namespace xAPI4Unity.Editor.Parser.IO
         }
     }
 }
+#endif

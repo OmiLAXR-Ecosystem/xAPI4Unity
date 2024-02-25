@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿#if UNITY_EDITOR
+using System.Diagnostics;
 using UnityEngine;
 
 namespace xAPI4Unity.Editor
@@ -83,3 +84,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

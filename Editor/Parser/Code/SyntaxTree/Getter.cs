@@ -1,8 +1,9 @@
-﻿namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
+﻿#if UNITY_EDITOR
+namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A getter in the syntax tree
     /// </summary>
-    public sealed class Getter {
+    internal sealed class Getter {
         private MethodBody body;
 
         /// <summary>
@@ -22,3 +23,4 @@
         }
     }
 }
+#endif

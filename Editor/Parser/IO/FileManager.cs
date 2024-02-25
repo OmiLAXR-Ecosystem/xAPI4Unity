@@ -1,9 +1,9 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
@@ -11,7 +11,7 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// <summary>
     /// Manages the read and write operations of local files
     /// </summary>
-    public class FileManager : IOManager
+    internal class FileManager : IOManager
     {
         private readonly string _rootPath;
         /// <summary>
@@ -339,3 +339,4 @@ namespace xAPI4Unity.Editor.Parser.IO
         }
     }
 }
+#endif

@@ -1,8 +1,9 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
 {
-    public abstract class TypedNode<T> : SyntaxNode<T> where T : SyntaxNode<T>
+    internal abstract class TypedNode<T> : SyntaxNode<T> where T : SyntaxNode<T>
     {
         private readonly List<Argument> arguments = new List<Argument>();
         
@@ -44,3 +45,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
         }
     }
 }
+#endif

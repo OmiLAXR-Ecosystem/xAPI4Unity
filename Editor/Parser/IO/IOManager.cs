@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace xAPI4Unity.Editor.Parser.IO {
     /// <summary>
     /// Manages the read and write operations of a source type
     /// </summary>
-    public abstract class IOManager {
+    internal abstract class IOManager {
         /// <summary>
         /// Logging event
         /// </summary>
@@ -424,3 +425,4 @@ namespace xAPI4Unity.Editor.Parser.IO {
         protected abstract Task WriteFilesAsync(string dest, List<FileMeta> files);
     }
 }
+#endif

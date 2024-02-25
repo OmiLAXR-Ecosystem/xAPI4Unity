@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
@@ -9,7 +10,7 @@ namespace xAPI4Unity.Editor.Parser.Code
     /// <summary>
     /// Serializes source code out of a syntax tree
     /// </summary>
-    public abstract class SyntaxTreeSerializer
+    internal abstract class SyntaxTreeSerializer
     {
         protected abstract IDictionary<Modifier, string> Modifiers { get; }
 
@@ -262,3 +263,4 @@ namespace xAPI4Unity.Editor.Parser.Code
         }
     }
 }
+#endif

@@ -1,8 +1,9 @@
-﻿namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
+﻿#if UNITY_EDITOR
+namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A statement in a method
     /// </summary>
-    public class Statement {
+    internal class Statement {
         private string value;
 
         /// <summary>
@@ -22,3 +23,4 @@
         }
     }
 }
+#endif

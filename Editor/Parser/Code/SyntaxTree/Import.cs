@@ -1,8 +1,9 @@
-﻿namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
+﻿#if UNITY_EDITOR
+namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// An import of the syntax tree
     /// </summary>
-    public sealed class Import {
+    internal sealed class Import {
         private string target;
         private string source;
 
@@ -33,3 +34,4 @@
         }
     }
 }
+#endif

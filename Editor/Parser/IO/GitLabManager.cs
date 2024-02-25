@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿#if UNITY_EDITOR
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +11,7 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// <summary>
     /// Manages the read and write operations of GitLab files
     /// </summary>
-    public class GitLabManager : IOManager
+    internal class GitLabManager : IOManager
     {
         private readonly string privateKey;
 
@@ -455,3 +456,4 @@ namespace xAPI4Unity.Editor.Parser.IO
         }
     }
 }
+#endif

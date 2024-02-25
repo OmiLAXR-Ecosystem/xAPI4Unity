@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿#if UNITY_EDITOR
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// Class that represents an xAPI definition
     /// </summary>
-    public abstract class xAPIDefinition {
+    internal abstract class xAPIDefinition {
         /// <summary>
         /// Context of the definition
         /// </summary>
@@ -105,3 +106,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         public virtual string GetDefinitionGroup() => throw new NotImplementedException();
     }
 }
+#endif

@@ -1,12 +1,10 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
-using JetBrains.Annotations;
-using UnityEngine;
 using Newtonsoft.Json;
-using UnityEngine.Internal;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
-    public enum ExtensionType
+    internal enum ExtensionType
     {
         Unknown,
         Activity,
@@ -14,7 +12,7 @@ namespace xAPI4Unity.Editor.Parser.IO
         Result
     }
 
-    public enum DefinitionType
+    internal enum DefinitionType
     {
         Unknown,
         Extension,
@@ -22,7 +20,7 @@ namespace xAPI4Unity.Editor.Parser.IO
         Activity
     }
 
-    public struct DefinitionFileContent
+    internal struct DefinitionFileContent
     {
         [JsonProperty("name")]
         public Dictionary<string, string> Names { get; set; }
@@ -37,7 +35,7 @@ namespace xAPI4Unity.Editor.Parser.IO
         public string[] ExactMatch { get; set; }
     }
     
-    public class DefinitionFile
+    internal class DefinitionFile
     {
         public readonly string Path;
         public readonly string JsonContent;
@@ -114,3 +112,4 @@ namespace xAPI4Unity.Editor.Parser.IO
         public override string ToString() => $"[File: Name=\"{Name}\", Context=\"{Context}\", DefinitionType=\"{DefinitionType}\", ExtensionType=\"{ExtensionType}\", Path=\"{Path}\", Content=\"{Content}\"]";
     }
 }
+#endif

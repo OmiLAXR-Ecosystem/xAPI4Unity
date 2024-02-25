@@ -1,6 +1,6 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor.Parser.Definitions
@@ -68,3 +68,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions
         }
     }
 }
+#endif

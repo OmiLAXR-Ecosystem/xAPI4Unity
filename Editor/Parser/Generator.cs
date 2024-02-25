@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.IO;
 using UnityEngine;
 using xAPI4Unity.Editor.Parser.IO;
@@ -8,7 +9,7 @@ namespace xAPI4Unity.Editor.Parser
     /// <summary>
     /// Class that provides easy to use access to code generation functionality
     /// </summary>
-    public static class Generator
+    internal static class Generator
     {
         /// <summary>
         /// 
@@ -79,3 +80,4 @@ namespace xAPI4Unity.Editor.Parser
         }
     }
 }
+#endif

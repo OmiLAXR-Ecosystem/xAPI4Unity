@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,7 +8,7 @@ namespace xAPI4Unity.Editor.Parser
     /// <summary>
     /// Access modifiers
     /// </summary>
-    public enum Modifier
+    internal enum Modifier
     {
         Public,
         Private,
@@ -21,7 +22,7 @@ namespace xAPI4Unity.Editor.Parser
     /// <summary>
     /// Class with enum methods
     /// </summary>
-    public static class EnumMethods
+    internal static class EnumMethods
     {
         /// <summary>
         /// Gets the string of a source key
@@ -93,3 +94,4 @@ namespace xAPI4Unity.Editor.Parser
         }
     }
 }
+#endif

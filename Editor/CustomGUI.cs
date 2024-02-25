@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ using Button = UnityEngine.UI.Button;
 
 namespace xAPI4Unity.Editor
 {
-    public static class CustomGUI
+    internal static class CustomGUI
     {
-        public static class Horizontal
+        internal static class Horizontal
         {
             public static void Begin() => EditorGUILayout.BeginHorizontal();
             public static void End() => EditorGUILayout.EndHorizontal();
@@ -23,7 +24,7 @@ namespace xAPI4Unity.Editor
                 End();
             }
         }
-        public class ScrollViewGUI
+        internal class ScrollViewGUI
         {
             private Vector2 _scrollPos;
             private ScrollViewGUI(Vector2 startScroll)
@@ -320,3 +321,4 @@ namespace xAPI4Unity.Editor
         public static void EndDisabledGroup() => EditorGUI.EndDisabledGroup();
     }
 }
+#endif

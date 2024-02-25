@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A method body in the syntax tree
     /// </summary>
-    public sealed class MethodBody {
+    internal sealed class MethodBody {
         private List<Statement> statements = new List<Statement>();
 
         /// <summary>
@@ -30,3 +31,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

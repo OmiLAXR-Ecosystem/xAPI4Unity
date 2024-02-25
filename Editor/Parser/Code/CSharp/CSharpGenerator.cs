@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
 using xAPI4Unity.Editor.Parser.Definitions;
@@ -8,7 +9,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
     /// <summary>
     /// Generates C# code files from the xAPI definitions
     /// </summary>
-    public sealed class CSharpGenerator : CodeGenerator
+    internal sealed class CSharpGenerator : CodeGenerator
     {
         protected override string Namespace { get; }
         
@@ -88,3 +89,4 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
         
     }
 }
+#endif

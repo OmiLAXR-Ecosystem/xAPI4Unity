@@ -7,7 +7,7 @@ using xAPI4Unity.Editor.Parser;
 
 namespace xAPI4Unity.Editor
 {
-    public class DefinitionAssetPostProcessor : AssetPostprocessor
+    internal class DefinitionAssetPostProcessor : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)

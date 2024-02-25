@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A class in the syntax tree
     /// </summary>
-    public sealed class Class : SyntaxNode<Class> {
+    internal sealed class Class : SyntaxNode<Class> {
         private List<Property> properties = new List<Property>();
         private List<Constructor> constructors = new List<Constructor>();
         private List<GetableProperty> getableProperties = new List<GetableProperty>();
@@ -104,3 +105,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

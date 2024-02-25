@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// List of xAPIDefinition objects
     /// </summary>
     /// <typeparam name="T">Type of definition</typeparam>
-    public class xAPIDefinitionsList<T> where T : xAPIDefinition {
+    internal class xAPIDefinitionsList<T> where T : xAPIDefinition {
         /// <summary>
         /// Name of the list
         /// </summary>
@@ -77,3 +78,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         }
     }
 }
+#endif

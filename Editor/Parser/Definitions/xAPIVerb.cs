@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// Class that represents an xAPI verb
     /// </summary>
-    public sealed class xAPIVerb : xAPIDefinition {
+    internal sealed class xAPIVerb : xAPIDefinition {
         /// <summary>
         /// Creates an empty xAPIVerb
         /// </summary>
@@ -23,3 +24,4 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         public override string GetDefinitionGroup() => "verbs";
     }
 }
+#endif

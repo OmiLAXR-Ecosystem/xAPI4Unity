@@ -1,6 +1,6 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
 using xAPI4Unity.Editor.Parser.Definitions;
@@ -11,9 +11,9 @@ namespace xAPI4Unity.Editor.Parser.Code
     /// <summary>
     /// Generates CodeFiles from the xAPI definitions
     /// </summary>
-    public abstract class CodeGenerator
+    internal abstract class CodeGenerator
     {
-        public class CoreFiles : List<FileMeta>
+        internal class CoreFiles : List<FileMeta>
         {
             public CoreFiles() : base()
             {
@@ -23,7 +23,7 @@ namespace xAPI4Unity.Editor.Parser.Code
             public static CoreFiles From(IEnumerable<FileMeta> list) => new CoreFiles(list);
         }
 
-        public class ContextFiles : List<FileMeta>
+        internal class ContextFiles : List<FileMeta>
         {
             public ContextFiles() : base()
             {
@@ -653,3 +653,4 @@ namespace xAPI4Unity.Editor.Parser.Code
         protected abstract MethodBody CreateContextExtensionsGetterBody(xAPIContext context, string type);
     }
 }
+#endif

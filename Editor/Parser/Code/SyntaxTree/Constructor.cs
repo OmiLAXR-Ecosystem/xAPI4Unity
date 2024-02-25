@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// <summary>
     /// A constructor in the syntax tree
     /// </summary>
-    public sealed class Constructor {
+    internal sealed class Constructor {
         private MethodBody body;
         private readonly List<Argument> baseArguments = new List<Argument>();
         private readonly List<Modifier> modifiers = new List<Modifier>();
@@ -95,3 +96,4 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         }
     }
 }
+#endif

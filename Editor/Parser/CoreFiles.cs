@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿#if UNITY_EDITOR
+using System.IO;
 
 namespace xAPI4Unity.Editor.Parser
 {
-    public static class CoreFiles
+    internal static class CoreFiles
     {
         private static string[] Files = new[]
         {
@@ -50,3 +51,4 @@ namespace xAPI4Unity.Editor.Parser
         const string AsmDefFileMeta = "fileFormatVersion: 2\nguid: 5b80f9e8c84ce594bbd1284cff4292dd\nAssemblyDefinitionImporter:\n  externalObjects: {}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n\n";
     }
 }
+#endif

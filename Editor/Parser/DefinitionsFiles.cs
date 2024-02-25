@@ -1,14 +1,14 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser.Code.CSharp;
 using xAPI4Unity.Editor.Parser.Definitions;
 
 namespace xAPI4Unity.Editor.Parser
 {
-    public static class DefinitionsFiles
+    internal static class DefinitionsFiles
     {
-        private static readonly string[] ExtensionTypes = new[] { "activity", "context", "result" };
+        private static readonly string[] ExtensionTypes = { "activity", "context", "result" };
         public static void UpdateFiles(string @namespace, IEnumerable<xAPI4Unity.Editor.Parser.IO.DefinitionFile> definitions, string destPath)
         {
             var xAPIDefinitions = new xAPI_Definitions(definitions);
@@ -51,3 +51,4 @@ namespace xAPI4Unity.Editor.Parser
         }
     }
 }
+#endif

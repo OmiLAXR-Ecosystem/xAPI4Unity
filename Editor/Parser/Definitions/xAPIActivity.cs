@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor.Parser.Definitions {
     /// <summary>
     /// Class that represents an xAPI activity
     /// </summary>
-    public sealed class xAPIActivity : xAPIDefinition {
+    internal sealed class xAPIActivity : xAPIDefinition {
         /// <summary>
         /// Creates an empty xAPIActivity
         /// </summary>
@@ -21,6 +22,6 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
             : base(context, name, names, descriptions) { }
         
         public override string GetDefinitionGroup() => "activities";
-
     }
 }
+#endif
