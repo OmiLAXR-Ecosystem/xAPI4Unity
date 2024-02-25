@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -97,6 +98,7 @@ namespace xAPI4Unity.Editor
         [SerializeField] public string outputPath = DefaultValues.OutputPath;
         [SerializeField] public bool asmDef = DefaultValues.AsmDef;
         [SerializeField] public string version = DefaultValues.Version;
+        [SerializeField] public bool watcherEnabled = DefaultValues.WatcherEnabled;
 
         public T Clone<T>()
         {
@@ -108,7 +110,8 @@ namespace xAPI4Unity.Editor
                 localPath = localPath,
                 cliPath = cliPath,
                 outputPath = outputPath,
-                asmDef = asmDef
+                asmDef = asmDef,
+                watcherEnabled = watcherEnabled
             };
             return (T)(object)f;
         }
@@ -116,7 +119,7 @@ namespace xAPI4Unity.Editor
         public bool Equals(ISettings s)
         {
             var f = s as FetcherSettings;
-            return asmDef == f.asmDef && selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
+            return watcherEnabled == f.watcherEnabled && asmDef == f.asmDef && selectedType == f.selectedType && selectedUrl == f.selectedUrl &&
                    selectedSourceType == f.selectedSourceType && localPath == f.localPath &&
                    cliPath == f.cliPath && outputPath == f.outputPath;
         }
@@ -233,3 +236,4 @@ namespace xAPI4Unity.Editor
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.Replace(".", "_")}-{gitCloneAmount++}";
     }
 }
+#endif

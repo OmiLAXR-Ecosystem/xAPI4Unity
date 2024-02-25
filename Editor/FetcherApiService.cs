@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 namespace xAPI4Unity.Editor {
-    public class FetcherApiService
+    internal class FetcherApiService
     {
         public const string ZipName = "fetcher-cli.zip";
         private readonly string _url;
@@ -53,3 +54,4 @@ namespace xAPI4Unity.Editor {
         }
     }
 }
+#endif

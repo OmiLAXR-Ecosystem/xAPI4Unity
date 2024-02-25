@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 
 namespace xAPI4Unity.Editor
@@ -46,7 +47,7 @@ namespace xAPI4Unity.Editor
 
         public TreeNode<T> AddChild(T value)
         {
-            TreeNode<T> node = new TreeNode<T>(value,this);
+            var node = new TreeNode<T>(value,this);
             _children.Add(node);
 
             return node;
@@ -61,7 +62,7 @@ namespace xAPI4Unity.Editor
         {
             int i = 0, l = Count;
             for(; i<l; ++i){
-                TreeNode<T> child = _children[i];
+                var child = _children[i];
                 if(child.Data.Equals(data)) return child;
             }
 
@@ -75,19 +76,18 @@ namespace xAPI4Unity.Editor
 
         public void Traverse(TraversalDataDelegate handler)
         {
-            if(handler(_data)){
-                int i = 0, l = Count;
-                for(; i<l; ++i) _children[i].Traverse(handler);
-            }
+            if (!handler(_data)) return;
+            int i = 0, l = Count;
+            for(; i<l; ++i) _children[i].Traverse(handler);
         }
 
         public void Traverse(TraversalNodeDelegate handler)
         {
-            if(handler(this)){
-                int i = 0, l = Count;
-                for(; i<l; ++i) _children[i].Traverse(handler);
-            }
+            if (!handler(this)) return;
+            int i = 0, l = Count;
+            for(; i<l; ++i) _children[i].Traverse(handler);
         }
 
     }
 }
+#endif

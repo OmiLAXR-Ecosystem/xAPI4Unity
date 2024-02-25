@@ -1,8 +1,9 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 
 namespace xAPI4Unity.Editor
 {
-    public class DefinitionsTree
+    internal class DefinitionsTree
     {
         protected abstract class TreeNode
         {
@@ -93,3 +94,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

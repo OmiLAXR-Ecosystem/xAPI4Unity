@@ -1,0 +1,72 @@
+﻿using System.Collections.Generic;
+
+namespace xAPI.Registry
+{
+    /// <summary>
+    /// Version: 2.0.0
+    /// </summary>
+    public class xAPI_Extensions : List<KeyValuePair<xAPI_Extension, object>>
+    {
+        public readonly string Context;
+        public readonly string ExtensionType;
+
+        public xAPI_Extensions(string extensionType, string context)
+        {
+            Context = context;
+            ExtensionType = extensionType;
+        }
+
+        public xAPI_Extensions() { }
+
+        public xAPI_Extensions(params xAPI_Extensions[] extensions)
+        {
+            Add(extensions);
+        }
+
+        public xAPI_Extensions Combine(xAPI_Extensions withExtensions)
+            => Combine(this, withExtensions);
+        public static xAPI_Extensions Combine(xAPI_Extensions a, xAPI_Extensions b)
+            => new xAPI_Extensions(a, b);
+
+        public xAPI_Extensions Add(xAPI_Extension key, object value)
+        {
+            if (key == null)
+                return this;
+
+            Add(new KeyValuePair<xAPI_Extension, object>(key, value));
+            return this;
+        }
+
+        public xAPI_Extensions Remove(xAPI_Extension key)
+        {
+            return Remove(key.Key);
+        }
+
+        public xAPI_Extensions Add(params xAPI_Extensions[] extensions)
+        {
+            foreach (var ext in extensions)
+                Add(ext);
+            return this;
+        }
+
+        public xAPI_Extensions Add(xAPI_Extensions extensions)
+        {
+            foreach (var pair in extensions)
+                Add(pair.Key, pair.Value);
+            return this;
+        }
+
+        public xAPI_Extensions Remove(string key)
+        {
+            var index = FindIndex(p => p.Key.Key == key);
+            base.RemoveAt(index);
+            return this;
+        }
+
+        public new xAPI_Extensions Clear()
+        {
+            base.Clear();
+            return this;
+        }
+    }
+}

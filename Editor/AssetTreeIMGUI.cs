@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -21,6 +22,6 @@ namespace xAPI4Unity.Editor
 
             EditorGUI.LabelField(rect,labelContent,selected ? EditorStyles.whiteLabel : EditorStyles.label);
         }
-
     }
 }
+#endif

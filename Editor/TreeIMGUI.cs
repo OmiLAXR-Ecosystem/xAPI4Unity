@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
@@ -94,3 +95,4 @@ namespace xAPI4Unity.Editor
 
 	}
 }
+#endif

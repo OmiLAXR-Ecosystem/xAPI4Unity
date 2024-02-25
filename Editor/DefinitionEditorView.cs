@@ -1,8 +1,8 @@
-﻿
+﻿#if UNITY_EDITOR
 
 namespace xAPI4Unity.Editor
 {
-    public static class DefinitionEditorView 
+    internal static class DefinitionEditorView 
     {
         public static void Show()
         {
@@ -10,3 +10,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿#if UNITY_EDITOR
+using System.Diagnostics;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -19,7 +20,6 @@ namespace xAPI4Unity.Editor
         }
         public void Show()
         {
-            
             CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(true);
@@ -64,3 +64,4 @@ namespace xAPI4Unity.Editor
         }
     }
 }
+#endif

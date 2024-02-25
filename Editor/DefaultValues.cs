@@ -1,16 +1,18 @@
+#if UNITY_EDITOR
 using System;
 using System.IO;
 using UnityEditor;
 
 namespace xAPI4Unity.Editor
 {
-    public static class DefaultValues
+    internal static class DefaultValues
     {
+        public const bool WatcherEnabled = true;
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
         //public const string FetcherAPIBase = "http://localhost:8083/";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
         //public const string FetcherAPIBase = "https://localhost:5000/";
-        public const FetcherType FetcherType = Editor.FetcherType.CommandLine;
+        public const FetcherType FetcherType = Editor.FetcherType.Unity;
         public const string Namespace = "xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public const PackageType PackageType = Editor.PackageType.SimpleAsset;
@@ -37,7 +39,7 @@ AssemblyDefinitionImporter:
         public static string CliRoot => Path.Join(ProjectRoot, "Tools");
         
         // todo also osx and linux
-        public static string CliPath => Path.Join(CliRoot, "xAPI_Definitions_Fetcher.CLI" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : ""));
+        public static string CliPath => Path.Join(CliRoot, "xAPI4Unity.Editor.CLI" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".exe" : ""));
         public static string CliExeExtension => Path.GetExtension(CliPath).Replace(".", "");
         public static string OutputPath => AssetRoot;
 
@@ -49,3 +51,4 @@ AssemblyDefinitionImporter:
         }
     }
 }
+#endif

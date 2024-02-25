@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,6 +10,7 @@ using System.Text;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEngine;
+using xAPI4Unity.Editor.Parser;
 using Debug = UnityEngine.Debug;
 
 namespace xAPI4Unity.Editor
@@ -25,7 +27,8 @@ namespace xAPI4Unity.Editor
         private readonly GitLabView _gitLabView = new GitLabView(Settings);
         private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings);
 
-        private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path) &&
+        private static bool IsTransformationPossible => Settings.fetcher.selectedType == FetcherType.Unity || 
+                                                        GitHelper.IsValidRepo(Settings.localSource.path) &&
                                                         (Settings.fetcher.selectedType == FetcherType.CommandLine &&
                                                          !string.IsNullOrEmpty(Settings.fetcher.cliPath));
 
@@ -80,19 +83,25 @@ namespace xAPI4Unity.Editor
 
             switch (Settings.fetcher.selectedType)
             {
+                case FetcherType.Unity:
+                    
+                    CustomGUI.Description(
+                        "Here you can select where you want to fetch the xAPI definitions from. You can select between GitLab and Local.");
+
+                    Settings.fetcher.selectedSourceType =
+                        CustomGUI.Popup("Source type", Settings.fetcher.selectedSourceType, OnTriggeredControl);
+
+                    SourceType_View();
+                    
+                    break;
                 case FetcherType.WebService:
                     break;
                 case FetcherType.CommandLine:
                     CustomGUI.Description(
                         "Here you can select where you want to fetch the xAPI definitions from. You can select between GitLab and Local.");
 
-                    if (Settings.fetcher.selectedType == FetcherType.CommandLine)
-                    {
-                        Settings.fetcher.selectedSourceType =
-                            CustomGUI.Popup("Source type", Settings.fetcher.selectedSourceType, OnTriggeredControl);
-                    } 
-                    else
-                        CustomGUI.Popup("Source type", SourceType.Local, OnTriggeredControl);
+                    Settings.fetcher.selectedSourceType =
+                        CustomGUI.Popup("Source type", Settings.fetcher.selectedSourceType, OnTriggeredControl);
 
                     SourceType_View();
                     break;
@@ -113,6 +122,8 @@ namespace xAPI4Unity.Editor
 
             switch (Settings.fetcher.selectedType)
             {
+                case FetcherType.Unity:
+                    break;
                 case FetcherType.WebService:
                     break;
                 case FetcherType.CommandLine:
@@ -131,7 +142,7 @@ namespace xAPI4Unity.Editor
                                 File.Delete(zipPath);
 
                                 var ext = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ".exe" : "";
-                                var cliPath = Path.Join(outPath, "xAPI_Definitions_Fetcher.CLI" + ext);
+                                var cliPath = Path.Join(outPath, "xAPI4Unity.Editor.CLI" + ext);
 
                                 Settings.fetcher.cliPath = cliPath;
 
@@ -149,56 +160,64 @@ namespace xAPI4Unity.Editor
             }
 
             CustomGUI.Horizontal.End();
-            
-            if (Settings.fetcher.selectedType == FetcherType.CommandLine)
+
+            switch (Settings.fetcher.selectedType)
             {
-                CustomGUI.Description(
-                    "Choose the path of the fetcher tool executable. Go to step 2 if the path is correct.");
+                case FetcherType.Unity:
+                    break;
+                case FetcherType.CommandLine:
+                    CustomGUI.Description(
+                        "Choose the path of the fetcher tool executable. Go to step 2 if the path is correct.");
 
-                CustomGUI.Horizontal.Begin();
-                CustomGUI.BeginDisabledGroup(true);
-                Settings.fetcher.cliPath =
-                    CustomGUI.TextField("Executable path", Settings.fetcher.cliPath, DefaultValues.CliPath, OnTriggeredControl);
-                CustomGUI.EndDisabledGroup();
-                if (CustomGUI.Button("Open in explorer", OnTriggeredControl))
-                {
-                    Process.Start(Path.GetDirectoryName(Settings.fetcher.cliPath)!);
-                }
-
-                GUI.SetNextControlName("BrowseCliButton");
-                if (CustomGUI.Button("Browse executable", OnTriggeredControl))
-                {
-                    // todo changed path
+                    CustomGUI.Horizontal.Begin();
+                    CustomGUI.BeginDisabledGroup(true);
                     Settings.fetcher.cliPath =
-                        EditorUtility.OpenFilePanel("Browse executable",
-                            Path.GetDirectoryName(Settings.fetcher.cliPath), DefaultValues.CliExeExtension);
-                    GUI.FocusControl(null);
-                }
+                        CustomGUI.TextField("Executable path", Settings.fetcher.cliPath, DefaultValues.CliPath, OnTriggeredControl);
+                    CustomGUI.EndDisabledGroup();
+                    if (CustomGUI.Button("Open in explorer", OnTriggeredControl))
+                    {
+                        Process.Start(Path.GetDirectoryName(Settings.fetcher.cliPath)!);
+                    }
 
-                CustomGUI.Horizontal.End();
+                    GUI.SetNextControlName("BrowseCliButton");
+                    if (CustomGUI.Button("Browse executable", OnTriggeredControl))
+                    {
+                        // todo changed path
+                        Settings.fetcher.cliPath =
+                            EditorUtility.OpenFilePanel("Browse executable",
+                                Path.GetDirectoryName(Settings.fetcher.cliPath), DefaultValues.CliExeExtension);
+                        GUI.FocusControl(null);
+                    }
+
+                    CustomGUI.Horizontal.End();
+                    break;
+                default:
+                    CustomGUI.Warning("Not supported yet.");
+                    CustomGUI.Horizontal.Begin();
+
+                    CustomGUI.BeginDisabledGroup(true);
+                    Settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", Settings.fetcher.selectedUrl,
+                        DefaultValues.FetcherAPIBase, OnTriggeredControl);
+                    CustomGUI.EndDisabledGroup();
+
+                    if (CustomGUI.Button("Open in browser", OnTriggeredControl))
+                    {
+                        Process.Start(Settings.fetcher.selectedUrl);
+                    }
+
+                    CustomGUI.Horizontal.End();
+                    CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
+                    break;
             }
-            else
-            {
-                CustomGUI.Warning("Not supported yet.");
-                CustomGUI.Horizontal.Begin();
+            
 
-                CustomGUI.BeginDisabledGroup(true);
-                Settings.fetcher.selectedUrl = CustomGUI.TextField("Service Url", Settings.fetcher.selectedUrl,
-                    DefaultValues.FetcherAPIBase, OnTriggeredControl);
-                CustomGUI.EndDisabledGroup();
-
-                if (CustomGUI.Button("Open in browser", OnTriggeredControl))
-                {
-                    Process.Start(Settings.fetcher.selectedUrl);
-                }
-
-                CustomGUI.Horizontal.End();
-                CustomGUI.Description("Choose the url of the xAPI Fetcher web service.");
-            }
         }
 
         private void Fetcher_Args_View()
         {
+            if (Settings.fetcher.selectedType == FetcherType.Unity)
+                return;
+            
             var csharpLocation =
                 SafePath(Path.Join(Settings.fetcher.outputPath, Settings.@namespace).Replace("\"", ""));
 
@@ -271,23 +290,35 @@ namespace xAPI4Unity.Editor
             Fetcher_View();
 
             CustomGUI.Divider();
-
-            CustomGUI.BeginDisabledGroup(Settings.fetcher.selectedType != FetcherType.CommandLine);
+            
+            CustomGUI.BeginDisabledGroup(Settings.fetcher.selectedType != FetcherType.CommandLine &&
+                                         Settings.fetcher.selectedType != FetcherType.Unity);
 
             xAPI_Source_View();
 
             CustomGUI.Space();
 
-            Fetcher_Args_View();
+            if (Settings.fetcher.selectedType != FetcherType.Unity)
+            {
+                Fetcher_Args_View();
+                
+                CustomGUI.Divider();
 
+                PreviewView();
 
-            CustomGUI.Divider();
+                CustomGUI.Divider();
+            }
+            
 
-            PreviewView();
-
-            CustomGUI.Divider();
-
-            CustomGUI.Subtitle("5) Do transformation!");
+            if (Settings.fetcher.selectedType != FetcherType.Unity)
+                CustomGUI.Subtitle("5) Do transformation!");
+            else
+            {
+                CustomGUI.Subtitle("3) Do transformation!");
+                Settings.fetcher.watcherEnabled =
+                    CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled);
+                CustomGUI.Warning("If watcher is enabled, than the transformation is done each time when you change a JSON definition file.");
+            }
 
             CustomGUI.Horizontal.Begin();
 
@@ -310,6 +341,8 @@ namespace xAPI4Unity.Editor
 
         private void PreviewView()
         {
+            
+            
             CustomGUI.Subtitle("4) Check your settings");
 
             var arguments = GetArguments();
@@ -392,6 +425,13 @@ namespace xAPI4Unity.Editor
         /// </summary>
         public static void ExecuteFetcher()
         {
+            if (Settings.fetcher.selectedType == FetcherType.Unity)
+            {
+                Generator.Generate(Settings.@namespace, Settings.localSource.path);
+                AssetDatabase.Refresh();
+                return;
+            }
+            
             var p = Path.Combine(Settings.fetcher.outputPath, Settings.@namespace);
             var f = Path.Combine(p, Settings.AsmDefMetaFilename);
 
@@ -416,3 +456,4 @@ namespace xAPI4Unity.Editor
         protected void OnEnable() => Settings.instance.Load();
     }
 }
+#endif

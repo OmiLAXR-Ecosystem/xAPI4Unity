@@ -1,8 +1,9 @@
+#if UNITY_EDITOR
 using UnityEditor;
 
 namespace xAPI4Unity.Editor
 {
-    public class AssetTree 
+    internal class AssetTree 
     {
 		
         private TreeNode<AssetData> _root;
@@ -84,3 +85,4 @@ namespace xAPI4Unity.Editor
 
     }
 }
+#endif
