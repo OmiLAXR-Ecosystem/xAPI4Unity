@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using UnityEngine;
 
-namespace xAPI4Unity.Editor
+namespace xAPI4Unity.Editor.Parser
 {
     public static class CoreFiles
     {
@@ -25,7 +24,7 @@ namespace xAPI4Unity.Editor
         {
             foreach (var f in Files)
             {
-                var fullPath = Path.Combine(CorePath, f);
+                var fullPath = Path.Combine(CorePath, f + ".tmpl");
                 var targetPath = Path.Combine(destination, f);
                 var content = File.ReadAllText(fullPath);
                 content = content.Replace("xAPI.Registry", @namespace);

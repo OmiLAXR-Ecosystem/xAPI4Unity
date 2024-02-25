@@ -122,44 +122,7 @@ namespace xAPI4Unity.Editor.Parser.Code
 
             return files;
         }
-
-        /// <summary>
-        /// Generates core files
-        /// </summary>
-        /// <returns>List of generated files</returns>
-        public virtual CoreFiles GenerateCoreFiles()
-        {
-            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            var resources = assembly.GetManifestResourceNames()
-                .Where(res => Path.GetExtension(res).Equals(".cs")).ToList();
-
-            var files = new CoreFiles();
-
-            foreach (var resource in resources)
-            {
-                string content = null;
-                using (var stream = assembly.GetManifestResourceStream(resource))
-                {
-                    if (stream != null)
-                    {
-                        using (var reader = new StreamReader(stream))
-                        {
-                            content = reader.ReadToEnd();
-                        }
-                    }
-                }
-
-                if (content != null)
-                {
-                    files.Add(new FileMeta(
-                        resource.Replace($"Parser.BaseClasses.CSharp.", ""), null,
-                        content));
-                }
-            }
-
-            return files;
-        }
-
+        
         /// <summary>
         /// Generates files from a context
         /// </summary>
@@ -387,7 +350,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// <returns>Generated files</returns>
         public virtual IEnumerable<FileMeta> GenerateExtensionsFiles(xAPIContext context, string type)
         {
-            return GenerateExtensionsFiles(context.Name, type, context.Extensions[type]);
+            return !context.Extensions.ContainsKey(type) ? Array.Empty<FileMeta>() : GenerateExtensionsFiles(context.Name, type, context.Extensions[type]);
         }
 
         private IEnumerable<FileMeta> GenerateExtensionsFiles(string context, string type,
@@ -567,7 +530,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// </summary>
         /// <param name="contexts">Contexts to generate from</param>
         /// <returns>Generated file</returns>
-        public virtual FileMeta GenerateDefinitionsFile(List<xAPIContext> contexts)
+        public virtual FileMeta GenerateDefinitionsFile(IEnumerable<xAPIContext> contexts)
         {
             var fileName = CreateFileName(DefinitionsClassName);
             Log($"{GetType().Name} generating: {fileName}");
@@ -666,7 +629,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// </summary>
         /// <param name="contexts">Contexts of the definitions</param>
         /// <returns>Created imports</returns>
-        protected abstract IEnumerable<Import> CreateDefinitionsImports(List<xAPIContext> contexts);
+        protected abstract IEnumerable<Import> CreateDefinitionsImports(IEnumerable<xAPIContext> contexts);
 
         /// <summary>
         /// Creates the imports for ExtensionType files

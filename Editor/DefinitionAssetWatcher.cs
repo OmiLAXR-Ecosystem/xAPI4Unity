@@ -11,17 +11,17 @@ namespace xAPI4Unity.Editor
     {
         private static string[] OnWillSaveAssets(string[] paths)
         {
-            Debug.Log("OnWillSaveAssets " + string.Join(',', paths));
+            //Debug.Log("OnWillSaveAssets " + string.Join(',', paths));
             return paths;
         }
         private static bool IsOpenForEdit(string[] paths, List<string> outNotEditablePaths, StatusQueryOptions statusQueryOptions)
         {
-            Debug.Log("IsOpenForEdit: " + string.Join(',', paths) + " " + statusQueryOptions);
+            //Debug.Log("IsOpenForEdit: " + string.Join(',', paths) + " " + statusQueryOptions);
             return true;
         }
         static void OnWillCreateAsset(string assetName)
         {
-            Debug.Log("OnWillCreateAsset is being called with the following asset: " + assetName + ".");
+            //Debug.Log("OnWillCreateAsset is being called with the following asset: " + assetName + ".");
         }
 
         private static void FileModeChanged(string[] paths, FileMode mode)
@@ -32,16 +32,16 @@ namespace xAPI4Unity.Editor
         [OnOpenAsset]
         private static bool OnOpenAsset(int instanceID, int line)
         {
-            var assetPath = AssetDatabase.GetAssetPath(instanceID);
+            //var assetPath = AssetDatabase.GetAssetPath(instanceID);
             //var text = File.ReadAllText(assetPath);
-            Debug.Log("OnOpenAsset");
+            //Debug.Log("OnOpenAsset");
             return false;
         }
         
         [DidReloadScripts]
         private static void DidReloadScripts()
         {
-            Debug.Log("DidReloadScripts");
+            //Debug.Log("DidReloadScripts");
 
         }
 

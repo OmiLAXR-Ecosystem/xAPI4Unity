@@ -33,7 +33,7 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// </summary>
         /// <param name="name">Name of the context</param>
         /// <param name="description"></param>
-        public xAPIContext(string name, string description) {
+        public xAPIContext(string name, string description = "") {
             Name = name;
             Description = description;
         }

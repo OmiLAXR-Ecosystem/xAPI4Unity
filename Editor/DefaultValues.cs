@@ -10,7 +10,7 @@ namespace xAPI4Unity.Editor
         //public const string FetcherAPIBase = "http://localhost:8083/";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
         //public const string FetcherAPIBase = "https://localhost:5000/";
-        public const FetcherType FetcherType = Editor.FetcherType.CommandLine;
+        public const FetcherType FetcherType = Editor.FetcherType.Unity;
         public const string Namespace = "xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public const PackageType PackageType = Editor.PackageType.SimpleAsset;

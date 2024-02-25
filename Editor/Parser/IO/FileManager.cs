@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
@@ -80,10 +81,17 @@ namespace xAPI4Unity.Editor.Parser.IO
         public override IEnumerable<string> GetAllKeys(string rootPath)
             => GetAllFiles(rootPath).Select(s => s.Replace(rootPath, "").Replace(".json", "")).ToArray();
 
+        private string GetFileContent(string path)
+        {
+            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(fileStream);
+            return reader.ReadToEnd();
+        }
+        
         public override IEnumerable<DefinitionFile> GetAllEntries()
         {
             var allFiles = GetAllFiles(_rootPath, "*.json");
-            return allFiles.Select(f => new DefinitionFile(f.Substring(_rootPath.Length + 1), File.ReadAllText(f)));
+            return allFiles.Select(f => new DefinitionFile(f.Substring(_rootPath.Length + 1), GetFileContent(f))).Where(f => f.Name[0] != '.');
         }
 
         private IEnumerable<string> GetKeys(string rootPath, IEnumerable<string> includes)

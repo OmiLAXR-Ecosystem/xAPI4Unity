@@ -56,7 +56,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             return new List<Import>();
         }
 
-        protected override IEnumerable<Import> CreateDefinitionsImports(List<xAPIContext> contexts)
+        protected override IEnumerable<Import> CreateDefinitionsImports(IEnumerable<xAPIContext> contexts)
         {
             return new List<Import>();
         }
@@ -84,17 +84,6 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             return new MethodBody()
                 .AddStatement(new Statement(
                     $"return new {BuildExtensionsClassName(type.Capitalize(), context.Name.Capitalize())}();"));
-        }
-
-        public override CoreFiles GenerateCoreFiles()
-        {
-            var files = base.GenerateCoreFiles();
-            foreach (var file in files)
-            {
-                file.FileContent = file.FileContent.Replace("namespace xAPI.Registry", $"namespace {Namespace}");
-            }
-
-            return files;
         }
         
     }

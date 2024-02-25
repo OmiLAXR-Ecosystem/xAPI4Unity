@@ -8,6 +8,7 @@ namespace xAPI4Unity.Editor
 
     public enum FetcherType
     {
+        Unity,
         WebService,
         CommandLine
     }

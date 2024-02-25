@@ -113,6 +113,8 @@ namespace xAPI4Unity.Editor
 
             switch (Settings.fetcher.selectedType)
             {
+                case FetcherType.Unity:
+                    break;
                 case FetcherType.WebService:
                     break;
                 case FetcherType.CommandLine:

@@ -75,10 +75,10 @@ namespace xAPI4Unity.Editor.Parser.IO {
                 DirContent.ForEach(d => d.Save(destination));
                 return;
             }
-
+            
             var filePath = System.IO.Path.Combine(destination, Name);
-            using (var fs = new StreamWriter(filePath))
-                fs.Write(FileContent);
+            using var fs = new StreamWriter(filePath);
+            fs.Write(FileContent);
         }
 
         /// <summary>

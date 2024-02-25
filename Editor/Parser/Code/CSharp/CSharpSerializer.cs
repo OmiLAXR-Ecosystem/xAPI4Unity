@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
 
 namespace xAPI4Unity.Editor.Parser.Code.CSharp {

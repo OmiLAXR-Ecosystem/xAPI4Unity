@@ -1,5 +1,8 @@
-using System;
+using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
+using Newtonsoft.Json;
+using UnityEngine.Internal;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
@@ -18,21 +21,39 @@ namespace xAPI4Unity.Editor.Parser.IO
         Verb,
         Activity
     }
+
+    public struct DefinitionFileContent
+    {
+        [JsonProperty("name")]
+        public Dictionary<string, string> Names { get; set; }
+        
+        [JsonProperty("description")]
+        public Dictionary<string, string> Descriptions { get; set; }
+
+        [JsonProperty("relatedMatch", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] RelatedMatch { get; set; }
+        
+        [JsonProperty("exactMatch", NullValueHandling = NullValueHandling.Ignore)]
+        public string[] ExactMatch { get; set; }
+    }
     
     public class DefinitionFile
     {
         public readonly string Path;
-        public readonly string Content;
+        public readonly string JsonContent;
+        public readonly DefinitionFileContent Content;
         public readonly string Name;
         public readonly string Context;
+        public readonly string Category;
+        
         public readonly DefinitionType DefinitionType;
         public readonly ExtensionType ExtensionType;
         
         public DefinitionFile(string path, string content)
         {
             Path = path.Replace('\\', '/');
-            Content = content;
-            Name = System.IO.Path.GetFileNameWithoutExtension(path);
+            JsonContent = content;
+            Name = System.IO.Path.GetFileNameWithoutExtension(path).ClearName();
 
             var s = Path.Split('/');
             Context = s[0];
@@ -42,7 +63,18 @@ namespace xAPI4Unity.Editor.Parser.IO
             {
                 ExtensionType = DetectExtensionType(s[2]);
             }
+
+            if (!string.IsNullOrEmpty(JsonContent))
+            {
+                Content = JsonConvert.DeserializeObject<DefinitionFileContent>(JsonContent);
+            }
+
+            if (s.Length >= 4 && (DefinitionType == DefinitionType.Verb || DefinitionType == DefinitionType.Activity))
+                Category = s[2];
+            else if (s.Length >= 5 && DefinitionType == DefinitionType.Extension)
+                Category = s[3];
         }
+        
 
         private DefinitionType DetectDefinitionType(string type)
         {
