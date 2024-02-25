@@ -1,13 +1,42 @@
 # xAPI4Unity
 
 ## Getting started
-1. Install xAPI4Unity package (e.g. as package, see [here](https://learntech-rwth.gitlab.io/omilaxr-ecosystem/omilaxr-documentation/getting-started/index.html))
+1. Install xAPI4Unity package (see below).
 2. Go the the top bar of Unity and click `OmiLAXR > xAPI > Open Fetcher Window`
 3. Use the tool to transform xAPI Jsons to C# by following next steps here. These steps have to be done once. Later you can use quick options to fetch the definitions.
 
+## Install by using Git url
+1. Go to Package Manager.
+2. Click on the (+) button.
+3. Select 'Add package from git URL'.
+4. Paste `https://gitlab.com/learntech-rwth/omilaxr-ecosystem/xapi-4-unity.git` and confirm.
+
+## Install by using scoped registry (recommended)
+1. Ensure in "Project settings" > "Package Manager" that you have the scoped registry with following settings:
+   - Name: npmjs
+   - URL: http://registry.npmjs.com
+   - Scope(s): `com.rwth.unity.omilaxr.xapi4unity`
+2. Go to Package Manager.
+3. Click on the (+) button.
+4. Select 'Add package by name'.
+5. Place in 'Name' field: `com.rwth.unity.omilaxr.xapi4unity`.
+
+### Adding scoped registry by using manifest.json
+1. Alternatively, instead of adding the scoped registry inside Unity editor you can do it by using `manifest.json` file.
+2. Go to you project root and then open `Packages/manifest.json`.
+3. Ensure following entries in your file: `"scopedRegistries": [
+   {
+   "name": "npmjs",
+   "url": "http://registry.npmjs.com/",
+   "scopes": [
+   "com.rwth.unity.omilaxr.xapi4unity"
+   ]
+   }]`.
+4. By the way, you can also add here this package by adding `"com.rwth.unity.omilaxr.xapi4unity": "2.0.0"` to the dependencies (attention you can change the version).
+
 ### Select your tool
-Here you can decide between `Web service` and `Command Line`. The web service will use the deployed xAPI registry from GitLab.
-For developers we strongly recommend to choose `Command Line`. 
+Here you can decide between `Unity`, `Web service` and `Command Line`. The web service will use the deployed xAPI registry from GitLab.
+For developers we strongly recommend to choose `Unity`. 
 In case of Command line, you have to download the CLI Tool by pressing `Download Executable`.
 
 ### Setup JSON Definitions Location
@@ -19,7 +48,12 @@ If you choose a path (e.g. `./Assets/xapi`) and click on `Clone repository`, the
 ### Fetcher configuration
 The only option you need to do here, is to select a path where you want to place your generated C# files of the xAPI Registry. You can place it for example at `./Assets`.
 
+### JSON Watcher
+In case you are using the fetcher type `Unity` it will transform the JSON files to C# directly inside of Unity Editor. This can be done by using the transform button or the watcher (turned on by default and can be disabled).
+
 ### Check your settings
+In case of using `Unity` fetcher type, everything is pre-configured by default.
+
 Here you can review your setup. For Unity, it is strongly recommended to generated .asmdef file.
 The `version` field is only important if you want to flag your generated files with a specific version. Otherwise you can keep default `1.0.0`.
 
@@ -28,6 +62,8 @@ These parameters can be passed to `xAPI_Definitions_Fetcher.CLI.exe`. That's ove
 
 ### Do the transformation
 Finally, you can press on `Transform JSON => C#` to generate the C# files.
+
+If you are using fetcher type `Unity` and the watcher is enabled, you can simply edit JSON files inside your Project and it will transform them automatically when you save the file.
 
 If you are doing changes at definitions in `./Assets/xapi` you have to update the C# files.
 This can be done by clicking this button again, using CLI command or clicking inside of Unity on `OmiLAXR > xAPI > Quick transform JSON => C#`.
