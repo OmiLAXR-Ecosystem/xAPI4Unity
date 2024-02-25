@@ -7,6 +7,7 @@ namespace xAPI4Unity.Editor
 {
     internal static class DefaultValues
     {
+        public const bool WatcherEnabled = true;
         public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
         //public const string FetcherAPIBase = "http://localhost:8083/";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";

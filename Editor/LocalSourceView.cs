@@ -20,7 +20,6 @@ namespace xAPI4Unity.Editor
         }
         public void Show()
         {
-            
             CustomGUI.Horizontal.Begin();
             
             CustomGUI.BeginDisabledGroup(true);
