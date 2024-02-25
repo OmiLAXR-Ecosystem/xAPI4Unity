@@ -53,8 +53,8 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// <param name="name">Name</param>
         /// <param name="activities">Activities</param>
         /// <returns>Number of added activities</returns>
-        public bool AddSubActivities(string name, xAPIDefinitionsList<xAPIActivity> activities) {
-            return Activities.AddDefinitions(name, activities);
+        public bool AddSubActivity(string name, xAPIActivity activity) {
+            return Activities.AddSubDefinition(name, activity);
         }
 
         /// <summary>
@@ -72,8 +72,8 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// <param name="name">Name</param>
         /// <param name="verbs">Verbs</param>
         /// <returns>Number of added verbs</returns>
-        public bool AddSubVerbs(string name, xAPIDefinitionsList<xAPIVerb> verbs) {
-            return Verbs.AddDefinitions(name, verbs);
+        public bool AddSubVerb(string name, xAPIVerb verb) {
+            return Verbs.AddSubDefinition(name, verb);
         }
 
         /// <summary>
@@ -95,11 +95,11 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// <param name="name">Name</param>
         /// <param name="extensions">Extensions</param>
         /// <returns>Number of added extensions</returns>
-        public bool AddSubExtensions(string type, string name, xAPIDefinitionsList<xAPIExtension> extensions) {
+        public bool AddSubExtension(string type, string name, xAPIExtension extension) {
             if (!Extensions.ContainsKey(type)) {
                 Extensions.Add(type, new xAPIDefinitionsList<xAPIExtension>());
             }
-            return Extensions[type].AddDefinitions(name, extensions);
+            return Extensions[type].AddSubDefinition(name, extension);
         }
     }
 }

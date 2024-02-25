@@ -3,40 +3,12 @@ using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Compilation;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser;
-using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor
 {
     public class DefinitionAssetPostProcessor : AssetPostprocessor
     {
-        static void EnsureFolder(string path)
-        {
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
-        }
-        static (string, string, string) EnsureFolders(string @namespace)
-        {
-            var rootFolder = Path.Combine(Application.dataPath, @namespace);
-            var coreFolder = Path.Combine(rootFolder, "Core");
-            var definitionsFolder = Path.Combine(rootFolder, "Definitions");
-            
-            EnsureFolder(rootFolder);
-            EnsureFolder(coreFolder);
-            EnsureFolder(definitionsFolder);
-
-            return (rootFolder, coreFolder, definitionsFolder);
-        }
-
-        private void OnPreprocessAsset()
-        {
-            Debug.Log("on preprocess");
-        }
-
-        
-
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
@@ -61,17 +33,7 @@ namespace xAPI4Unity.Editor
             
             var @namespace = "xAPI.Registry";
 
-            var fm = new FileManager(definitionsPath);
-            var definitionsFiles = fm.GetAllEntries();
-
-            var (rootFolder, coreFolder, definitionsFolder) = EnsureFolders(@namespace);
-            CoreFiles.CopyFiles(@namespace, coreFolder);
-            
-            DefinitionsFiles.UpdateFiles(@namespace, definitionsFiles, definitionsFolder);
-            
-            CoreFiles.CreateAsmDefFile(@namespace, rootFolder);
-                
-            Debug.Log("[xAPI 4 Unity]: Created xAPI Registry with namespace " + @namespace);
+            Generator.Generate(@namespace, definitionsPath);
         }
     }
 }

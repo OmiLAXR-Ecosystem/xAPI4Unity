@@ -5,7 +5,7 @@ using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor.Parser.Definitions
 {
-    public class xAPI_Definitions
+    internal class xAPI_Definitions
     {
         public readonly IDictionary<string, xAPIContext> Contexts;
         public xAPI_Definitions(IEnumerable<xAPI4Unity.Editor.Parser.IO.DefinitionFile> definitionFiles)
@@ -20,6 +20,7 @@ namespace xAPI4Unity.Editor.Parser.Definitions
             foreach (var definition in definitionFiles)
             {
                 Contexts.TryGetValue(definition.Context, out var ctx);
+                
                 if (ctx == null)
                     continue;
 
@@ -31,16 +32,31 @@ namespace xAPI4Unity.Editor.Parser.Definitions
                 switch (definition.DefinitionType)
                 {
                     case DefinitionType.Activity:
-                        ctx.AddActivity(new xAPIActivity(context, name, names, descriptions));
+                        var activity = new xAPIActivity(context, name, names, descriptions);
+                        if (definition.HasCategory)
+                            ctx.AddSubActivity(definition.Category, activity);
+                        else 
+                            ctx.AddActivity(activity);
+                        
                         break;
                     case DefinitionType.Extension:
-                        ctx.AddExtension(definition.ExtensionType.ToString().ToLower(),
-                            new xAPIExtension(context, name, names, descriptions));
+                        var extension = new xAPIExtension(context, name, names, descriptions);
+                        var extType = definition.ExtensionType.ToString().ToLower();
+
+                        if (definition.HasCategory)
+                            ctx.AddSubExtension(extType, definition.Category, extension);
+                        else 
+                            ctx.AddExtension(extType, extension);
+                        
                         break;
                     case DefinitionType.Verb:
-                        ctx.AddVerb(new xAPIVerb(context, name, names, descriptions));
+                        var verb = new xAPIVerb(context, name, names, descriptions);
+                        if (definition.HasCategory)
+                            ctx.AddSubVerb(definition.Category, verb);
+                        else 
+                            ctx.AddVerb(verb);
+                        
                         break;
-                    // todo subverb, subextension
                 }
             }
         }

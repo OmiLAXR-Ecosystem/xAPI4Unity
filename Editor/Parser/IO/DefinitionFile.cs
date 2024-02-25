@@ -45,6 +45,8 @@ namespace xAPI4Unity.Editor.Parser.IO
         public readonly string Name;
         public readonly string Context;
         public readonly string Category;
+
+        public bool HasCategory => !string.IsNullOrEmpty(Category);
         
         public readonly DefinitionType DefinitionType;
         public readonly ExtensionType ExtensionType;

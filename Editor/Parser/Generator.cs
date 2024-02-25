@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using UnityEngine;
+using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor.Parser
 {
@@ -8,45 +10,6 @@ namespace xAPI4Unity.Editor.Parser
     /// </summary>
     public static class Generator
     {
-        
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="output"></param>
-        /// <param name="namespace"></param>
-        private static void CreateUnityAsmDefFile(string output, string @namespace)
-        {
-            if (!Directory.Exists(output))
-                Directory.CreateDirectory(output);
-            File.WriteAllText(
-                Path.Combine(output, @namespace + ".asmdef"), 
-                GetUnityAsmDefContent(@namespace, @namespace));
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="rootNamespace"></param>
-        /// <returns></returns>
-        private static string GetUnityAsmDefContent(string name, string rootNamespace)
-        {
-            return "{\r\n" +
-                   $"\t\"name\": \"{name}\",\r\n" +
-                   $"\t\"rootNamespace\": \"{rootNamespace}\",\r\n" +
-                   "\t\"references\": [],\r\n" +
-                   "\t\"includePlatforms\": [],\r\n" +
-                   "\t\"excludePlatforms\": [],\r\n" +
-                   "\t\"allowUnsafeCode\": false,\r\n" +
-                   "\t\"overrideReferences\": false,\r\n" +
-                   "\t\"precompiledReferences\": [],\r\n" +
-                   "\t\"autoReferenced\": true,\r\n" +
-                   "\t\"defineConstraints\": [],\r\n" +
-                   "\t\"versionDefines\": [],\r\n" +
-                   "\t\"noEngineReferences\": false\r\n" +
-                   "}";
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -75,9 +38,44 @@ namespace xAPI4Unity.Editor.Parser
             return path;
         }
 
-        public static void Generate()
+        private static void EnsureFolder(string path)
         {
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+        }
+
+        private static (string, string, string) DetectPaths(string @namespace)
+        {
+            var rootFolder = Path.Combine(Application.dataPath, @namespace);
+            var coreFolder = Path.Combine(rootFolder, "Core");
+            var definitionsFolder = Path.Combine(rootFolder, "Definitions");
+            return (rootFolder, coreFolder, definitionsFolder);
+        }
+        
+        private static void EnsureFolders(string rootFolder, string coreFolder, string definitionsFolder)
+        {
+            EnsureFolder(rootFolder);
+            EnsureFolder(coreFolder);
+            EnsureFolder(definitionsFolder);
+        }
+
+        public static void Generate(string @namespace, string definitionsPath)
+        {
+            var fm = new FileManager(definitionsPath);
+            var definitionsFiles = fm.GetAllEntries();
+
+            var (rootFolder, coreFolder, definitionsFolder) = DetectPaths(@namespace);
             
+            if (Directory.Exists(rootFolder))
+                Directory.Delete(rootFolder, recursive: true);
+            
+            EnsureFolders(rootFolder, coreFolder, definitionsFolder);
+            
+            CoreFiles.CopyFiles(@namespace, coreFolder);
+            DefinitionsFiles.UpdateFiles(@namespace, definitionsFiles, definitionsFolder);
+            CoreFiles.CreateAsmDefFile(@namespace, rootFolder);
+                
+            Debug.Log("[xAPI 4 Unity]: Created xAPI Registry with namespace " + @namespace);
         }
     }
 }

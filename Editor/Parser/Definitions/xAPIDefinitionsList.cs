@@ -37,7 +37,8 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
             }
             return added;
         }
-
+        
+        
         /// <summary>
         /// Adds a list of sub definitions
         /// </summary>
@@ -51,6 +52,28 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
                 SubDefinitions.Add(name, definitions);
             }
             return added;
+        }
+
+        /// <summary>
+        /// Adds a list of sub definitions
+        /// </summary>
+        /// <param name="name">Name of the list</param>
+        /// <param name="definitions">Definitions</param>
+        /// <returns>Number of added definitions</returns>
+        public bool AddSubDefinition(string name, T definition) {
+            if (definition == null)
+                return false;
+
+            if (SubDefinitions.ContainsKey(name))
+                SubDefinitions[name].AddDefinition(definition);
+            else
+            {
+                var list = new xAPIDefinitionsList<T>();
+                list.AddDefinition(definition);
+                SubDefinitions.Add(name, list);
+            }
+
+            return true;
         }
     }
 }
