@@ -1,6 +1,7 @@
 ﻿#if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using xAPI4Unity.Editor.Parser.IO;
 
@@ -63,7 +64,9 @@ namespace xAPI4Unity.Editor.Parser
         public static void Generate(string @namespace, string definitionsPath)
         {
             var fm = new FileManager(definitionsPath);
-            var definitionsFiles = fm.GetAllEntries();
+            var definitionsFiles = fm.GetAllEntries().ToArray();
+
+            Debug.Log($"[xAPI 4 Unity]: Found {definitionsFiles.Length} xAPI definitions");
 
             var (rootFolder, coreFolder, definitionsFolder) = DetectPaths(@namespace);
             
@@ -73,6 +76,7 @@ namespace xAPI4Unity.Editor.Parser
             EnsureFolders(rootFolder, coreFolder, definitionsFolder);
             
             CoreFiles.CopyFiles(@namespace, coreFolder);
+            
             DefinitionsFiles.UpdateFiles(@namespace, definitionsFiles, definitionsFolder);
             CoreFiles.CreateAsmDefFile(@namespace, rootFolder);
                 

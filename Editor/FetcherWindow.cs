@@ -427,7 +427,7 @@ namespace xAPI4Unity.Editor
         {
             if (Settings.fetcher.selectedType == FetcherType.Unity)
             {
-                Generator.Generate(Settings.@namespace, Settings.localSource.path);
+                Generator.Generate(Settings.@namespace, Path.Combine(Settings.localSource.path, "definitions"));
                 AssetDatabase.Refresh();
                 return;
             }
