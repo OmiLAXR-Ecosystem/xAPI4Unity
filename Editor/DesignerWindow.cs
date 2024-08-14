@@ -48,7 +48,7 @@ namespace xAPI4Unity.Editor
         public event OnTriggeredControlHandler OnTriggeredControl;
 
         
-        [MenuItem("OmiLAXR / xAPI / Designer")]
+        //[MenuItem("OmiLAXR / xAPI / Designer")]
         public static void ShowWindow()
         {
             GetWindow<DesignerWindow>("xAPI Designer").Show();

@@ -45,12 +45,12 @@ namespace xAPI4Unity.Editor
         private void FireTriggeredControl(Type type, string label, string value)
             => OnTriggeredControl?.Invoke(type, label, value);
         
-        [MenuItem("OmiLAXR / xAPI / Open Fetcher Window")]
+        [MenuItem("xAPI4Unity / Settings")]
         public static void ShowWindow()
         {
-            Instance = GetWindow<FetcherWindow>("xAPI Fetcher");
+            Instance = GetWindow<FetcherWindow>("xAPI4Unity");
 #if UNITY_5_1 || UNITY_5_2 || UNITY_5_3 || UNITY_5_3_OR_NEWER
-            Instance.titleContent = new GUIContent("xAPI Fetcher");
+            Instance.titleContent = new GUIContent("xAPI4Unity");
 #else
             Instance.title = "xAPI Fetcher";
 #endif
@@ -58,7 +58,7 @@ namespace xAPI4Unity.Editor
             Instance.Show(true);
         }
 
-        [MenuItem("OmiLAXR / xAPI / Quick transform JSON => C#")]
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)")]
         public static void QuickFetch()
             => ExecuteFetcher();
 
@@ -90,6 +90,7 @@ namespace xAPI4Unity.Editor
 
                     Settings.fetcher.selectedSourceType =
                         CustomGUI.Popup("Source type", Settings.fetcher.selectedSourceType, OnTriggeredControl);
+                    CustomGUI.Description("(Recommended Local)");
 
                     SourceType_View();
                     
@@ -119,6 +120,7 @@ namespace xAPI4Unity.Editor
 
             CustomGUI.Horizontal.Begin();
             Settings.fetcher.selectedType = CustomGUI.Popup("Fetcher type", Settings.fetcher.selectedType, OnTriggeredControl);
+            CustomGUI.Description("(Recommended: Unity)");
 
             switch (Settings.fetcher.selectedType)
             {
@@ -250,7 +252,7 @@ namespace xAPI4Unity.Editor
 
         private void OnGUI()
         {
-            CustomGUI.Title("xAPI Definitions Fetcher");
+            CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
 
             CustomGUI.Horizontal.Begin();
 
@@ -273,12 +275,12 @@ namespace xAPI4Unity.Editor
 
             CustomGUI.Space();
 
-            CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(Settings.localSource.path));
-            if (CustomGUI.Button("Edit and Create xAPI Definitions", OnTriggeredControl))
-            {
-                DesignerWindow.ShowWindow();
-            }
-            CustomGUI.EndDisabledGroup();
+            // CustomGUI.BeginDisabledGroup(!GitHelper.IsValidRepo(Settings.localSource.path));
+            // if (CustomGUI.Button("Edit and Create xAPI Definitions", OnTriggeredControl))
+            // {
+            //     DesignerWindow.ShowWindow();
+            // }
+            // CustomGUI.EndDisabledGroup();
 
             CustomGUI.Horizontal.End();
             CustomGUI.EndDisabledGroup();
@@ -317,13 +319,14 @@ namespace xAPI4Unity.Editor
                 CustomGUI.Subtitle("3) Do transformation!");
                 Settings.fetcher.watcherEnabled =
                     CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled);
+                CustomGUI.Description("(Recommended Yes)");
                 CustomGUI.Warning("If watcher is enabled, than the transformation is done each time when you change a JSON definition file.");
             }
-
+ 
             CustomGUI.Horizontal.Begin();
 
             CustomGUI.BeginDisabledGroup(!IsTransformationPossible);
-            if (CustomGUI.Button("Transform JSON => C#", OnTriggeredControl, 
+            if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)", OnTriggeredControl, 
                     GUILayout.MaxWidth(1000), 
                     GUILayout.Height(50), 
                     GUILayout.ExpandWidth(true)))
