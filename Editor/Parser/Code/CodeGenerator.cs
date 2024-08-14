@@ -43,6 +43,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         protected virtual string ExtensionClassName => "xAPI_Extension";
         protected virtual string ExtensionsClassName => "xAPI_Extensions";
         protected virtual string DefinitionsClassName => "xAPI_Definitions";
+        protected virtual string ContextsClassName => "xAPI_Contexts";
         protected virtual string ContextClassName => "xAPI_Context";
 
         protected virtual string BuildActivitiesClassName(params string[] args)
@@ -525,6 +526,37 @@ namespace xAPI4Unity.Editor.Parser.Code
                 Serializer.RootToString(root));
         }
 
+        /// <summary>
+        /// Generates non-static Definitions file from a context
+        /// </summary>
+        /// <param name="contexts">Contexts to generate from</param>
+        /// <returns>Generated file</returns>
+        public virtual FileMeta GenerateContextsFile(IEnumerable<xAPIContext> contexts)
+        {
+            var fileName = CreateFileName(ContextsClassName);
+            Log($"{GetType().Name} generating: {fileName}");
+            var properties = contexts
+                .Select(context
+                    => new Property(context.Name,
+                            type: BuildContextClassName(context.Name.Capitalize()))
+                        .AddModifier(Modifier.Public)
+                        .AddModifier(Modifier.ReadOnly)
+                        .WithComment(context.Description + $"\nURI: {GetUri(context.Name)}")
+                )
+                .ToList();
+
+            var cls = new Class(ContextsClassName, null,
+                    $"Class that provides all contexts as public properties.")
+                .AddModifier(Modifier.Public)
+                .AddProperties(properties);
+            var root = new Root(cls, Namespace)
+                .AddImports(CreateDefinitionsImports(contexts));
+            return new FileMeta(
+                fileName,
+                null,
+                Serializer.RootToString(root));
+        }
+        
         /// <summary>
         /// Generates Definitions file from a context
         /// </summary>

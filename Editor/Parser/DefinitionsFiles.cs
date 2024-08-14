@@ -48,6 +48,10 @@ namespace xAPI4Unity.Editor.Parser
             // xAPI_Definitions.cs
             var definitionsFile = generator.GenerateDefinitionsFile(xAPIDefinitions.Contexts.Values.Select(c => new xAPIContext(c.Name)));
             definitionsFile.Save(destPath);
+            
+            // xAPI_Contexts.cs
+            var contextsFile = generator.GenerateContextsFile(xAPIDefinitions.Contexts.Values.Select(c => new xAPIContext(c.Name)));
+            contextsFile.Save(destPath);
         }
     }
 }
