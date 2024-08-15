@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace xAPI4Unity.Editor.Parser {
     /// <summary>
@@ -52,7 +53,11 @@ namespace xAPI4Unity.Editor.Parser {
                 .Replace("Ö", "Oe")
                 .Replace("Ü", "Ue")
                 .Replace("ß", "ss");
-            return char.ToLowerInvariant(name[0]) + name.Substring(1);
+
+            var firstLetter = name[0];
+            
+            Debug.Log("First Letter " + firstLetter + " " + char.IsLetter(firstLetter));
+            return (!char.IsLetter(firstLetter) ? "_" : "") + char.ToLowerInvariant(firstLetter) + name.Substring(1);
         }
 
         /// <summary>

@@ -38,12 +38,6 @@ namespace xAPI4Unity.Editor.Parser.IO
             _meta = meta;
         }
 
-        [Obsolete]
-        public Context(string name)
-        {
-            
-        }
-
         /// <summary>
         /// Adds an activity to the context
         /// </summary>

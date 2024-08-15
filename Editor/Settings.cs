@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using xAPI4Unity.Editor.Parser;
 
 namespace xAPI4Unity.Editor
 {
@@ -233,7 +234,7 @@ namespace xAPI4Unity.Editor
         public bool Equals(ISettings s)
             => (s as LocalSourceSettings)?.path == path;
         
-        public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.Replace(".", "_")}-{gitCloneAmount++}";
+        public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
     }
 }
 #endif

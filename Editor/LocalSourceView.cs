@@ -29,7 +29,7 @@ namespace xAPI4Unity.Editor
             CustomGUI.BeginDisabledGroup(Git.IsBusy);
             
             CustomGUI.BeginDisabledGroup(!Git.IsCloned);
-            if (CustomGUI.Button("Open in browser", OnTriggeredControl))
+            if (CustomGUI.Button("Open folder", OnTriggeredControl))
             {
                 Process.Start(_settings.localSource.path);
             }
@@ -51,6 +51,14 @@ namespace xAPI4Unity.Editor
             if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning...", OnTriggeredControl))
             {
                 Git.Clone(_settings.localSource.GetNewBranchName());
+                _settings.localSource.path = Git.RepoDirectory;
+            }
+            CustomGUI.EndDisabledGroup();
+            
+            CustomGUI.BeginDisabledGroup(Git.IsCloned);
+            if (CustomGUI.StateButton("Clone as submodule", Git.IsBusy, "Cloning...", OnTriggeredControl))
+            {
+                Git.SubmoduleClone(_settings.localSource.GetNewBranchName());
                 _settings.localSource.path = Git.RepoDirectory;
             }
             CustomGUI.EndDisabledGroup();

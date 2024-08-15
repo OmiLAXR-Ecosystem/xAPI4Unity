@@ -25,6 +25,31 @@ namespace xAPI4Unity.Editor
 
         public static bool IsValidRepo(string repoPath) =>
             Dir.Exists(repoPath) && Dir.Exists(Path.Join(repoPath, "definitions"));
+
+        public void SubmoduleClone(string branch = default)
+        {
+            if (_processHandle != null)
+            {
+                _processHandle.Kill();
+                _processHandle = null;
+            }
+            
+            IsBusy = true;
+            var isUnixOrMac = Environment.OSVersion.Platform == PlatformID.Unix ||
+                              Environment.OSVersion.Platform == PlatformID.MacOSX;
+            
+            var gitCloneProcess = ProcessHelper.Cmd("git", $"submodule add {Url}", false, Directory);
+            gitCloneProcess.WaitForExit();
+
+            if (branch != default)
+            {
+           
+                var gitCheckoutProcess = ProcessHelper.Cmd("git",$" checkout -b {branch}", false, RepoDirectory);
+                gitCheckoutProcess.WaitForExit();
+            }
+
+            IsBusy = false;
+        }
         
         public void Clone(string branch = default)
         {
@@ -39,7 +64,7 @@ namespace xAPI4Unity.Editor
                               Environment.OSVersion.Platform == PlatformID.MacOSX;
             
             var gitCloneProcess = ProcessHelper.Cmd("git", $"clone {Url}", false, Directory);
-            gitCloneProcess.WaitForExit(5000);
+            gitCloneProcess.WaitForExit();
 
             if (branch != default)
             {

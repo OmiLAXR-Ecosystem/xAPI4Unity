@@ -58,6 +58,12 @@ namespace xAPI4Unity.Editor
             Instance.Show(true);
         }
 
+        [MenuItem("xAPI4Unity / Open registry page")]
+        public static void OpenXApiRegistryPage()
+        {
+            Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
+        }
+        
         [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)")]
         public static void QuickFetch()
             => ExecuteFetcher();
@@ -414,6 +420,8 @@ namespace xAPI4Unity.Editor
 
         private void OnDisable()
         {
+            if (!Settings.IsDirty())
+                return;
             // Ask the user if they really want to close the window
             var wantsSave = EditorUtility.DisplayDialog("Saving your settings?", "Do you want to save your settings before closing this window?", "Yes", "No");
         

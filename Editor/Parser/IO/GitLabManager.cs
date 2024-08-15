@@ -240,7 +240,7 @@ namespace xAPI4Unity.Editor.Parser.IO
                 var parts = relativePath.Split('/');
                 if (parts.Length == 1)
                 {
-                    contexts.Add(new Context(parts[0]));
+                    // contexts.Add(new Context(parts[0]));
                 }
                 else if (parts.Length >= 3)
                 {

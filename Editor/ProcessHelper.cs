@@ -22,21 +22,21 @@ namespace xAPI4Unity.Editor
         public static Process Cmd(string app, string arguments, bool showShell = false, string workingDirectory = default, Action<Process> configure = null)
         {
 
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
-                var f = Path.Combine(DefaultValues.CliRoot, "fetch.sh");
-                
-                if (File.Exists(f))
-                    File.Delete(f);
-
-                System.IO.File.WriteAllText(f, $"exec {app} {arguments}");
-                AllowExecute(f);
-                
-                Debug.Log("[xAPI4Unity] > Please run manually if unity does not open " + f);
-                Process.Start(f);
-                return null;
-            }
-            Debug.Log("[xAPI4Unity] > " + app + " " + arguments);
+            // if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+            // {
+            //     var f = Path.Combine(DefaultValues.CliRoot, "fetch.sh");
+            //     
+            //     if (File.Exists(f))
+            //         File.Delete(f);
+            //
+            //     System.IO.File.WriteAllText(f, $"exec {app} {arguments}");
+            //     AllowExecute(f);
+            //     
+            //     Debug.Log("[xAPI4Unity] > Please run manually if unity does not open " + f);
+            //     Process.Start(f);
+            //     return null;
+            // }
+            Debug.Log($"[xAPI4Unity] Executed `> {app} {arguments}` in directory '{workingDirectory}'");
 
 
             var startInfo = new ProcessStartInfo(app)
@@ -55,8 +55,8 @@ namespace xAPI4Unity.Editor
 
             if (!showShell)
             {
-                process.OutputDataReceived += Process_OutputDataReceived;
-                process.ErrorDataReceived += Process_ErrorDataReceived;
+                //process.OutputDataReceived += Process_OutputDataReceived;
+                //process.ErrorDataReceived += Process_ErrorDataReceived;
             }
 
             configure?.Invoke(process);
