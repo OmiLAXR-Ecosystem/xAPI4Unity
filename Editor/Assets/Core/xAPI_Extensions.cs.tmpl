@@ -3,7 +3,7 @@
 namespace xAPI.Registry
 {
     /// <summary>
-    /// Version: 2.0.0
+    /// Version: 2.1.1
     /// </summary>
     public class xAPI_Extensions : List<KeyValuePair<xAPI_Extension, object>>
     {
@@ -42,6 +42,13 @@ namespace xAPI.Registry
             return Remove(key.Key);
         }
 
+        public xAPI_Extensions Remove(string path, char pathSeparator = '.')
+        {
+            var index = FindIndex(p => p.Key.MatchesPath(path, pathSeparator));
+            base.RemoveAt(index);
+            return this;
+        }
+
         public xAPI_Extensions Add(params xAPI_Extensions[] extensions)
         {
             foreach (var ext in extensions)
@@ -56,7 +63,7 @@ namespace xAPI.Registry
             return this;
         }
 
-        public xAPI_Extensions Remove(string key)
+        public xAPI_Extensions RemoveByKey(string key)
         {
             var index = FindIndex(p => p.Key.Key == key);
             base.RemoveAt(index);
@@ -67,6 +74,19 @@ namespace xAPI.Registry
         {
             base.Clear();
             return this;
+        }
+
+        public bool ContainsPath(string path, char pathSeperator = '.')
+            => FindIndex(p => p.Key.MatchesPath(path, pathSeperator)) > -1;
+        public bool ContainsKey(string key)
+            => FindIndex(p => p.Key.Key == key) > -1;
+
+        public bool Match(string key, object value)
+            => FindIndex(p => p.Key.Key == key && p.Value == value) > -1;
+
+        public T Clone<T>() where T : xAPI_Extensions, new()
+        {
+            return (T)Activator.CreateInstance(typeof(T), this);
         }
     }
 }

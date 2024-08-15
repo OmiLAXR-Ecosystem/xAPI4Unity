@@ -5,7 +5,7 @@ using System.Linq;
 namespace xAPI.Registry
 {
     /// <summary>
-    /// Version: 2.0.0
+    /// Version: 2.1.1
     /// </summary>
     public abstract class xAPI_Definition
     {
@@ -21,6 +21,17 @@ namespace xAPI.Registry
             Key = key;
             Names = names;
             Descriptions = descriptions;
+        }
+        
+        /// <summary>
+        /// Checks if this definition matches keyPath.
+        /// </summary>
+        /// <param name="keyPath">Can be expressed as [contextKey].(verbs|activity|extensions.(activity|context|result)).[definitionKey].</param>
+        /// <returns>Is true if key path matches with this item.</returns>
+        public bool MatchesPath(string keyPath, char pathSeperator = '.')
+        {
+            var path = GetPath().Substring(1).Replace('/', pathSeperator);
+            return keyPath == path;
         }
 
         public string GetName(string language)
@@ -67,7 +78,7 @@ namespace xAPI.Registry
 
         public string[] GetLanguages() => Names.Keys.Union(Descriptions.Keys).ToArray();
 
-        public virtual string GetPath() => Key;
+        public abstract string GetPath();
 
         public string CreateValidId(string uri)
         {
