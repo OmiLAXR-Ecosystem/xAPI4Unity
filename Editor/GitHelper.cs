@@ -10,7 +10,7 @@ namespace xAPI4Unity.Editor
     public class GitHelper
     {
         private Process _processHandle;
-        public readonly string Url;
+        public string Url;
         public string Directory;
         public bool IsBusy { get; private set; }
         public string RepoDirectory => Path.Join(Directory, "xapi");

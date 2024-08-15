@@ -56,7 +56,6 @@ namespace xAPI4Unity.Editor.Parser {
 
             var firstLetter = name[0];
             
-            Debug.Log("First Letter " + firstLetter + " " + char.IsLetter(firstLetter));
             return (!char.IsLetter(firstLetter) ? "_" : "") + char.ToLowerInvariant(firstLetter) + name.Substring(1);
         }
 

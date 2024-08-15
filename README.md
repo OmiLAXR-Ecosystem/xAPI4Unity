@@ -2,7 +2,7 @@
 
 ## Getting started (new - recommended)
 1. Install xAPI4Unity package (see below).
-2. Make sure you have a local copy of https://gitlab.com/learntech-rwth/xapi repository as `Assets/xapi` folder. You can create the copy on your own or go to `xAPI4Unity > Settings` in Unity menu and click on `Clone repository` button. We personally recommend to fork the repository and clone your fork.
+2. Make sure you have a local copy of https://gitlab.com/learntech-rwth/xapi repository as `Assets/xapi` folder. You can create the copy on your own or go to `xAPI4Unity > Settings` in Unity menu and click on `Clone repository` or `Clone as submodule` button (recommended if your Unity project has already git). The repository We personally recommend to fork the repository and clone your fork.
 3. (Optional) If you wish another `xapi` folder location, then go the the top bar of Unity and click `xAPI4Unity > Settings` and set the new location.
 4. Use the tool by simply editing your JSON files in `Asset/xapi`. Each time you safe a JSON file in that location, the transformation is triggered (if watcher is set to `Yes`). Of course, you can use `Update xAPI.Registry` button whenever you wish. But this button is needed in case you turned off the watcher.
 

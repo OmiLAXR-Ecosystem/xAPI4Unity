@@ -8,15 +8,12 @@ namespace xAPI4Unity.Editor
     internal static class DefaultValues
     {
         public const bool WatcherEnabled = true;
-        public const string RepoUrl = "https://gitlab.com/learntech-rwth/xapi";
+        public const string RepoUrl = "git@gitlab.com:learntech-rwth/xapi.git";
         //public const string FetcherAPIBase = "http://localhost:8083/";
         public const string FetcherAPIBase = "https://fetch.xapi.elearn.rwth-aachen.de/";
         //public const string FetcherAPIBase = "https://localhost:5000/";
-        public const FetcherType FetcherType = Editor.FetcherType.Unity;
         public const string Namespace = "xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        public const PackageType PackageType = Editor.PackageType.SimpleAsset;
-        public const SourceType SourceType = Editor.SourceType.Local;
 
         public const string GitLabBranch = "main";
         public const string GitLabProjectId = "";

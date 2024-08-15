@@ -196,6 +196,16 @@ namespace xAPI4Unity.Editor
             return selectedIndex;
         }
 
+        public static bool Button(string text, bool disabled = false, OnTriggeredControlHandler callback = null,
+            params GUILayoutOption[] options)
+        {
+            var rtn = false;
+            BeginDisabledGroup(disabled);
+            rtn = Button(text, callback, options);
+            EndDisabledGroup();
+            return rtn;
+        }
+
         public static bool Button(string text, OnTriggeredControlHandler callback = null,
             params GUILayoutOption[] options)
             => Button(new GUIContent(text), callback, options);
@@ -225,9 +235,11 @@ namespace xAPI4Unity.Editor
         public static bool StateButton(string normalText, bool isStateMode, string stateText,
             OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
-            BeginDisabledGroup(isStateMode);
-            var result = Button(isStateMode ? stateText : normalText, callback, options);
-            EndDisabledGroup();
+            var result = false;
+            Disabled(isStateMode, () =>
+            {
+                result = Button(isStateMode ? stateText : normalText, callback, options);
+            });
             return result;
         }
 
@@ -249,6 +261,15 @@ namespace xAPI4Unity.Editor
         public static void Description(string text)
             => GUILayout.Label(text, TextStyle, GUILayout.ExpandWidth(true));
 
+        public static void Bullets(params string[] bullets)
+        {
+            for (var i = 0; i < bullets.Length; i++)
+            {
+                var bullet = bullets[i];
+                GUILayout.Label((i + 1) + ". " + bullet, TextStyle, GUILayout.ExpandWidth(true));
+            }
+        }
+        
         public static void Error(string text)
             => GUILayout.Label(text, ErrorStyle, GUILayout.ExpandWidth(true));
         
@@ -300,6 +321,34 @@ namespace xAPI4Unity.Editor
             Space(spaceLines);
         }
 
+        public static void DividedRegion(bool hidden, Action content, int spaceLines = 1)
+        {
+            if (hidden)
+                return;
+            DividedRegion(content, spaceLines);
+        }
+        
+        public static void DividedRegion(Action content, int spaceLines = 1)
+        {
+            Divider(spaceLines);
+            content();
+            Divider(spaceLines);
+        }
+        
+        public static void Region(bool hidden, Action content, int spaceLines = 1)
+        {
+            if (hidden)
+                return;
+            Region(content, spaceLines);
+        }
+        
+        public static void Region(Action content, int spaceLines = 1)
+        {
+            Space(spaceLines);
+            content();
+            Space(spaceLines);
+        }
+
         public static string TextField(string label, string text, string defaultText = "",
             OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
         {
@@ -317,8 +366,22 @@ namespace xAPI4Unity.Editor
 
         public static void BeginVertical() => EditorGUILayout.BeginVertical();
         public static void EndVertical() => EditorGUILayout.EndVertical();
-        public static void BeginDisabledGroup(bool conditions) => EditorGUI.BeginDisabledGroup(conditions);
+        public static void BeginDisabledGroup(bool disabled = false) => EditorGUI.BeginDisabledGroup(disabled);
         public static void EndDisabledGroup() => EditorGUI.EndDisabledGroup();
+
+        public static void Disabled(bool disabled, Action content)
+        {
+            BeginDisabledGroup(disabled);
+            content();
+            EndDisabledGroup();
+        }
+
+        public static void ScrollView(ref Vector2 scrollPosition, Action content)
+        {
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
+            content();
+            GUILayout.EndScrollView();
+        }
     }
 }
 #endif

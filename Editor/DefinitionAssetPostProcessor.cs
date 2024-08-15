@@ -15,7 +15,7 @@ namespace xAPI4Unity.Editor
         {
             var settings = Settings.instance;
 
-            if (!settings.fetcher.watcherEnabled || settings.fetcher.selectedType != FetcherType.Unity)
+            if (!settings.fetcher.watcherEnabled)
                 return;
             
             var definitionsPath = "";
