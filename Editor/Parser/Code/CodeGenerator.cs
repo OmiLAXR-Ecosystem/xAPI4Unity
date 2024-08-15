@@ -537,7 +537,7 @@ namespace xAPI4Unity.Editor.Parser.Code
             Log($"{GetType().Name} generating: {fileName}");
             var properties = contexts
                 .Select(context
-                    => new Property(context.Name,
+                    => new Property(context.Name.ClearName(),
                             type: BuildContextClassName(context.Name.Capitalize()))
                         .AddModifier(Modifier.Public)
                         .AddModifier(Modifier.ReadOnly)
@@ -568,7 +568,7 @@ namespace xAPI4Unity.Editor.Parser.Code
             Log($"{GetType().Name} generating: {fileName}");
             var properties = contexts
                 .Select(context
-                    => new Property(context.Name,
+                    => new Property(context.Name.ClearName(),
                             type: BuildContextClassName(context.Name.Capitalize()))
                         .AddModifier(Modifier.Public)
                         .AddModifier(Modifier.Static)
