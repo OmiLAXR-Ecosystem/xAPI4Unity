@@ -61,37 +61,6 @@ namespace xAPI4Unity.Editor.Parser
         {
             return Enum.GetName(enu.GetType(), enu);
         }
-
-        /// <summary>
-        /// Gets the names of all values of an enum type
-        /// </summary>
-        /// <param name="enumType">Enum type</param>
-        /// <returns>Comma separated names</returns>
-        public static string GetNames(Type enumType)
-        {
-            var names = Enum.GetNames(enumType);
-            var namesStr = string.Empty;
-            for (var i = 0; i < names.Length; ++i)
-            {
-                namesStr += names[i];
-                if (i < names.Length - 1)
-                {
-                    namesStr += ", ";
-                }
-            }
-
-            return namesStr;
-        }
-
-        /// <summary>
-        /// Gets a dictionary of enum values and their names
-        /// </summary>
-        /// <typeparam name="T">Enum type</typeparam>
-        /// <returns>Dictionary of enum values and their names</returns>
-        public static IDictionary<T, string> GetEnumDict<T>() where T : struct
-        {
-            return Enum.GetValues(typeof(T)).Cast<T>().ToDictionary(val => val, val => Enum.GetName(typeof(T), val));
-        }
     }
 }
 #endif

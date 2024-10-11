@@ -10,7 +10,7 @@ namespace xAPI4Unity.Editor
 {
     internal class DefinitionAssetPostProcessor : AssetPostprocessor
     {
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
+        private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
             var settings = Settings.instance;
@@ -50,6 +50,7 @@ namespace xAPI4Unity.Editor
 
             definitionsPath = Path.Combine(definitionsPath, "definitions");
             Generator.Generate(@namespace, definitionsPath);
+            Debug.Log("Generated " + definitionsPath);
         }
     }
 }

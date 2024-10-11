@@ -6,19 +6,5 @@ namespace xAPI4Unity.Editor
         GitLab,
         Local
     }
-
-    public enum FetcherType
-    {
-        Unity,
-        WebService,
-        CommandLine
-    }
-
-    public enum PackageType
-    {
-        SimpleAsset,
-        Binary,
-        UnityPackage
-    }
 }
 #endif

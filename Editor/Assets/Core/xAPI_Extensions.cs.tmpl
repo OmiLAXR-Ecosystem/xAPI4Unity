@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace xAPI.Registry
 {
     /// <summary>
-    /// Version: 2.1.2
+    /// Version: 2.1.3
     /// </summary>
     public class xAPI_Extensions : List<KeyValuePair<xAPI_Extension, object>>
     {
@@ -88,6 +89,34 @@ namespace xAPI.Registry
         public T Clone<T>() where T : xAPI_Extensions, new()
         {
             return (T)Activator.CreateInstance(typeof(T), this);
+        }
+        
+        // Function to format the dictionary manually
+        private string FormatDictionaryAsJson()
+        {
+            var sb = new StringBuilder();
+
+            sb.Append("{");
+        
+            var first = true;
+            foreach (var kvp in this)
+            {
+                if (!first)
+                {
+                    sb.Append(",");
+                }
+                sb.Append($"\"{kvp.Key.Key}\":\"{kvp.Value}\"");
+                first = false;
+            }
+
+            sb.Append("}");
+
+            return sb.ToString();
+        }
+
+        public override string ToString()
+        {
+            return $"[{ExtensionType}Extension items=[{FormatDictionaryAsJson()}]]";
         }
     }
 }

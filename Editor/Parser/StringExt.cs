@@ -22,18 +22,7 @@ namespace xAPI4Unity.Editor.Parser {
             }
             return value.First().ToString().ToUpper() + value.Substring(1);
         }
-
-        public static string Repeat(this string value, int n)
-        {
-            var sb = new StringBuilder();
-            for (var i = 0; i < n; i++)
-            {
-                sb.Append(value);
-            }
-            return sb.ToString();
-        }
-
-
+        
         /// <summary>
         /// Clears a name string of special characters that cannot be used
         /// </summary>

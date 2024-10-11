@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using xAPI4Unity.Editor.Parser;
@@ -58,8 +56,6 @@ namespace xAPI4Unity.Editor
 
         public void Load()
         {
-            DefaultValues.EnsureFolders();
-
             var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(instance, false));
             // Then we apply them to this window
             JsonUtility.FromJsonOverwrite(data, instance);

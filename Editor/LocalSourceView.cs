@@ -1,17 +1,15 @@
 ﻿#if UNITY_EDITOR
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using UnityEditor;
 using UnityEngine;
-using Debug = System.Diagnostics.Debug;
 
 namespace xAPI4Unity.Editor
 {
     public class LocalSourceView
     {
-        private bool cloningIsOpen = false;
-        private bool downloadLocalCopy = false;
+        private bool cloningIsOpen;
+        private bool downloadLocalCopy;
         private readonly Settings _settings;
 
         public readonly GitHelper Git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);

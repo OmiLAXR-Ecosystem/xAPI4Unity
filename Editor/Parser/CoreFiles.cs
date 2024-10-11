@@ -13,12 +13,8 @@ namespace xAPI4Unity.Editor.Parser
         };
 
         const string RelativePackagePath = "Packages/com.rwth.unity.omilaxr.xapi4unity";
-        private static string PackagePath => Path.GetFullPath(RelativePackagePath);
         private static string RelativeEditorPath => Path.Combine(RelativePackagePath, "Editor");
-        private static string EditorPath => Path.GetFullPath(Path.Combine(RelativePackagePath, "Editor"));
         private static string RelativeAssetPath => Path.Combine(RelativeEditorPath, "Assets");
-        private static string AssetPath => Path.GetFullPath(Path.Combine(RelativeEditorPath, "Assets"));
-        private static string RelativeCorePath => Path.Combine(RelativeAssetPath, "Core");
         private static string CorePath => Path.GetFullPath(Path.Combine(RelativeAssetPath, "Core"));
 
         public static void CopyFiles(string @namespace, string destination)
