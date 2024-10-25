@@ -10,8 +10,7 @@
   "licensesUrl": "https://gitlab.com/learntech-rwth/omilaxr-framework/xapi-4-unity/-/blob/main/LICENSE",
   "homepage": "https://omilaxr.dev/",
   "dependencies": {
-    "com.unity.editorcoroutines": "1.0.0",
-    "com.unity.nuget.newtonsoft-json": "3.0.2"
+    "com.unity.nuget.newtonsoft-json": "3.1.1"
   },
   "keywords": [
     "xAPI",
