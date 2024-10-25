@@ -21,10 +21,11 @@ namespace xAPI4Unity.Editor
             Url = repoUrl;
             Directory = directory;
         }
-        
 
+        public static bool HasDefinitionsFolder(string repoPath) => Dir.Exists(Path.Join(repoPath, "definitions"));
+        
         public static bool IsValidRepo(string repoPath) =>
-            Dir.Exists(repoPath) && Dir.Exists(Path.Join(repoPath, "definitions"));
+            Dir.Exists(repoPath) && HasDefinitionsFolder(repoPath);
 
         public void SubmoduleClone(string branch = default)
         {

@@ -38,7 +38,7 @@ namespace xAPI4Unity.Editor
                             _settings.localSource.path, Path.GetDirectoryName(_settings.localSource.path),
                             OnTriggeredControl);
                     });
-
+                
                 if (CustomGUI.Button("Browse path", OnTriggeredControl))
                 {
                     _settings.localSource.path =
@@ -57,6 +57,14 @@ namespace xAPI4Unity.Editor
                     }
                 });
             });
+
+            if (!GitHelper.HasDefinitionsFolder(_settings.localSource.path))
+            {
+                CustomGUI.Horizontal.Wrap(() =>
+                {
+                    CustomGUI.Error($"The path '{_settings.localSource.path}' has no 'definitions' folder. Make sure you extract the repository content correctly.");
+                });
+            }
             
             CustomGUI.Horizontal.Wrap(() =>
             {
