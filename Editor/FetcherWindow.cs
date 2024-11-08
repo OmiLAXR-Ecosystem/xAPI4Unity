@@ -11,7 +11,7 @@ namespace xAPI4Unity.Editor
 {
     public class FetcherWindow : EditorWindow
     {
-        private static Settings Settings => Settings.instance;
+        private static Settings Settings => Settings.Instance;
         private bool _isDownloading;
         
         private Vector2 _scrollPosition = Vector2.zero;
@@ -66,15 +66,15 @@ namespace xAPI4Unity.Editor
                     if (CustomGUI.Button("Save settings", OnTriggeredControl))
                     {
                         GUI.FocusControl(null);
-                        Settings.instance.Save();
+                        Settings.Instance.Save();
                     }
 
                 });
 
                 if (CustomGUI.Button("Reset to default", OnTriggeredControl))
                 {
-                    Settings.instance.Reset();
-                    Settings.instance.Load();
+                    Settings.Instance.Reset();
+                    Settings.Instance.Load();
                 }
                 
                 CustomGUI.Space();
@@ -131,7 +131,7 @@ namespace xAPI4Unity.Editor
             var wantsSave = EditorUtility.DisplayDialog("Saving your settings?", "Do you want to save your settings before closing this window?", "Yes", "No");
         
             if (wantsSave)
-                Settings.instance.Save();
+                Settings.Instance.Save();
         }
         
         /// <summary>
@@ -151,7 +151,7 @@ namespace xAPI4Unity.Editor
         private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
             => Debug.Log(e.Data);
 
-        protected void OnEnable() => Settings.instance.Load();
+        protected void OnEnable() => Settings.Instance.Load();
     }
 }
 #endif

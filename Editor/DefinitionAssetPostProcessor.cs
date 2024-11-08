@@ -13,7 +13,7 @@ namespace xAPI4Unity.Editor
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
             string[] movedFromAssetPaths)
         {
-            var settings = Settings.instance;
+            var settings = Settings.Instance;
 
             if (!settings.fetcher.watcherEnabled)
                 return;

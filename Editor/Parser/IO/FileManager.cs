@@ -83,9 +83,19 @@ namespace xAPI4Unity.Editor.Parser.IO
 
         private string GetFileContent(string path)
         {
+            #if UNITY_2019 
+            using (var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(fileStream))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+            #else 
             using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var reader = new StreamReader(fileStream);
             return reader.ReadToEnd();
+            #endif
         }
         
         public override IEnumerable<DefinitionFile> GetAllEntries()

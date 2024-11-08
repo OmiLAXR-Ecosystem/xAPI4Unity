@@ -116,24 +116,28 @@ namespace xAPI4Unity.Editor
 
                     CustomGUI.Disabled(Git.IsCloned, () =>
                     {
-                        var projectRoot = Directory.GetParent(Application.dataPath)!.ToString();
-                        var projectHasGit = Directory.Exists(Path.Combine(projectRoot, ".git"));
+                        var parent = Directory.GetParent(Application.dataPath);
+                        if (parent != null)
+                        {
+                            var projectRoot = parent.ToString();
+                            var projectHasGit = Directory.Exists(Path.Combine(projectRoot, ".git"));
 
-                        if (projectHasGit)
-                        {
-                            if (CustomGUI.StateButton("Clone as submodule", Git.IsBusy, "Cloning...",
-                                    OnTriggeredControl))
+                            if (projectHasGit)
                             {
-                                Git.SubmoduleClone(_settings.localSource.GetNewBranchName());
-                                _settings.localSource.path = Git.RepoDirectory;
+                                if (CustomGUI.StateButton("Clone as submodule", Git.IsBusy, "Cloning...",
+                                        OnTriggeredControl))
+                                {
+                                    Git.SubmoduleClone(_settings.localSource.GetNewBranchName());
+                                    _settings.localSource.path = Git.RepoDirectory;
+                                }
                             }
-                        }
-                        else
-                        {
-                            if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning...", OnTriggeredControl))
+                            else
                             {
-                                Git.Clone(_settings.localSource.GetNewBranchName());
-                                _settings.localSource.path = Git.RepoDirectory;
+                                if (CustomGUI.StateButton("Clone repository", Git.IsBusy, "Cloning...", OnTriggeredControl))
+                                {
+                                    Git.Clone(_settings.localSource.GetNewBranchName());
+                                    _settings.localSource.path = Git.RepoDirectory;
+                                }
                             }
                         }
 

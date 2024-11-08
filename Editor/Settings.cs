@@ -19,7 +19,7 @@ namespace xAPI4Unity.Editor
     {
         private const string SettingsKey = "xAPI4Unity";
 
-        public static Settings instance = new Settings();
+        public static Settings Instance = new Settings();
         private static Settings _savedInstance = new Settings();
 
         [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
@@ -33,8 +33,8 @@ namespace xAPI4Unity.Editor
         public void Reset()
         {
             EditorPrefs.DeleteKey(SettingsKey);
-            instance = new Settings();
-            _savedInstance = instance.Clone<Settings>();
+            Instance = new Settings();
+            _savedInstance = Instance.Clone<Settings>();
         }
 
         public T Clone<T>()
@@ -56,12 +56,16 @@ namespace xAPI4Unity.Editor
 
         public void Load()
         {
-            var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(instance, false));
+            var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(Instance, false));
             // Then we apply them to this window
-            JsonUtility.FromJsonOverwrite(data, instance);
-
-            instance ??= new Settings();
-            _savedInstance = instance.Clone<Settings>();
+            JsonUtility.FromJsonOverwrite(data, Instance);
+#if UNITY_2019
+            if (Instance == null)
+                Instance = new Settings();
+#else
+            Instance ??= new Settings();
+#endif
+            _savedInstance = Instance.Clone<Settings>();
         }
 
         public void Save()
@@ -69,10 +73,10 @@ namespace xAPI4Unity.Editor
             var data = JsonUtility.ToJson(this, false);
             // And we save it
             PlayerPrefs.SetString(SettingsKey, data);
-            _savedInstance = instance.Clone<Settings>();
+            _savedInstance = Instance.Clone<Settings>();
         }
 
-        public static bool IsDirty() => !instance.Equals(_savedInstance);
+        public static bool IsDirty() => !Instance.Equals(_savedInstance);
     }
 
     [Serializable]
@@ -104,7 +108,11 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
+#if UNITY_2019
+        [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
+#else
         [SerializeField] public string path = Path.Join(DefaultValues.AssetRoot, "xapi");
+#endif
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
         [SerializeField] public string repoBranch = default;
         [SerializeField] public int gitCloneAmount = 0;
