@@ -11,7 +11,7 @@ namespace xAPI4Unity.Editor
         public const string Namespace = "xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public static string ProjectRoot => Directory.GetCurrentDirectory();
-        #if UNITY_2019
+        #if UNITY_2019 || UNITY_2020
         public static string AssetRoot => Path.Combine(ProjectRoot, "Assets");
         #else
         public static string AssetRoot => Path.Join(ProjectRoot, "Assets");

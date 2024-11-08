@@ -108,7 +108,7 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-#if UNITY_2019
+#if UNITY_2019 || UNITY_2020
         [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
 #else
         [SerializeField] public string path = Path.Join(DefaultValues.AssetRoot, "xapi");

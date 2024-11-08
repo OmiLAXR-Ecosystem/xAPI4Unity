@@ -14,7 +14,7 @@ namespace xAPI4Unity.Editor
         {
             var dict = new Dictionary<string, Definition>();
 
-            #if UNITY_2019
+            #if UNITY_2019 || UNITY_2020
             foreach (var kvp in name)
             {
                 dict.Add(kvp.Key, new Definition(kvp.Value, description[kvp.Key]));
@@ -32,7 +32,7 @@ namespace xAPI4Unity.Editor
         public static DefinitionFile FromDefinitionList(Dictionary<string, Definition> definitionList)
         {
             var defFile = new DefinitionFile();
-            #if UNITY_2019 
+            #if UNITY_2019 || UNITY_2020
             foreach (var kvp in definitionList)
             {
                 defFile.name.Add(kvp.Key, kvp.Value.name);
