@@ -12,6 +12,47 @@ namespace xAPI4Unity.Editor
 {
     internal static class CustomGUI
     {
+        internal struct Tab
+        {
+            internal readonly Action ClickTab;
+            internal readonly Action Content;
+            internal readonly string TabLabel;
+
+            public Tab(string tabLabel, Action content, Action onClickTab = null)
+            {
+                Content = content;
+                TabLabel = tabLabel;
+                ClickTab = onClickTab;
+            }
+        }
+
+        internal static int Tabs(int selectedTab, params Tab[] tabs)
+        {
+            Horizontal.Wrap(() =>
+            {
+                for (var i = 0; i < tabs.Length; i++)
+                {
+                    var tab = tabs[i];
+                    Disabled(i == selectedTab, () =>
+                    {
+                        if (Button(tab.TabLabel))
+                        {
+                            selectedTab = i;
+                            tab.ClickTab?.Invoke();
+                        }
+                    });
+                }
+            });
+
+            for (var i = 0; i < tabs.Length; i++)
+            {
+                var tab = tabs[i];
+                Region(i != selectedTab, tab.Content);
+            }
+
+            return selectedTab;
+        }
+        
         internal static class Horizontal
         {
             public static void Begin() => EditorGUILayout.BeginHorizontal();
@@ -195,30 +236,16 @@ namespace xAPI4Unity.Editor
             EndVertical();
             return selectedIndex;
         }
-
-        public static bool Button(string text, bool disabled = false, OnTriggeredControlHandler callback = null,
-            params GUILayoutOption[] options)
-        {
-            var rtn = false;
-            BeginDisabledGroup(disabled);
-            rtn = Button(text, callback, options);
-            EndDisabledGroup();
-            return rtn;
-        }
-
-        public static bool Button(string text, OnTriggeredControlHandler callback = null,
-            params GUILayoutOption[] options)
-            => Button(new GUIContent(text), callback, options);
-        public static bool Button(GUIContent textContent, OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+        
+        public static bool Button(string textContent,  params GUILayoutOption[] options)
+            => Button(new GUIContent(textContent), options);
+        public static bool Button(GUIContent textContent,  params GUILayoutOption[] options)
         {
             var down = GUILayout.Button(textContent, ButtonStyle, (new[]
             {
                 GUILayout.Height(30),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
-
-            if (down)
-                callback?.Invoke(typeof(Button), textContent.text, null);
             
             return down;
         }
@@ -233,12 +260,12 @@ namespace xAPI4Unity.Editor
         }
 
         public static bool StateButton(string normalText, bool isStateMode, string stateText,
-            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+             params GUILayoutOption[] options)
         {
             var result = false;
             Disabled(isStateMode, () =>
             {
-                result = Button(isStateMode ? stateText : normalText, callback, options);
+                result = Button(isStateMode ? stateText : normalText, options);
             });
             return result;
         }
@@ -283,7 +310,7 @@ namespace xAPI4Unity.Editor
         }
 
         public static string Popup(string label, IEnumerable<string> selectionOptions, string value,
-            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+             params GUILayoutOption[] options)
         {
             var opts = selectionOptions.Prepend("").ToArray();
 
@@ -297,17 +324,13 @@ namespace xAPI4Unity.Editor
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
 
             var newValue = opts[EditorGUILayout.Popup(label, optsIndex, opts, newOptions)];
-            if (newValue != value)
-                callback?.Invoke(typeof(Dropdown), label, newValue);
             return newValue;
         }
 
-        public static T Popup<T>(string label, T value, OnTriggeredControlHandler callback, params GUILayoutOption[] options) where T : Enum
+        public static T Popup<T>(string label, T value, params GUILayoutOption[] options) where T : Enum
         {
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
             var newValue = (T)EditorGUILayout.EnumPopup(label, value, newOptions);
-            if (!value.Equals(newValue))
-                callback?.Invoke(typeof(Dropdown), label, newValue.ToString());
             return newValue;
         }
 
@@ -350,15 +373,12 @@ namespace xAPI4Unity.Editor
         }
 
         public static string TextField(string label, string text, string defaultText = "",
-            OnTriggeredControlHandler callback = null, params GUILayoutOption[] options)
+             params GUILayoutOption[] options)
         {
             var newText = EditorGUILayout.TextField(label, string.IsNullOrEmpty(text) ? defaultText : text, (new[]
             {
                 GUILayout.MinWidth(250)
             }).Concat(options).ToArray());
-
-            if (newText != text)
-                callback?.Invoke(typeof(TextField), label, newText);
             
             return newText;
         }

@@ -1,5 +1,4 @@
 ﻿#if UNITY_EDITOR
-using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEditor;
@@ -16,23 +15,17 @@ namespace xAPI4Unity.Editor
         
         private Vector2 _scrollPosition = Vector2.zero;
 
-        public static FetcherWindow Instance { get; private set; }
+        private static FetcherWindow Instance { get; set; }
 
         private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings);
 
         private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path);
         
-        public event OnTriggeredControlHandler OnTriggeredControl;
-
         private FetcherWindow()
         {
-            _localSourceView.OnTriggeredControl += FireTriggeredControl;
         }
-
-        private void FireTriggeredControl(Type type, string label, string value)
-            => OnTriggeredControl?.Invoke(type, label, value);
         
-        [MenuItem("xAPI4Unity / Settings")]
+        [MenuItem("xAPI4Unity / Open Fetcher Window (Settings)")]
         public static void ShowWindow()
         {
             Instance = GetWindow<FetcherWindow>("xAPI4Unity");
@@ -58,12 +51,14 @@ namespace xAPI4Unity.Editor
         private void OnGUI()
         {
             CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
+            
+            CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
 
             CustomGUI.Horizontal.Wrap(() =>
             {
                 CustomGUI.Disabled(!Settings.IsDirty(), () =>
                 {
-                    if (CustomGUI.Button("Save settings", OnTriggeredControl))
+                    if (CustomGUI.Button("Save settings"))
                     {
                         GUI.FocusControl(null);
                         Settings.Instance.Save();
@@ -71,7 +66,7 @@ namespace xAPI4Unity.Editor
 
                 });
 
-                if (CustomGUI.Button("Reset to default", OnTriggeredControl))
+                if (CustomGUI.Button("Reset to default"))
                 {
                     Settings.Instance.Reset();
                     Settings.Instance.Load();
@@ -106,7 +101,7 @@ namespace xAPI4Unity.Editor
                 CustomGUI.Horizontal.Wrap(() =>
                 {
                     CustomGUI.Disabled(!IsTransformationPossible, () => {
-                        if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)", OnTriggeredControl, 
+                        if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
                                 GUILayout.MaxWidth(1000), 
                                 GUILayout.Height(50), 
                                 GUILayout.ExpandWidth(true)))
@@ -137,7 +132,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Triggers to run the CLI command to transforms JSON to C#.
         /// </summary>
-        public static void ExecuteFetcher()
+        private static void ExecuteFetcher()
         {
             Generator.Generate(Settings.@namespace, Path.Combine(Settings.localSource.path, "definitions"));
             AssetDatabase.Refresh();
