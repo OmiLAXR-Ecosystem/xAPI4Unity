@@ -1,5 +1,13 @@
 # xAPI4Unity
 
+Tested on
+- [ ]  Unity 2019.4.40f1 (LTS)
+- [X]  Unity 2020.3.48f1 (LTS)
+- [X]  Unity 2021.3.45f1 (LTS)
+- [X]  Unity 2022.3.52f1 (LTS)
+- [ ]  Unity 2023 (no LTS)
+- [X]  Unity 6 (LTS)
+
 ## Getting started
 1. Install xAPI4Unity package (see below).
 2. Choose one of the three options to in `xAPI4Unity > Open Fetcher Window (Settings)` in Unity menu to get xAPI Registry folder copy in your project.
