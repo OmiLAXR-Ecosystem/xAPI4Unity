@@ -38,6 +38,8 @@ namespace xAPI4Unity.Editor
             
             var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
             var extractPath = Path.Combine(Application.dataPath, "__ExtractedXAPI__");
+            _settings.localSource.path = destPath;
+            _settings.Save();
             // download
             FileHelper.Download("https://gitlab.com/learntech-rwth/xapi/-/archive/master/xapi-master.zip", zipPath,
                 () =>
