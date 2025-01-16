@@ -1,9 +1,9 @@
 {
   "name": "com.rwth.unity.omilaxr.xapi4unity",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "displayName": "xAPI4Unity",
   "description": "This is an package with has editor tools to use work with xAPI definitions more easy. Developers can design xAPI definitions and transform them directly to C# code.",
-  "unity": "2021.3",
+  "unity": "2020.3",
   "unityRelease": "15f1",
   "documentationUrl": "https://omilaxr.dev/",
   "changelogUrl": "https://gitlab.com/learntech-rwth/omilaxr-framework/xapi-4-unity/-/blob/main/CHANGELOG",

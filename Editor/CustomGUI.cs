@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.UIElements;
-using Button = UnityEngine.UI.Button;
 
 namespace xAPI4Unity.Editor
 {
@@ -250,13 +247,18 @@ namespace xAPI4Unity.Editor
             return down;
         }
 
-        public static bool YesNoPopup(string label, bool value, string yesWord = "Yes", string noWord = "No")
+        public static bool YesNoPopup(string label, bool value, Action<bool> onChange = null, string yesWord = "Yes", string noWord = "No")
         {
             var v = value ? yesWord : noWord;
             Horizontal.Begin();
             v = Popup(label, new[] { yesWord, noWord }, v);
             Horizontal.End();
-            return v == yesWord;
+            var newValue = v == yesWord;
+            
+            if (newValue != value)
+                onChange?.Invoke(newValue);
+            
+            return newValue;
         }
 
         public static bool StateButton(string normalText, bool isStateMode, string stateText,

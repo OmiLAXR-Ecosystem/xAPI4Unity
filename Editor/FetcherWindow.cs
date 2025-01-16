@@ -54,28 +54,28 @@ namespace xAPI4Unity.Editor
             
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
 
-            CustomGUI.Horizontal.Wrap(() =>
-            {
-                CustomGUI.Disabled(!Settings.IsDirty(), () =>
-                {
-                    if (CustomGUI.Button("Save settings"))
-                    {
-                        GUI.FocusControl(null);
-                        Settings.Instance.Save();
-                    }
-
-                });
-
-                if (CustomGUI.Button("Reset to default"))
-                {
-                    Settings.Instance.Reset();
-                    Settings.Instance.Load();
-                }
-                
-                CustomGUI.Space();
-            });
-            
-            CustomGUI.Divider(2);
+            // CustomGUI.Horizontal.Wrap(() =>
+            // {
+            //     CustomGUI.Disabled(!Settings.IsDirty(), () =>
+            //     {
+            //         if (CustomGUI.Button("Save settings"))
+            //         {
+            //             GUI.FocusControl(null);
+            //             Settings.Instance.Save();
+            //         }
+            //
+            //     });
+            //
+            //     if (CustomGUI.Button("Reset to default"))
+            //     {
+            //         Settings.Instance.Reset();
+            //         Settings.Instance.Load();
+            //     }
+            //     
+            //     CustomGUI.Space();
+            // });
+            //
+            // CustomGUI.Divider(2);
             
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {
@@ -93,7 +93,10 @@ namespace xAPI4Unity.Editor
                 {
                     CustomGUI.Subtitle("2) Do transformation!");
                     Settings.fetcher.watcherEnabled =
-                        CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled);
+                        CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled, _ =>
+                        {
+                            Settings.Instance.Save();
+                        });
                     CustomGUI.Description("(Recommended Yes)");
                     CustomGUI.Warning("If watcher is enabled, than the transformation is done each time when you change a JSON definition file.");
                 });
@@ -120,13 +123,7 @@ namespace xAPI4Unity.Editor
 
         private void OnDisable()
         {
-            if (!Settings.IsDirty())
-                return;
-            // Ask the user if they really want to close the window
-            var wantsSave = EditorUtility.DisplayDialog("Saving your settings?", "Do you want to save your settings before closing this window?", "Yes", "No");
-        
-            if (wantsSave)
-                Settings.Instance.Save();
+            Settings.Instance.Save();
         }
         
         /// <summary>

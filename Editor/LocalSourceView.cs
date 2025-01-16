@@ -26,7 +26,7 @@ namespace xAPI4Unity.Editor
             Application.OpenURL("https://gitlab.com/learntech-rwth/xapi/-/archive/master/xapi-master.zip");
         }
 
-        private static void DownloadToAssets()
+        private void DownloadToAssets()
         {
             var destPath = Path.Combine(Application.dataPath, "xapi");
 
@@ -61,12 +61,8 @@ namespace xAPI4Unity.Editor
             // Local copy
             CustomGUI.Horizontal.Wrap(() =>
             {
-                CustomGUI.Disabled(true,
-                    () =>
-                    {
-                        _settings.localSource.path = CustomGUI.TextField("Path of local copy",
-                            _settings.localSource.path, Path.GetDirectoryName(_settings.localSource.path));
-                    });
+                _settings.localSource.path = CustomGUI.TextField("Path of local copy",
+                    _settings.localSource.path, Path.GetDirectoryName(_settings.localSource.path));
                 
                 if (CustomGUI.Button("Browse path"))
                 {
@@ -75,6 +71,9 @@ namespace xAPI4Unity.Editor
                             "xapi");
                     if (string.IsNullOrEmpty(_settings.localSource.path))
                         _settings.localSource.path = _git.RepoDirectory;
+                    
+                    _settings.Save();
+                    
                     GUI.FocusControl(null);
                 }
 
@@ -96,7 +95,7 @@ namespace xAPI4Unity.Editor
             }
             
             _downloadMethodTabIndex = CustomGUI.Tabs(_downloadMethodTabIndex,
-                new CustomGUI.Tab("(Option 1) I want download a local copy and place it in 'Assets'.", () =>
+                new CustomGUI.Tab("(Option 1) I want download a local copy and place it in project 'Assets' folder.", () =>
                 {
                     CustomGUI.Subtitle("Local copy in Assets instructions");
                     CustomGUI.Bullets(
@@ -108,7 +107,7 @@ namespace xAPI4Unity.Editor
                         DownloadToAssets();
                     }
                 }),
-                new CustomGUI.Tab("(Option 2) I want just download a local copy", () =>
+                new CustomGUI.Tab("(Option 2) I want just download a local copy to selected path", () =>
                 {
                     CustomGUI.Subtitle("Local copy instructions");
                     CustomGUI.Bullets(
@@ -121,7 +120,7 @@ namespace xAPI4Unity.Editor
                         DownloadToDownloads();
                     }
                 }),
-                new CustomGUI.Tab("(Option 3) I want to use git.", () =>
+                new CustomGUI.Tab("(Option 3) I want to use git and clone it to my selected path.", () =>
                 {
                     CustomGUI.Subtitle("Git Settings");
                 CustomGUI.Disabled(_git.IsBusy, () =>
