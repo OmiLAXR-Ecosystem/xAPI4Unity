@@ -28,13 +28,14 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Open Fetcher Window (Settings)")]
         public static void ShowWindow()
         {
-            Instance = GetWindow<FetcherWindow>("xAPI4Unity");
+            const string title = "xAPI4Unity";
+            Instance = GetWindow<FetcherWindow>(title);
 #if UNITY_5_1 || UNITY_5_2 || UNITY_5_3 || UNITY_5_3_OR_NEWER
-            Instance.titleContent = new GUIContent("xAPI4Unity");
+            Instance.titleContent = new GUIContent(title);
 #else
-            Instance.title = "xAPI4Unity";
+            Instance.title = title;
 #endif
-            Instance.minSize = new Vector2(1000, 770);
+            Instance.minSize = new Vector2(1000, 370);
             Instance.Show(true);
         }
 
