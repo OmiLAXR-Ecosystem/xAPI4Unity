@@ -3,37 +3,25 @@ using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using System;
-
-[Serializable]
-public class VerbDefinition
-{
-    public Localization name = new Localization();
-    public Localization description = new Localization();
-}
-
-[Serializable]
-public class Localization
-{
-    public string en_US;
-    public string de_DE;
-}
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace xAPI4Unity.Editor
 {
     public class XapiFolderTreeWindow : EditorWindow
     {
-        private Settings settings => Settings.Instance;
-        private Vector2 scroll;
-        private Vector2 scrollRight;
-        private Dictionary<string, bool> folderStates = new Dictionary<string, bool>();
+        private static Settings Settings => Settings.Instance;
+        private Vector2 _scroll;
+        private Vector2 _scrollRight;
+        private Vector2 _previewScroll;
+        private readonly Dictionary<string, bool> _folderStates = new Dictionary<string, bool>();
 
-        private string selectedJsonPath = null;
-        private VerbDefinition currentVerb = null;
-        private string lastLoadedJson = null;
-        private bool showRawJson = false;
-        private string editableRawJson = "";
-        private Vector2 rawJsonScroll;
+        private string _selectedJsonPath = null;
+        private JObject _jsonObj = null; // JObject for dynamic JSON editing
+        private string _lastLoadedJson = null;
+        private bool _showRawJson = false;
+        private string _editableRawJson = "";
+        private Vector2 _rawJsonScroll;
 
         [MenuItem("xAPI4Unity/Edit xAPI definitions (experimental)")]
         public static void ShowWindow()
@@ -43,7 +31,7 @@ namespace xAPI4Unity.Editor
 
         private void OnGUI()
         {
-            var rootFolder = settings.localSource.path;
+            var rootFolder = Settings.localSource.path;
             GUILayout.Label($"Showing file structure for: {rootFolder}", EditorStyles.boldLabel);
 
             if (!Directory.Exists(rootFolder))
@@ -60,20 +48,20 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.BeginHorizontal();
 
             // LEFT: Folder/File Tree
-            scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.Width(position.width / 2f));
+            _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
             DrawDirectory(rootFolder, 0);
             EditorGUILayout.EndScrollView();
 
             // RIGHT: Details/Edit panel
             EditorGUILayout.BeginVertical(GUILayout.ExpandHeight(true));
-            scrollRight = EditorGUILayout.BeginScrollView(scrollRight);
+            _scrollRight = EditorGUILayout.BeginScrollView(_scrollRight);
 
-            if (selectedJsonPath != null)
+            if (_selectedJsonPath != null)
             {
-                if (showRawJson)
-                    DrawRawJsonEditor(selectedJsonPath);
+                if (_showRawJson)
+                    DrawRawJsonEditor(_selectedJsonPath);
                 else
-                    DrawJsonEditor(selectedJsonPath);
+                    DrawJsonEditor(_selectedJsonPath);
             }
             else
             {
@@ -92,15 +80,15 @@ namespace xAPI4Unity.Editor
             if (string.IsNullOrEmpty(folderName))
                 folderName = path;
 
-            if (!folderStates.ContainsKey(path))
-                folderStates[path] = true;
+            if (!_folderStates.ContainsKey(path))
+                _folderStates[path] = depth < 2;
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(depth * 16f);
-            folderStates[path] = EditorGUILayout.Foldout(folderStates[path], folderName, true);
+            _folderStates[path] = EditorGUILayout.Foldout(_folderStates[path], folderName, true);
             EditorGUILayout.EndHorizontal();
 
-            if (!folderStates[path])
+            if (!_folderStates[path])
                 return;
 
             var files = Directory.GetFiles(path);
@@ -108,15 +96,15 @@ namespace xAPI4Unity.Editor
             {
                 if (!file.EndsWith(".json")) continue;
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Space((depth + 1) * 16f);
+                GUILayout.Space((depth + 1) * 16f + 5f);
 
-                GUIStyle style = (selectedJsonPath == file) ? EditorStyles.boldLabel : EditorStyles.label;
+                GUIStyle style = (_selectedJsonPath == file) ? EditorStyles.boldLabel : EditorStyles.label;
 
                 if (GUILayout.Button(Path.GetFileName(file), style))
                 {
-                    selectedJsonPath = file;
+                    _selectedJsonPath = file;
                     LoadJson(file);
-                    showRawJson = false;
+                    _showRawJson = false;
                 }
 
                 EditorGUILayout.EndHorizontal();
@@ -133,18 +121,30 @@ namespace xAPI4Unity.Editor
         {
             try
             {
-                lastLoadedJson = File.ReadAllText(path, Encoding.UTF8);
-                var replaced = lastLoadedJson.Replace("en-US", "en_US").Replace("de-DE", "de_DE");
-                currentVerb = JsonUtility.FromJson<VerbDefinition>(replaced);
-                if (currentVerb == null)
-                    currentVerb = new VerbDefinition();
-                editableRawJson = lastLoadedJson;
+                _lastLoadedJson = File.ReadAllText(path, Encoding.UTF8);
+                _jsonObj = JObject.Parse(_lastLoadedJson);
+                _editableRawJson = _lastLoadedJson;
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Debug.LogError("Failed to load JSON: " + ex.Message);
-                currentVerb = new VerbDefinition();
-                editableRawJson = "";
+                _jsonObj = new JObject();
+                _editableRawJson = "";
+            }
+        }
+
+        private void SaveJson(string path)
+        {
+            try
+            {
+                string json = JsonConvert.SerializeObject(_jsonObj, Formatting.Indented);
+                File.WriteAllText(path, json, Encoding.UTF8);
+                AssetDatabase.Refresh();
+                _lastLoadedJson = json;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Failed to save JSON: " + ex.Message);
             }
         }
 
@@ -153,19 +153,11 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.LabelField("Editing:", Path.GetFileName(path), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
-            if (currentVerb == null)
+            if (_jsonObj == null)
                 LoadJson(path);
 
-            EditorGUI.BeginChangeCheck();
-
-            EditorGUILayout.LabelField("Name", EditorStyles.boldLabel);
-            currentVerb.name.en_US = EditorGUILayout.TextField("en-US", currentVerb.name.en_US);
-            currentVerb.name.de_DE = EditorGUILayout.TextField("de-DE", currentVerb.name.de_DE);
-
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
-            currentVerb.description.en_US = EditorGUILayout.TextField("en-US", currentVerb.description.en_US, GUILayout.Height(40));
-            currentVerb.description.de_DE = EditorGUILayout.TextField("de-DE", currentVerb.description.de_DE, GUILayout.Height(40));
+            DrawLocalization("name");
+            DrawLocalization("description");
 
             EditorGUILayout.Space();
 
@@ -174,16 +166,97 @@ namespace xAPI4Unity.Editor
             {
                 LoadJson(path);
             }
-            GUI.enabled = currentVerb != null;
             if (GUILayout.Button("Save"))
             {
                 SaveJson(path);
             }
-            GUI.enabled = true;
-            if (GUILayout.Button("Show raw JSON"))
+            if (GUILayout.Button("Edit raw JSON"))
             {
-                editableRawJson = lastLoadedJson ?? "";
-                showRawJson = true;
+                _editableRawJson = _lastLoadedJson ?? "";
+                _showRawJson = true;
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // --- FULL FILE PREVIEW CANVAS ---
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Full File Preview", EditorStyles.boldLabel);
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+            var pretty = JsonConvert.SerializeObject(_jsonObj, Formatting.Indented);
+            _previewScroll = EditorGUILayout.BeginScrollView(_previewScroll, GUILayout.Height(300));
+            EditorGUILayout.TextArea(pretty ?? "", GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+            EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawLocalization(string field)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(field.Substring(0, 1).ToUpper() + field.Substring(1), EditorStyles.boldLabel);
+
+            JObject locObj = _jsonObj[field] as JObject;
+            if (locObj == null)
+            {
+                locObj = new JObject();
+                _jsonObj[field] = locObj;
+            }
+
+            List<string> keysToRemove = new List<string>();
+            string keyToRenameFrom = null;
+            string keyToRenameTo = null;
+            string valueToSet = null;
+
+            // Take snapshot of keys for safe iteration
+            var keysSnapshot = new List<string>();
+            foreach (var prop in locObj.Properties())
+                keysSnapshot.Add(prop.Name);
+
+            foreach (var oldKey in keysSnapshot)
+            {
+                EditorGUILayout.BeginHorizontal();
+                string oldVal = locObj[oldKey]?.ToString() ?? "";
+
+                string newKey = EditorGUILayout.TextField(oldKey, GUILayout.Width(80));
+                string newVal = EditorGUILayout.TextField(oldVal);
+
+                if (GUILayout.Button("-", GUILayout.Width(24)))
+                {
+                    keysToRemove.Add(oldKey);
+                }
+                else if (newKey != oldKey && !locObj.ContainsKey(newKey))
+                {
+                    keyToRenameFrom = oldKey;
+                    keyToRenameTo = newKey;
+                    valueToSet = newVal;
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                }
+                else if (newVal != oldVal)
+                {
+                    locObj[oldKey] = newVal;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            foreach (var key in keysToRemove)
+                locObj.Remove(key);
+
+            if (!string.IsNullOrEmpty(keyToRenameFrom) && !string.IsNullOrEmpty(keyToRenameTo))
+            {
+                locObj.Remove(keyToRenameFrom);
+                locObj[keyToRenameTo] = valueToSet;
+            }
+
+            // Add new language
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(16);
+            if (GUILayout.Button("+ Add language", GUILayout.Width(120)))
+            {
+                string newKey = "xx-XX";
+                int counter = 1;
+                while (locObj.ContainsKey(newKey))
+                    newKey = $"xx-XX{counter++}";
+                locObj[newKey] = "";
             }
             EditorGUILayout.EndHorizontal();
         }
@@ -193,8 +266,8 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.LabelField("Raw JSON Editor", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
-            rawJsonScroll = EditorGUILayout.BeginScrollView(rawJsonScroll, GUILayout.Height(300));
-            editableRawJson = EditorGUILayout.TextArea(editableRawJson, GUILayout.ExpandHeight(true));
+            _rawJsonScroll = EditorGUILayout.BeginScrollView(_rawJsonScroll, GUILayout.Height(300));
+            _editableRawJson = EditorGUILayout.TextArea(_editableRawJson, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
 
             EditorGUILayout.BeginHorizontal();
@@ -202,39 +275,22 @@ namespace xAPI4Unity.Editor
             {
                 try
                 {
-                    File.WriteAllText(path, editableRawJson, Encoding.UTF8);
+                    File.WriteAllText(path, _editableRawJson, Encoding.UTF8);
                     AssetDatabase.Refresh();
-                    lastLoadedJson = editableRawJson;
-                    showRawJson = false;
+                    _lastLoadedJson = _editableRawJson;
+                    _showRawJson = false;
                     LoadJson(path); // reload to update structured editor
                 }
-                catch (Exception ex)
+                catch (System.Exception ex)
                 {
                     Debug.LogError("Failed to save raw JSON: " + ex.Message);
                 }
             }
             if (GUILayout.Button("Close Raw JSON"))
             {
-                showRawJson = false;
+                _showRawJson = false;
             }
             EditorGUILayout.EndHorizontal();
-        }
-
-        private void SaveJson(string path)
-        {
-            try
-            {
-                string json = JsonUtility.ToJson(currentVerb, true)
-                    .Replace("en_US", "en-US")
-                    .Replace("de_DE", "de-DE");
-                File.WriteAllText(path, json, Encoding.UTF8);
-                AssetDatabase.Refresh();
-                lastLoadedJson = json;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError("Failed to save JSON: " + ex.Message);
-            }
         }
     }
 }
