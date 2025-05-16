@@ -54,29 +54,6 @@ namespace xAPI4Unity.Editor
             CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
             
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
-
-            // CustomGUI.Horizontal.Wrap(() =>
-            // {
-            //     CustomGUI.Disabled(!Settings.IsDirty(), () =>
-            //     {
-            //         if (CustomGUI.Button("Save settings"))
-            //         {
-            //             GUI.FocusControl(null);
-            //             Settings.Instance.Save();
-            //         }
-            //
-            //     });
-            //
-            //     if (CustomGUI.Button("Reset to default"))
-            //     {
-            //         Settings.Instance.Reset();
-            //         Settings.Instance.Load();
-            //     }
-            //     
-            //     CustomGUI.Space();
-            // });
-            //
-            // CustomGUI.Divider(2);
             
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {

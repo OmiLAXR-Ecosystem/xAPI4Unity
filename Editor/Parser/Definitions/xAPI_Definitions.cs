@@ -46,7 +46,7 @@ namespace xAPI4Unity.Editor.Parser.Definitions
                         
                         if (extType != "activity" && extType != "context" && extType != "result")
                         {
-                            Debug.LogWarning($"[xAPI 4 Unity]: Unknown extension type {extType} for extension {name} in context {context}. Skipping extension.");
+                            Debug.LogWarning($"[xAPI4Unity]: Unknown extension type {extType} for extension {name} in context {context}. Skipping extension.");
                             continue;
                         }
                         
