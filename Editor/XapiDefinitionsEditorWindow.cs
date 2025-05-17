@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace xAPI4Unity.Editor
 {
-    public class XapiFolderTreeWindow : EditorWindow
+    public class XapiDefinitionsEditorWindow : EditorWindow
     {
         private static Settings Settings => Settings.Instance;
         private Vector2 _scroll;
@@ -16,6 +16,7 @@ namespace xAPI4Unity.Editor
         private Vector2 _previewScroll;
 
         private string _selectedJsonPath = null;
+        private string _selectedDirectory = null;
         private JObject _jsonObj = null; // JObject for dynamic JSON editing
         private string _lastLoadedJson = null;
         private bool _showRawJson = false;
@@ -28,10 +29,10 @@ namespace xAPI4Unity.Editor
         private bool _showRenameDialog = false;
         private string _renameJsonFileName = "";
 
-        [MenuItem("xAPI4Unity/Edit xAPI definitions (experimental)")]
+        [MenuItem("xAPI4Unity/Edit xAPI definitions", priority = 1)]
         public static void ShowWindow()
         {
-            GetWindow<XapiFolderTreeWindow>("Assets/xapi definitions");
+            GetWindow<XapiDefinitionsEditorWindow>("xAPI Definitions Editor");
         }
 
         private void OnGUI()
@@ -120,6 +121,10 @@ namespace xAPI4Unity.Editor
             }
 
             EditorGUILayout.BeginHorizontal();
+            DrawPathHeader();  
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
 
             // LEFT: Folder/File Tree
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
@@ -185,14 +190,58 @@ namespace xAPI4Unity.Editor
 
                 AssetDatabase.Refresh();
                 _selectedJsonPath = newPath;
-                LoadJson(newPath);
-                _showRawJson = false;
+                if (!string.IsNullOrEmpty(newPath))
+                {
+                    LoadJson(newPath);
+                    _showRawJson = false;
+                }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError("Failed to rename definition: " + ex.Message);
                 EditorUtility.DisplayDialog("Error", "Could not rename file:\n" + ex.Message, "OK");
             }
+        }
+        
+        private void DrawPathHeader()
+        {
+            var headerStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                padding = new RectOffset(10, 10, 5, 5),
+                margin = new RectOffset(0, 0, 0, 10)
+            };
+
+            var pathStyle = new GUIStyle(EditorStyles.label)
+            {
+                fontSize = 11,
+                wordWrap = true
+            };
+
+            EditorGUILayout.BeginVertical(headerStyle);
+    
+            string displayPath = null;
+            string label = null;
+
+            if (!string.IsNullOrEmpty(_selectedJsonPath))
+            {
+                label = "Selected File:";
+                displayPath = _selectedJsonPath;
+            }
+            else if (!string.IsNullOrEmpty(_selectedDirectory))
+            {
+                label = "Selected Directory:";
+                displayPath = _selectedDirectory;
+            }
+
+            if (displayPath != null)
+            {
+                EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.SelectableLabel(displayPath, pathStyle);
+                EditorGUILayout.EndHorizontal();
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawDirectory(string path, int depth)
@@ -202,12 +251,25 @@ namespace xAPI4Unity.Editor
                 folderName = path;
 
             // Unique key for each folder
-            var sessionKey = $"XapiFolderTreeWindow.Foldout.{path.GetHashCode()}";
+            var sessionKey = $"XapiDefinitionsEditorWindow.Foldout.{path.GetHashCode()}";
             var isOpen = SessionState.GetBool(sessionKey, depth < 2); // open first 2 levels by default
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(depth * 16f);
-            var newIsOpen = EditorGUILayout.Foldout(isOpen, folderName, true);
+    
+            // Ändere den Foldout zu einem Button mit Foldout-Look
+            var style = (_selectedDirectory == path) ? EditorStyles.boldLabel : EditorStyles.label;
+            var rect = EditorGUILayout.GetControlRect();
+            var foldoutRect = new Rect(rect.x, rect.y, 15, rect.height);
+            var labelRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
+    
+            var newIsOpen = EditorGUI.Foldout(foldoutRect, isOpen, "", true);
+            if (GUI.Button(labelRect, folderName, style))
+            {
+                _selectedDirectory = path;
+                _selectedJsonPath = null;
+            }
+    
             EditorGUILayout.EndHorizontal();
 
             if (newIsOpen != isOpen)
@@ -223,11 +285,12 @@ namespace xAPI4Unity.Editor
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Space((depth + 1) * 16f + 5f);
 
-                var style = (_selectedJsonPath == file) ? EditorStyles.boldLabel : EditorStyles.label;
+                var fileStyle = (_selectedJsonPath == file) ? EditorStyles.boldLabel : EditorStyles.label;
 
-                if (GUILayout.Button(Path.GetFileName(file), style))
+                if (GUILayout.Button(Path.GetFileName(file), fileStyle))
                 {
                     _selectedJsonPath = file;
+                    _selectedDirectory = null;
                     LoadJson(file);
                     _showRawJson = false;
                 }
@@ -276,9 +339,14 @@ namespace xAPI4Unity.Editor
                 return;
             }
 
-            // Use parent of selected file or root
+            // Bestimme den Zielordner in dieser Reihenfolge:
+            // 1. Ausgewähltes Verzeichnis
+            // 2. Verzeichnis der ausgewählten Datei
+            // 3. Root-Verzeichnis
             string folder;
-            if (!string.IsNullOrEmpty(_selectedJsonPath))
+            if (!string.IsNullOrEmpty(_selectedDirectory))
+                folder = _selectedDirectory;
+            else if (!string.IsNullOrEmpty(_selectedJsonPath))
                 folder = Path.GetDirectoryName(_selectedJsonPath);
             else
                 folder = Settings.localSource.path;
@@ -299,6 +367,7 @@ namespace xAPI4Unity.Editor
             File.WriteAllText(filePath, json, Encoding.UTF8);
             AssetDatabase.Refresh();
             _selectedJsonPath = filePath;
+            _selectedDirectory = null; // Setze die Verzeichnisauswahl zurück
             LoadJson(filePath);
             _showRawJson = false;
         }
@@ -336,6 +405,9 @@ namespace xAPI4Unity.Editor
 
         private void DrawJsonEditor(string path)
         {
+            if (string.IsNullOrEmpty(path))
+                return;
+            
             EditorGUILayout.LabelField("Editing:", Path.GetFileName(path), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
