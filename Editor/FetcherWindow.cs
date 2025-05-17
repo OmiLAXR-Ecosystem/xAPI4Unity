@@ -102,10 +102,15 @@ namespace xAPI4Unity.Editor
                 {
                     CustomGUI.Subtitle("3) Work with xAPI Definitions");
                     CustomGUI.Description("Now, you have C# files you can use in your project to define xAPI statements. For creating new definitions or edit existing you have two options:");
-                    CustomGUI.Description("1) Create a new JSON file in the 'definitions' folder structure of your local copy of the xAPI registry according the folder rules or you can edit existing files. This can be done with your IDE.");
-                    CustomGUI.Description("2) Use our 'xAPI Definitions Editor' window for create new definitions or for changing existing.");
-                    CustomGUI.Description("We also recommend to look into our registry website for searching fast for defintions.");
+                    CustomGUI.Description("For searching fast for definitions you can also use our registry website.");
                     CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de");
+                    CustomGUI.Description("1) Create a new JSON file in the 'definitions' folder structure of your local copy of the xAPI registry according the folder rules or you can edit existing files. This can be done with your IDE.");
+                    CustomGUI.Description("2) Use our 'xAPI Definitions Editor' window for create new definitions or for changing existing. You can reopen this window anytime on menu 'xAPI4Unity > Edit xAPI definitions'.");
+                    if (CustomGUI.Button("Open xAPI Definitions Editor", GUILayout.MaxWidth(1000), GUILayout.Height(50),
+                            GUILayout.ExpandWidth(true)))
+                    {
+                        XapiDefinitionsEditorWindow.ShowWindow();
+                    }
                 });
             });
       
