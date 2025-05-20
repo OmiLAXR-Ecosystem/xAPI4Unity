@@ -191,6 +191,21 @@ namespace xAPI4Unity.Editor
                 textColor = Color.yellow
             }
         };
+        
+        private static readonly GUIStyle HyperlinkStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 11,
+            wordWrap = true,
+            richText = true,
+            normal = new GUIStyleState()
+            {
+                textColor = new Color(0.2f, 0.4f, 1f) // Hellblau
+            },
+            hover = new GUIStyleState()
+            {
+                textColor = new Color(0.3f, 0.5f, 1f) // Helleres Blau beim Hover
+            }
+        };
 
         private static Texture2D MakeTex(int width, int height, Color color)
         {
@@ -296,6 +311,22 @@ namespace xAPI4Unity.Editor
             {
                 var bullet = bullets[i];
                 GUILayout.Label((i + 1) + ". " + bullet, TextStyle, GUILayout.ExpandWidth(true));
+            }
+        }
+        
+        public static void Hyperlink(string url)
+            => Hyperlink(url, url);
+        public static void Hyperlink(string text, string url)
+        {
+            var content = new GUIContent(text);
+            var rect = GUILayoutUtility.GetRect(content, HyperlinkStyle);
+            
+            // Verändere den Cursor zum Hand-Symbol wenn die Maus über dem Link ist
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
+
+            if (GUI.Button(rect, content, HyperlinkStyle))
+            {
+                Application.OpenURL(url);
             }
         }
         

@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor.Parser.Definitions
@@ -42,12 +43,17 @@ namespace xAPI4Unity.Editor.Parser.Definitions
                     case DefinitionType.Extension:
                         var extension = new xAPIExtension(context, name, names, descriptions);
                         var extType = definition.ExtensionType.ToString().ToLower();
-
+                        
+                        if (extType != "activity" && extType != "context" && extType != "result")
+                        {
+                            Debug.LogWarning($"[xAPI4Unity]: Unknown extension type {extType} for extension {name} in context {context}. Skipping extension.");
+                            continue;
+                        }
+                        
                         if (definition.HasCategory)
                             ctx.AddSubExtension(extType, definition.Category, extension);
                         else 
                             ctx.AddExtension(extType, extension);
-                        
                         break;
                     case DefinitionType.Verb:
                         var verb = new xAPIVerb(context, name, names, descriptions);

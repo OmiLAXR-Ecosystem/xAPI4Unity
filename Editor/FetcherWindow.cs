@@ -25,7 +25,7 @@ namespace xAPI4Unity.Editor
         {
         }
         
-        [MenuItem("xAPI4Unity / Open Fetcher Window (Settings)")]
+        [MenuItem("xAPI4Unity / Setup xAPI definitions", priority = 0)]
         public static void ShowWindow()
         {
             const string title = "xAPI4Unity";
@@ -45,7 +45,8 @@ namespace xAPI4Unity.Editor
             Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
         }
         
-        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)")]
+        
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 2)]
         public static void QuickFetch()
             => ExecuteFetcher();
         
@@ -54,29 +55,6 @@ namespace xAPI4Unity.Editor
             CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
             
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
-
-            // CustomGUI.Horizontal.Wrap(() =>
-            // {
-            //     CustomGUI.Disabled(!Settings.IsDirty(), () =>
-            //     {
-            //         if (CustomGUI.Button("Save settings"))
-            //         {
-            //             GUI.FocusControl(null);
-            //             Settings.Instance.Save();
-            //         }
-            //
-            //     });
-            //
-            //     if (CustomGUI.Button("Reset to default"))
-            //     {
-            //         Settings.Instance.Reset();
-            //         Settings.Instance.Load();
-            //     }
-            //     
-            //     CustomGUI.Space();
-            // });
-            //
-            // CustomGUI.Divider(2);
             
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {
@@ -93,6 +71,10 @@ namespace xAPI4Unity.Editor
                 CustomGUI.Region(() =>
                 {
                     CustomGUI.Subtitle("2) Do transformation!");
+                    CustomGUI.Description("Now, you have a local copy of the xAPI registry repository. It contains several JSON files which define the xAPI registry.");
+                    CustomGUI.Description("The next step is to transform them into C# code which you can use in your project. We strongly recommend to enable the watcher.");
+                    CustomGUI.Description("This feature listen for changes in the JSON files automatically and trigger the transformation on each change automatically.");
+                    CustomGUI.Description("If you don't want to use the watcher, you can trigger the transformation manually by clicking on the button below.");
                     Settings.fetcher.watcherEnabled =
                         CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled, _ =>
                         {
@@ -115,8 +97,21 @@ namespace xAPI4Unity.Editor
                         }
                     });
                 });
- 
-               
+                
+                CustomGUI.Region(() =>
+                {
+                    CustomGUI.Subtitle("3) Work with xAPI Definitions");
+                    CustomGUI.Description("Now, you have C# files you can use in your project to define xAPI statements. For creating new definitions or edit existing you have two options:");
+                    CustomGUI.Description("For searching fast for definitions you can also use our registry website.");
+                    CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de");
+                    CustomGUI.Description("1) Create a new JSON file in the 'definitions' folder structure of your local copy of the xAPI registry according the folder rules or you can edit existing files. This can be done with your IDE.");
+                    CustomGUI.Description("2) Use our 'xAPI Definitions Editor' window for create new definitions or for changing existing. You can reopen this window anytime on menu 'xAPI4Unity > Edit xAPI definitions'.");
+                    if (CustomGUI.Button("Open xAPI Definitions Editor", GUILayout.MaxWidth(1000), GUILayout.Height(50),
+                            GUILayout.ExpandWidth(true)))
+                    {
+                        XapiDefinitionsEditorWindow.ShowWindow();
+                    }
+                });
             });
       
         }

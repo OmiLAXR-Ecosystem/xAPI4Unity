@@ -38,7 +38,7 @@ namespace xAPI4Unity.Editor.Parser
             var fm = new FileManager(definitionsPath);
             var definitionsFiles = fm.GetAllEntries().ToArray();
 
-            Debug.Log($"[xAPI 4 Unity]: Found {definitionsFiles.Length} xAPI definitions");
+            Debug.Log($"[xAPI4Unity]: Found {definitionsFiles.Length} xAPI definitions");
 
             var (rootFolder, coreFolder, definitionsFolder) = DetectPaths(@namespace);
             
@@ -52,7 +52,7 @@ namespace xAPI4Unity.Editor.Parser
             DefinitionsFiles.UpdateFiles(@namespace, definitionsFiles, definitionsFolder);
             CoreFiles.CreateAsmDefFile(@namespace, rootFolder);
                 
-            Debug.Log("[xAPI 4 Unity]: Created xAPI Registry with namespace " + @namespace);
+            Debug.Log("[xAPI4Unity]: Created xAPI Registry with namespace " + @namespace);
         }
     }
 }
