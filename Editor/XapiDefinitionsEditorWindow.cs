@@ -394,6 +394,7 @@ namespace xAPI4Unity.Editor
             {
                 var json = JsonConvert.SerializeObject(_jsonObj, Formatting.Indented);
                 File.WriteAllText(path, json, Encoding.UTF8);
+                FetcherWindow.QuickFetch();
                 AssetDatabase.Refresh();
                 _lastLoadedJson = json;
             }
