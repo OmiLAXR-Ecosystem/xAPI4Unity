@@ -199,11 +199,11 @@ namespace xAPI4Unity.Editor
             richText = true,
             normal = new GUIStyleState()
             {
-                textColor = new Color(0.2f, 0.4f, 1f) // Hellblau
+                textColor = new Color(0.8f, 0.8f, 0) 
             },
             hover = new GUIStyleState()
             {
-                textColor = new Color(0.3f, 0.5f, 1f) // Helleres Blau beim Hover
+                textColor = new Color(1f, 1f, 0) 
             }
         };
 

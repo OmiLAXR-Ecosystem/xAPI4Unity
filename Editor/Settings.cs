@@ -59,11 +59,11 @@ namespace xAPI4Unity.Editor
             var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(Instance, false));
             // Then we apply them to this window
             JsonUtility.FromJsonOverwrite(data, Instance);
-#if UNITY_2019
+#if UNITY_2020_1_OR_NEWER
+            Instance ??= new Settings();
+#else
             if (Instance == null)
                 Instance = new Settings();
-#else
-            Instance ??= new Settings();
 #endif
             _savedInstance = Instance.Clone<Settings>();
         }
@@ -108,11 +108,7 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-#if !UNITY_2021_1_OR_NEWER
         [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
-#else
-        [SerializeField] public string path = Path.Join(DefaultValues.AssetRoot, "xapi");
-#endif
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
         [SerializeField] public string repoBranch = default;
         [SerializeField] public int gitCloneAmount = 0;

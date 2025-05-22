@@ -13,11 +13,7 @@ namespace xAPI4Unity.Editor
         public string Url;
         public string Directory;
         public bool IsBusy { get; private set; }
-#if UNITY_2019 || UNITY_2020
         public string RepoDirectory => Path.Combine(Directory, "xapi");
-#else
-        public string RepoDirectory => Path.Join(Directory, "xapi");
-#endif
         public bool IsCloned => IsValidRepo(RepoDirectory);
         
         public GitHelper(string repoUrl, string directory)
@@ -25,12 +21,7 @@ namespace xAPI4Unity.Editor
             Url = repoUrl;
             Directory = directory;
         }
-
-        #if UNITY_2019 || UNITY_2020
         public static bool HasDefinitionsFolder(string repoPath) => Dir.Exists(Path.Combine(repoPath, "definitions"));
-        #else
-        public static bool HasDefinitionsFolder(string repoPath) => Dir.Exists(Path.Join(repoPath, "definitions"));
-        #endif
         
         public static bool IsValidRepo(string repoPath) =>
             Dir.Exists(repoPath) && HasDefinitionsFolder(repoPath);
