@@ -35,7 +35,7 @@ namespace xAPI4Unity.Editor
 #else
             Instance.title = title;
 #endif
-            Instance.minSize = new Vector2(1000, 370);
+            Instance.minSize = new Vector2(1000, 700);
             Instance.Show(true);
         }
 
