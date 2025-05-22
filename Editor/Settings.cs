@@ -17,7 +17,7 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class Settings : ISettings
     {
-        private const string SettingsKey = "xAPI4Unity";
+        private static string SettingsKey = $"xAPI4Unity_{Application.dataPath.GetHashCode()}";
 
         public static Settings Instance = new Settings();
         private static Settings _savedInstance = new Settings();
@@ -108,7 +108,7 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-#if UNITY_2019 || UNITY_2020
+#if !UNITY_2021_1_OR_NEWER
         [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
 #else
         [SerializeField] public string path = Path.Join(DefaultValues.AssetRoot, "xapi");
