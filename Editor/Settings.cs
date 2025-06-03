@@ -17,7 +17,7 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class Settings : ISettings
     {
-        private static string SettingsKey = $"xAPI4Unity_{Application.dataPath.GetHashCode()}";
+        private static string SettingsKey => $"xAPI4Unity_{Application.dataPath.GetHashCode()}";
 
         public static Settings Instance = new Settings();
         private static Settings _savedInstance = new Settings();
@@ -57,16 +57,22 @@ namespace xAPI4Unity.Editor
         public void Load()
         {
             var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(Instance, false));
-            // Then we apply them to this window
             JsonUtility.FromJsonOverwrite(data, Instance);
+
+            // Fallback-Initialisierung – UNITY < 2020 hat kein ??=
 #if UNITY_2020_1_OR_NEWER
-            Instance ??= new Settings();
+            Instance.fetcher ??= new FetcherSettings();
+            Instance.localSource ??= new LocalSourceSettings();
 #else
-            if (Instance == null)
-                Instance = new Settings();
+    if (Instance.fetcher == null)
+        Instance.fetcher = new FetcherSettings();
+    if (Instance.localSource == null)
+        Instance.localSource = new LocalSourceSettings();
 #endif
+
             _savedInstance = Instance.Clone<Settings>();
         }
+
 
         public void Save()
         {

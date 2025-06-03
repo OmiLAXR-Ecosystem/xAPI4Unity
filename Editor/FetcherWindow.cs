@@ -17,13 +17,8 @@ namespace xAPI4Unity.Editor
 
         private static FetcherWindow Instance { get; set; }
 
-        private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings);
 
         private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path);
-        
-        private FetcherWindow()
-        {
-        }
         
         [MenuItem("xAPI4Unity / Setup xAPI definitions", priority = 0)]
         public static void ShowWindow()
@@ -52,6 +47,7 @@ namespace xAPI4Unity.Editor
         
         private void OnGUI()
         {
+            var localSourceView = new LocalSourceView(Settings);
             CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
             
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
@@ -65,7 +61,7 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Description(
                         "Here you can get a local copy of xAPI repository into your project. You can either work with a downloaded copy or use git instead. In case of git, you will ne write permissions in the git repository to at least a branch. Alternatively you can use your git fork repository.");
 
-                    _localSourceView.Show();
+                    localSourceView.Show();
                 });
                 
                 CustomGUI.Region(() =>

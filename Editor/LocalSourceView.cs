@@ -14,11 +14,12 @@ namespace xAPI4Unity.Editor
         private static int _downloadMethodTabIndex = -1;
         private readonly Settings _settings;
 
-        private readonly GitHelper _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
+        private readonly GitHelper _git;
         
         public LocalSourceView(Settings settings)
         {
             _settings = settings;
+            _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
         }
 
         private static void DownloadToDownloads()
