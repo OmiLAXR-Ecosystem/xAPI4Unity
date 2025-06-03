@@ -116,7 +116,7 @@ namespace xAPI4Unity.Editor
     {
         [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
-        [SerializeField] public string repoBranch = default;
+        [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
         [SerializeField] public int gitCloneAmount = 0;
         
         public T Clone<T>()

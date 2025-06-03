@@ -9,6 +9,7 @@ namespace xAPI4Unity.Editor
     {
         public const bool WatcherEnabled = true;
         public const string RepoUrl = "git@gitlab.com:learntech-rwth/xapi.git";
+        public const string RepoBranch = "master";
         public const string Namespace = "xAPI.Registry";
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public static string AssetRoot => Application.dataPath;
