@@ -91,7 +91,7 @@ namespace xAPI4Unity.Editor
             {
                 JsonUtility.FromJsonOverwrite(data, Instance);
             }
-            catch (Exception e)
+            catch
             {
                 // Debug.LogError($"[xAPI4Unity] Failed to load settings: {e.Message}");
                 _instance = new Settings(); // Fallback if corrupted

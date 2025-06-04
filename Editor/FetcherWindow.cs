@@ -16,7 +16,16 @@ namespace xAPI4Unity.Editor
         private Vector2 _scrollPosition = Vector2.zero;
 
         private static FetcherWindow Instance { get; set; }
-        private readonly LocalSourceView _localSourceView = new LocalSourceView();
+        private LocalSourceView _localSourceView;
+
+        public LocalSourceView LocalSourceView
+        {
+            get
+            {
+                _localSourceView ??= new LocalSourceView();
+                return _localSourceView;
+            }
+        }
         
         private FetcherWindow()
         {
@@ -39,11 +48,18 @@ namespace xAPI4Unity.Editor
         }
 
         [MenuItem("xAPI4Unity / Open registry page")]
-        public static void OpenXApiRegistryPage()
+        private static void OpenXApiRegistryPage()
         {
             Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
         }
-        
+
+        [MenuItem("xAPI4Unity / Download newest 'xapi' patch into mine", priority = 1)]
+        private static void UpdateXApiFolder()
+        {
+            var localSourceView = new LocalSourceView();
+            Settings.Instance.Load();
+            localSourceView.UpdateXApiFolder();
+        }
         
         [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 2)]
         public static void QuickFetch()
@@ -56,7 +72,7 @@ namespace xAPI4Unity.Editor
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
             
             Settings.isOpeningOnStartup =
-                CustomGUI.YesNoPopup("Open at load on demand", Settings.isOpeningOnStartup , newValue =>
+                CustomGUI.YesNoPopup("Open at load or startup on demand", Settings.isOpeningOnStartup , newValue =>
                 {
                     Settings.isOpeningOnStartup = newValue;
                     Settings.Instance.Save();
@@ -72,9 +88,9 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Description(
                         "Here you can get a local copy of xAPI repository into your project. You can either work with a downloaded copy or use git instead. In case of git, you will ne write permissions in the git repository to at least a branch. Alternatively you can use your git fork repository.");
 
-                    _localSourceView.Show(() =>
+                    LocalSourceView.Show(() =>
                     {
-                        ExecuteFetcher();
+                        //ExecuteFetcher();
                     });
                 });
                 

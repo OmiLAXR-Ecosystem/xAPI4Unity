@@ -42,8 +42,8 @@ namespace xAPI4Unity.Editor
         
         public static string GetRelativePath(string basePath, string fullPath)
         {
-            Uri baseUri = new Uri(AppendDirectorySeparatorChar(basePath));
-            Uri fullUri = new Uri(fullPath);
+            var baseUri = new Uri(AppendDirectorySeparatorChar(basePath));
+            var fullUri = new Uri(fullPath);
             return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
         }
 
@@ -140,6 +140,8 @@ namespace xAPI4Unity.Editor
                     case ConflictResolution.Undecided:
                         Debug.LogWarning($"Undecided, skipping: {conflict.RelativePath}");
                         break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
             }
 

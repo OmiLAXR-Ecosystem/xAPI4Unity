@@ -23,6 +23,15 @@ namespace xAPI4Unity.Editor
                 return path + Path.DirectorySeparatorChar;
             return path;
         }
+
+        public static void EnsurePath(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+        
         public static void CreateZip(string sourceDirectory, string zipPath)
         {
             if (File.Exists(zipPath))

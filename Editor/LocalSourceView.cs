@@ -87,53 +87,37 @@ namespace xAPI4Unity.Editor
         {
             var filename = _settings.DownloadFilename;
             var destPath = Path.Combine(Application.dataPath, "xapi");
-            var backupFilename = $"xapi.backup-{DateTime.UtcNow:yyyyMMddHHmmss}";
-            var backupPath = Path.Combine(Application.dataPath, backupFilename);
             var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
-            var extractPath = Path.Combine(Application.dataPath, "xAPI4Unity_tmp");
-            var backupFolder = Path.Combine(Application.dataPath, "xAPI4Unity_Backups");
-            var extractedXapiPath = Path.Combine(extractPath, filename);
-            var conflictLogPath = Path.Combine(Application.dataPath, "xapi-merge-conflicts.json");
-
-            if (Directory.Exists(destPath))
-            {
-                Directory.Move(destPath, backupPath);
-                if (!Directory.Exists(backupFolder))
-                    Directory.CreateDirectory(backupFolder);
-                var fullBackupPath = Path.Combine(backupPath, filename);
-                FileHelper.CreateZip(backupFolder, fullBackupPath);
-                Directory.Delete(backupPath, true);
-                Debug.Log($"Created backup: {fullBackupPath}");
-            }
+            var extractPath = Path.Combine(Application.dataPath, filename);
+            var mergeReportPath = Path.Combine(destPath, DateTime.Now.ToString("yyyyMMddhhmmss") + "-xapi-report.json");
 
             _settings.path = destPath;
             Settings.Instance.Save();
 
             var url = _settings.GetDownloadUrl();
+            
+            Debug.Log($"Downloading '{url}' to '{zipPath}'");
 
             FileHelper.Download(url, zipPath, () =>
             {
                 try
                 {
                     Debug.Log($"Downloaded '{zipPath}'");
-                    FileHelper.ExtractZip(zipPath, extractPath);
+                    FileHelper.ExtractZip(zipPath, Application.dataPath);
                     File.Delete(zipPath);
 
-                    Directory.CreateDirectory(destPath);
+                    // create xapi folder
+                    if (!Directory.Exists(destPath))
+                        Directory.CreateDirectory(destPath);
 
-                    var conflicts = new List<MergeConflict>();
+                    var mergeReport = MergeXapiFolder(extractPath, destPath);
 
-                    MergeXapiFolder(extractedXapiPath, destPath, conflicts);
-
-                    if (conflicts.Count > 0)
-                    {
-                        File.WriteAllText(conflictLogPath,
-                            JsonUtility.ToJson(new MergeConflictLog { conflicts = conflicts }, true));
-                        Debug.LogWarning($"Merge conflicts detected. See log at: {conflictLogPath}");
-                    }
-
+                    File.WriteAllText(mergeReportPath,
+                        JsonUtility.ToJson(mergeReport, true));
+                    
+                    // Delete extracted folder
                     Directory.Delete(extractPath, true);
-                    Debug.Log("Extraction and merge complete.");
+                    Debug.Log($"Merge Copied: {mergeReport.copied}, Conflicts: {mergeReport.conflicts}, Skipped: {mergeReport.skipped}. Merge report at {mergeReportPath}.");
 
                     EditorApplication.delayCall += AssetDatabase.Refresh;
                 }
@@ -143,20 +127,20 @@ namespace xAPI4Unity.Editor
                 }
             });
         }
-
-
-        private static void MergeXapiFolder(string sourceDir, string destDir, List<MergeConflict> conflictLog)
+        
+        private static MergeReport MergeXapiFolder(string sourceDir, string destDir)
         {
-            foreach (var sourceFilePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            var mergeReport = new MergeReport();
+            foreach (var sourceFilePath in Directory.GetFiles(sourceDir, "*.json", SearchOption.AllDirectories))
             {
                 var relativePath = FileHelper.GetRelativePath(sourceDir, sourceFilePath).Replace("\\", "/");
                 var destFilePath = Path.Combine(destDir, relativePath);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(destFilePath)!);
-
+                
                 if (!File.Exists(destFilePath))
                 {
-                    File.Copy(sourceFilePath, destFilePath);
+                    FileHelper.EnsurePath(destFilePath);
+                    File.Move(sourceFilePath, destFilePath);
+                    mergeReport.AddCopy(relativePath);
                 }
                 else
                 {
@@ -165,15 +149,17 @@ namespace xAPI4Unity.Editor
 
                     if (!sourceBytes.SequenceEqual(destBytes))
                     {
-                        conflictLog.Add(new MergeConflict
-                        {
-                            path = relativePath,
-                            reason = "File exists and differs"
-                        });
-                        // Keep original, don't overwrite
+                        mergeReport.AddConflict(relativePath);
+                        // Keep original and move the conflicted renamed
+                        File.Move(sourceFilePath, destFilePath.Replace(".json", ".json-conflict"));
+                    }
+                    else
+                    {
+                        mergeReport.AddSkip(relativePath);
                     }
                 }
             }
+            return mergeReport;
         }
 
         private void DownloadToAssets()
@@ -239,7 +225,22 @@ namespace xAPI4Unity.Editor
                 });
             });
         }
-
+        public void UpdateXApiFolder()
+        {
+            if (_settings.selectedOptionIndex == 0)
+            {
+                DownloadToAssetsAndPatch();
+            } 
+            else if (_settings.selectedOptionIndex == 1)
+            {
+                DownloadToDownloads();
+            } 
+            else if (_settings.selectedOptionIndex == 2)
+            {
+                Debug.LogError("Not valid for Option 3. Please select Option 1 or 2.");
+            }
+        }
+        
         public void Show(Action callback)
         {
             LocalPathView();
@@ -262,8 +263,10 @@ namespace xAPI4Unity.Editor
                         CustomGUI.Description("Only change this value, if you are working with a fork of the xAPI repository.");
                         _settings.repoBranch =
                             CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
+                        CustomGUI.Space();
                         CustomGUI.Bullets(
-                            $"The file will be downloaded from '{_settings.GetDownloadUrl()}' and extracted automatically to '{_settings.path}'.",
+                            "If you are not using git in your project, we recommend to backup your 'xapi' folder.",
+                            $"The file will be downloaded from '{_settings.GetDownloadUrl()}' and merged into to 'Assets/xapi'.",
                             "Enjoy!"
                         );
                         if (CustomGUI.Button($"Patch '{_settings.DownloadFilename}.zip' into Assets folder"))
@@ -281,6 +284,7 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Description("Only change this value, if you are working with a fork of the xAPI repository.");
                     _settings.repoBranch =
                         CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
+                    CustomGUI.Space();
                     CustomGUI.Bullets(
                         $"The file will be downloaded from '{_settings.GetDownloadUrl()}'.",
                         "Download the xAPI repository zip file. (A download of official xAPI Repository was already started. Check your downloads folder.)",
