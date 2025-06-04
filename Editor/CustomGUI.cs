@@ -26,6 +26,8 @@ namespace xAPI4Unity.Editor
         internal static int TabsLimit = 10;
         
         internal static int Tabs(int selectedTab, params Tab[] tabs)
+            => Tabs(selectedTab, tabs, null);
+        internal static int Tabs(int selectedTab, Tab[] tabs, Action<int> onChangeTab)
         {
             Horizontal.Wrap(() =>
             {
@@ -35,6 +37,7 @@ namespace xAPI4Unity.Editor
                         index =>
                         {
                             tabs[index].ClickTab?.Invoke();
+                            onChangeTab?.Invoke(index);
                         });
                 }
                 else

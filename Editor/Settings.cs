@@ -147,11 +147,16 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-        [SerializeField] public string path = Path.Combine(DefaultValues.AssetRoot, "xapi");
+        [SerializeField] public string path = DefaultValues.RepoPath;
+        [SerializeField] public int selectedOptionIndex = 0;
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
+        [SerializeField] public string repoDownloadUrl = DefaultValues.RepoUrl;
         [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
         [SerializeField] public int gitCloneAmount = 0;
 
+        public string DownloadFilename => "xapi-" + repoBranch;
+        public string GetDownloadUrl() => $"{repoDownloadUrl}/-/archive/{repoBranch}/{DownloadFilename}.zip";
+        
         public T Clone<T>()
         {
             return (T)(object)(new LocalSourceSettings() { path = path });

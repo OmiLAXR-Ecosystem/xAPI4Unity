@@ -32,7 +32,7 @@ namespace xAPI4Unity.Editor
         private string _existingFolder;
         private string _incomingFolder;
 
-        [MenuItem("xAPI4Unity / Merge Conflict Resolver")]
+        [MenuItem("xAPI4Unity / Resolve Registry Merge Conflicts")]
         public static void ShowWindow()
         {
             var window = GetWindow<XapiMergeWindow>(true, "xAPI Merge Conflict Resolver");
