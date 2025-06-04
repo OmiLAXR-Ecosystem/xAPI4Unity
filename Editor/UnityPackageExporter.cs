@@ -30,20 +30,20 @@ namespace xAPI4Unity.Editor
             Debug.Log($"Exported into '{targetPath}'.");
         }
         
-        [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xapi' folder", priority = 100)]
+        [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xapi' folder", priority = 200)]
         private static void ExportXApiFolder()
         {
             var path = GetRelativePath(Settings.Instance.localSource.path);
             ExportAsPackage(path, "xapi.unitypackage");
         }
         
-        [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xAPI.Registry' folder", priority = 100)]
+        [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xAPI.Registry' folder", priority = 200)]
         private static void ExportXApiRegistryFolder()
         {
             ExportAsPackage($"Assets/{Settings.Instance.@namespace}", "xAPIRegistry.unitypackage");
         }
         
-        [MenuItem("xAPI4Unity / Export .unitypackage / 'xapi' and 'xAPI.Registry' folder together", priority = 100)]
+        [MenuItem("xAPI4Unity / Export .unitypackage / 'xapi' and 'xAPI.Registry' folder together", priority = 200)]
         private static void ExportBoth()
         {
             ExportAsPackage(new []

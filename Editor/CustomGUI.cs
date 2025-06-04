@@ -65,16 +65,28 @@ namespace xAPI4Unity.Editor
 
             return selectedTab;
         }
-        
+
+        internal static class Vertical
+        {
+            public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginVertical(options);
+            public static void End() => EditorGUILayout.EndVertical();
+
+            public static void Wrap(Action content, params GUILayoutOption[] options)
+            {
+                Begin(options);
+                content();
+                End();
+            }
+        }
         internal static class Horizontal
         {
-            public static void Begin() => EditorGUILayout.BeginHorizontal();
+            public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginHorizontal(options);
             public static void End() => EditorGUILayout.EndHorizontal();
 
-            public static void Wrap(Action action)
+            public static void Wrap(Action content, params GUILayoutOption[] options)
             {
-                Begin();
-                action();
+                Begin(options);
+                content();
                 End();
             }
         }

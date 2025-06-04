@@ -53,7 +53,7 @@ namespace xAPI4Unity.Editor
             Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
         }
 
-        [MenuItem("xAPI4Unity / Download newest 'xapi' patch into mine", priority = 1)]
+        [MenuItem("xAPI4Unity / Download newest 'xapi' patch into mine", priority = 100)]
         private static void UpdateXApiFolder()
         {
             var localSourceView = new LocalSourceView();
@@ -61,7 +61,7 @@ namespace xAPI4Unity.Editor
             localSourceView.UpdateXApiFolder();
         }
         
-        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 2)]
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 101)]
         public static void QuickFetch()
             => ExecuteFetcher();
         
@@ -153,7 +153,13 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private static void ExecuteFetcher()
         {
-            Generator.Generate(Settings.@namespace, Path.Combine(Settings.localSource.path, "definitions"));
+            var definitionsPath = Path.Combine(Settings.localSource.path, "definitions");
+            if (!Directory.Exists(definitionsPath))
+            {
+                Debug.LogError($"Cannot transform JSON files, because '{definitionsPath}' doesn't exist.");
+                return;
+            }
+            Generator.Generate(Settings.@namespace, definitionsPath);
             AssetDatabase.Refresh();
         }
 

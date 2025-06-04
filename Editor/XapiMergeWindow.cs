@@ -1,14 +1,13 @@
-#if UNITY_EDITOR 
+#if UNITY_EDITOR
 
-using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 namespace xAPI4Unity.Editor
 {
-    
     public class XapiMergeWindow : EditorWindow
     {
         private class Conflict
@@ -16,138 +15,180 @@ namespace xAPI4Unity.Editor
             public string RelativePath;
             public string ExistingContent;
             public string IncomingContent;
-            public ConflictResolution Resolution = ConflictResolution.Undecided;
+            public string IncomingFile;
+            public string ExistingFile;
         }
 
-        private enum ConflictResolution
-        {
-            Undecided,
-            KeepExisting,
-            ReplaceWithIncoming,
-            Skip
-        }
-
-        private List<Conflict> _conflicts = new List<Conflict>();
         private Vector2 _scrollPos;
-        private string _existingFolder;
-        private string _incomingFolder;
+        private string[] _reportPaths;
+        private int _selectedReportIndex = 0;
+        
+        private MergeReport _mergeReport;
+        
+        private List<Conflict> _conflicts = new List<Conflict>();
+        private Dictionary<string, Vector2> _existingScrolls = new();
+        private Dictionary<string, Vector2> _incomingScrolls = new();
 
-        [MenuItem("xAPI4Unity / Resolve Registry Merge Conflicts")]
+        [MenuItem("xAPI4Unity / Resolve Conflicts from Report")]
         public static void ShowWindow()
         {
-            var window = GetWindow<XapiMergeWindow>(true, "xAPI Merge Conflict Resolver");
-            window.minSize = new Vector2(900, 600);
-            window.Initialize("Assets/xapi", Path.Combine(Application.dataPath, "__ExtractedXAPI__/xapi-master"));
-        }
-        
-        public static string GetRelativePath(string basePath, string fullPath)
-        {
-            var baseUri = new Uri(AppendDirectorySeparatorChar(basePath));
-            var fullUri = new Uri(fullPath);
-            return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+            var window = GetWindow<XapiMergeWindow>(true, "xAPI Conflict Resolver");
+            window.minSize = new Vector2(1200, 600);
+            window.LoadReportOptions();
         }
 
-        private static string AppendDirectorySeparatorChar(string path)
+        private void LoadReportOptions()
         {
-            if (!path.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                return path + Path.DirectorySeparatorChar;
-            return path;
+            var definitionsRoot = Settings.Instance.localSource.path;
+            _reportPaths = Directory
+                .GetFiles(definitionsRoot, "*-xapi-report.json", SearchOption.TopDirectoryOnly)
+                .Select(p => p.Replace("\\", "/"))
+                .OrderByDescending(Path.GetFileName)
+                .ToArray();
+
+            _selectedReportIndex = _reportPaths.Length > 0 ? 0 : -1;
+            if (_selectedReportIndex >= 0)
+                Initialize(definitionsRoot, _reportPaths[_selectedReportIndex]);
         }
 
-        public void Initialize(string existingFolder, string incomingFolder)
+        private MergeReport LoadMergeReport(string reportPath)
         {
-            _existingFolder = existingFolder;
-            _incomingFolder = incomingFolder;
+            if (!File.Exists(reportPath))
+            {
+                Debug.LogError($"Merge report not found: {reportPath}");
+                return null;
+            }
+
+            var json = File.ReadAllText(reportPath);
+            return JsonUtility.FromJson<MergeReport>(json);
+        }
+
+        public void Initialize(string definitionsRoot, string reportPath)
+        {
+            var report = LoadMergeReport(reportPath);
+            if (report == null)
+                return;
+            _mergeReport = report;
 
             _conflicts.Clear();
 
-            foreach (var newFilePath in Directory.GetFiles(incomingFolder, "*.json", SearchOption.AllDirectories))
+            foreach (var conflict in report.ConflictResults)
             {
-                var relativePath = GetRelativePath(incomingFolder, newFilePath).Replace("\\", "/");
-                var existingFilePath = Path.Combine(existingFolder, relativePath);
+                var file = Path.Combine(definitionsRoot, conflict.path);
+                var conflictFile = Path.Combine(definitionsRoot, conflict.path + "-conflict");
 
-                if (File.Exists(existingFilePath))
+                if (!File.Exists(conflictFile))
+                    continue;
+
+                _conflicts.Add(new Conflict
                 {
-                    var newContent = File.ReadAllText(newFilePath);
-                    var existingContent = File.ReadAllText(existingFilePath);
-
-                    if (newContent != existingContent)
-                    {
-                        _conflicts.Add(new Conflict
-                        {
-                            RelativePath = relativePath,
-                            IncomingContent = newContent,
-                            ExistingContent = existingContent
-                        });
-                    }
-                }
+                    RelativePath = conflict.path,
+                    ExistingFile = file,
+                    IncomingFile = conflictFile,
+                    ExistingContent = File.ReadAllText(file),
+                    IncomingContent = File.ReadAllText(conflictFile)
+                });
             }
         }
 
         private void OnGUI()
         {
+            DrawReportDropdown();
+
+            if (_selectedReportIndex < 0 || _mergeReport == null)
+                return;
+
             if (_conflicts.Count == 0)
             {
-                EditorGUILayout.HelpBox("No conflicts detected.", MessageType.Info);
-                if (GUILayout.Button("Close")) Close();
+                EditorGUILayout.HelpBox("No conflicts to resolve.", MessageType.Info);
+                if (GUILayout.Button("Close"))
+                    Close();
                 return;
             }
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
-            foreach (var conflict in _conflicts)
+            for (var i = _conflicts.Count - 1; i >= 0; i--)
             {
-                EditorGUILayout.Space();
-                EditorGUILayout.LabelField($"File: {conflict.RelativePath}", EditorStyles.boldLabel);
+                var c = _conflicts[i];
+                CustomGUI.Space(2);
+                EditorGUILayout.LabelField($"File: {c.RelativePath}", EditorStyles.boldLabel);
+                bool acceptLeft = false, acceptRight = false;
 
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Keep Existing")) conflict.Resolution = ConflictResolution.KeepExisting;
-                if (GUILayout.Button("Replace with Incoming"))
-                    conflict.Resolution = ConflictResolution.ReplaceWithIncoming;
-                if (GUILayout.Button("Skip")) conflict.Resolution = ConflictResolution.Skip;
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.LabelField("Existing:", EditorStyles.miniBoldLabel);
-                EditorGUILayout.TextArea(conflict.ExistingContent, GUILayout.Height(100));
-                EditorGUILayout.LabelField("Incoming:", EditorStyles.miniBoldLabel);
-                EditorGUILayout.TextArea(conflict.IncomingContent, GUILayout.Height(100));
-            }
-
-            EditorGUILayout.EndScrollView();
-
-            if (GUILayout.Button("Apply Decisions")) ApplyResolutions();
-        }
-
-        private void ApplyResolutions()
-        {
-            foreach (var conflict in _conflicts)
-            {
-                var destFile = Path.Combine(_existingFolder, conflict.RelativePath);
-                var srcFile = Path.Combine(_incomingFolder, conflict.RelativePath);
-
-                switch (conflict.Resolution)
+                CustomGUI.Horizontal.Wrap(() =>
                 {
-                    case ConflictResolution.ReplaceWithIncoming:
-                        File.Copy(srcFile, destFile, true);
-                        Debug.Log($"Replaced: {conflict.RelativePath}");
-                        break;
-                    case ConflictResolution.KeepExisting:
-                        Debug.Log($"Kept: {conflict.RelativePath}");
-                        break;
-                    case ConflictResolution.Skip:
-                        Debug.Log($"Skipped: {conflict.RelativePath}");
-                        break;
-                    case ConflictResolution.Undecided:
-                        Debug.LogWarning($"Undecided, skipping: {conflict.RelativePath}");
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    CustomGUI.Vertical.Wrap(() =>
+                    {
+                        EditorGUILayout.LabelField("Existing:", EditorStyles.miniBoldLabel);
+
+                        if (!_existingScrolls.ContainsKey(c.RelativePath))
+                            _existingScrolls[c.RelativePath] = Vector2.zero;
+
+                        _existingScrolls[c.RelativePath] = EditorGUILayout.BeginScrollView(
+                            _existingScrolls[c.RelativePath], GUILayout.ExpandWidth(true), GUILayout.MinHeight(150), GUILayout.ExpandHeight(true));
+                        EditorGUILayout.TextArea(c.ExistingContent, EditorStyles.textArea, GUILayout.ExpandHeight(true));
+                        EditorGUILayout.EndScrollView();
+
+                        if (GUILayout.Button("Accept left", GUILayout.ExpandWidth(true)))
+                        {
+                            acceptLeft = true;
+                        }
+                    }, GUILayout.Width(position.width / 2 - 15));
+
+                    CustomGUI.Vertical.Wrap(() =>
+                    {
+                        EditorGUILayout.LabelField("Incoming:", EditorStyles.miniBoldLabel);
+
+                        if (!_incomingScrolls.ContainsKey(c.RelativePath))
+                            _incomingScrolls[c.RelativePath] = Vector2.zero;
+
+                        _incomingScrolls[c.RelativePath] = EditorGUILayout.BeginScrollView(
+                            _incomingScrolls[c.RelativePath], GUILayout.ExpandWidth(true), GUILayout.MinHeight(150), GUILayout.ExpandHeight(true));
+                        EditorGUILayout.TextArea(c.IncomingContent, EditorStyles.textArea, GUILayout.ExpandHeight(true));
+                        EditorGUILayout.EndScrollView();
+
+                        if (GUILayout.Button("Accept right", GUILayout.ExpandWidth(true)))
+                        {
+                            acceptRight = true;
+                        }
+                    }, GUILayout.Width(position.width / 2 - 15));
+                });
+                
+                // Apply actions after layout
+                if (acceptLeft)
+                {
+                    File.Delete(c.IncomingFile);
+                    _conflicts.RemoveAt(i);
+                }
+                else if (acceptRight)
+                {
+                    File.Delete(c.ExistingFile);
+                    File.Move(c.IncomingFile, c.ExistingFile);
+                    _conflicts.RemoveAt(i);
                 }
             }
 
-            AssetDatabase.Refresh();
-            EditorUtility.DisplayDialog("Done", "Merge operation completed.", "OK");
-            Close();
+            EditorGUILayout.EndScrollView();
+            
+            
+        }
+
+        private void DrawReportDropdown()
+        {
+            if (_reportPaths == null || _reportPaths.Length == 0)
+            {
+                EditorGUILayout.HelpBox("No xAPI report files found in 'Assets/xapi'.", MessageType.Warning);
+                return;
+            }
+
+            EditorGUILayout.LabelField("Select Merge Report", EditorStyles.boldLabel);
+            var newIndex = EditorGUILayout.Popup(_selectedReportIndex, _reportPaths.Select(Path.GetFileName).ToArray());
+
+            if (newIndex != _selectedReportIndex)
+            {
+                _selectedReportIndex = newIndex;
+                Initialize(Settings.Instance.localSource.path, _reportPaths[_selectedReportIndex]);
+            }
         }
     }
 }

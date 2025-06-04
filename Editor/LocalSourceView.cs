@@ -94,15 +94,19 @@ namespace xAPI4Unity.Editor
             _settings.path = destPath;
             Settings.Instance.Save();
 
+            if (!Directory.Exists(destPath))
+            {
+                DownloadToAssets();
+                return;
+            }
+
             var url = _settings.GetDownloadUrl();
             
-            Debug.Log($"Downloading '{url}' to '{zipPath}'");
-
             FileHelper.Download(url, zipPath, () =>
             {
                 try
                 {
-                    Debug.Log($"Downloaded '{zipPath}'");
+                    Debug.Log($"Downloaded '{url}' to '{zipPath}'.");
                     FileHelper.ExtractZip(zipPath, Application.dataPath);
                     File.Delete(zipPath);
 
@@ -130,7 +134,7 @@ namespace xAPI4Unity.Editor
         
         private static MergeReport MergeXapiFolder(string sourceDir, string destDir)
         {
-            var mergeReport = new MergeReport();
+            var mergeReport = new MergeReport(Path.GetDirectoryName(destDir));
             foreach (var sourceFilePath in Directory.GetFiles(sourceDir, "*.json", SearchOption.AllDirectories))
             {
                 var relativePath = FileHelper.GetRelativePath(sourceDir, sourceFilePath).Replace("\\", "/");
@@ -138,6 +142,7 @@ namespace xAPI4Unity.Editor
                 
                 if (!File.Exists(destFilePath))
                 {
+                    Debug.Log($"File '{destFilePath}' does not exist.");
                     FileHelper.EnsurePath(destFilePath);
                     File.Move(sourceFilePath, destFilePath);
                     mergeReport.AddCopy(relativePath);
@@ -149,12 +154,15 @@ namespace xAPI4Unity.Editor
 
                     if (!sourceBytes.SequenceEqual(destBytes))
                     {
+                        Debug.Log($"File '{destFilePath}' already exists with conflict.");
+
                         mergeReport.AddConflict(relativePath);
                         // Keep original and move the conflicted renamed
                         File.Move(sourceFilePath, destFilePath.Replace(".json", ".json-conflict"));
                     }
                     else
                     {
+                        Debug.Log($"File '{sourceFilePath}' already exists so skip.");
                         mergeReport.AddSkip(relativePath);
                     }
                 }
@@ -186,7 +194,7 @@ namespace xAPI4Unity.Editor
                     // delete zip
                     File.Delete(zipPath);
                     // rename
-                    var ePath = Path.Combine(extractPath, "xapi-master");
+                    var ePath = Path.Combine(extractPath, _settings.DownloadFilename);
                     Directory.Move(ePath, destPath);
                     Directory.Delete(extractPath, true);
                     Debug.Log($"Extraction complete to '{extractPath}'!");

@@ -13,12 +13,12 @@ namespace xAPI4Unity.Editor
     {
         public string path;
         public MergeResultType type;
-        public bool isResolved = false;
     }
 
     [Serializable]
     public class MergeReport
     {
+        [SerializeField] public string source;
         [SerializeField]
         public DateTime MergeTime = DateTime.Now;
         [SerializeField]
@@ -32,7 +32,12 @@ namespace xAPI4Unity.Editor
         public MergeResult[] SkipResults => results.Where(r => r.type == MergeResultType.Skip).ToArray();
         [SerializeField]
         public List<MergeResult> results = new List<MergeResult>();
-
+        
+        public MergeReport(string source)
+        {
+            this.source = source;
+        }
+        
         public void AddResult(string path, MergeResultType type)
         {
             if (type == MergeResultType.Conflict)
@@ -41,7 +46,7 @@ namespace xAPI4Unity.Editor
                 copied++;
             else if (type == MergeResultType.Skip)
                 skipped++;
-            results.Add(new MergeResult { path = path, type = type, isResolved = type == MergeResultType.Conflict });
+            results.Add(new MergeResult { path = path, type = type });
         }
         public void AddCopy(string path)
             => AddResult(path, MergeResultType.Copy);
