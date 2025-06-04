@@ -30,9 +30,12 @@ namespace xAPI4Unity.Editor
         
         static Startup()
         {
+            var settings = Settings.Instance;
+            if (!settings.isOpeningOnStartup)
+                return;
             EditorApplication.delayCall += () =>
             {
-                if (!DefineExist("XAPI_REGISTRY_EXISTS"))
+                if (!DefineExist("XAPI_REGISTRY_EXISTS") || !GitHelper.HasDefinitionsFolder(settings.localSource.path))
                     FetcherWindow.ShowWindow();
             };
         }

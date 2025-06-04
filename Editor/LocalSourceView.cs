@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 using Debug = UnityEngine.Debug;
 
 namespace xAPI4Unity.Editor
@@ -13,14 +14,12 @@ namespace xAPI4Unity.Editor
     public class LocalSourceView
     {
         private static int _downloadMethodTabIndex = -1;
-        private readonly Settings _settings;
+        private Settings Settings => Settings.Instance;
 
-        private readonly GitHelper _git;
+        private readonly GitHelper _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
         
-        public LocalSourceView(Settings settings)
+        public LocalSourceView()
         {
-            _settings = settings;
-            _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
         }
 
         private static void DownloadToDownloads()
@@ -30,7 +29,7 @@ namespace xAPI4Unity.Editor
 
         private void DownloadUnityPackage()
         {
-            var branch = _settings.localSource.repoBranch ?? DefaultValues.RepoBranch;
+            var branch = Settings.localSource.repoBranch ?? DefaultValues.RepoBranch;
             var destPath = Path.Combine(Application.dataPath, "xapi");
             var backupPath = Path.Combine(Application.dataPath, "xapi.backup");
 
@@ -41,8 +40,8 @@ namespace xAPI4Unity.Editor
             
             var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
             var extractPath = Path.Combine(Application.dataPath, "xAPI4Unity");
-            _settings.localSource.path = destPath;
-            _settings.Save();
+            Settings.localSource.path = destPath;
+            Settings.Save();
             
             var filename = "xapi-" + branch;
             // download
@@ -87,23 +86,30 @@ namespace xAPI4Unity.Editor
         
         private void DownloadToAssetsAndPatch()
         {
-            var branch = _settings.localSource.repoBranch ?? DefaultValues.RepoBranch;
+            var branch = Settings.localSource.repoBranch ?? DefaultValues.RepoBranch;
             var filename = $"xapi-{branch}";
             var destPath = Path.Combine(Application.dataPath, "xapi");
-            var backupPath = Path.Combine(Application.dataPath, $"xapi.backup-{DateTime.UtcNow:yyyyMMddHHmmss}");
+            var backupFilename = $"xapi.backup-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            var backupPath = Path.Combine(Application.dataPath, backupFilename);
             var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
-            var extractPath = Path.Combine(Application.dataPath, "xAPI4Unity.tmp");
+            var extractPath = Path.Combine(Application.dataPath, "xAPI4Unity_tmp");
+            var backupFolder = Path.Combine(Application.dataPath, "xAPI4Unity_Backups");
             var extractedXapiPath = Path.Combine(extractPath, filename);
             var conflictLogPath = Path.Combine(Application.dataPath, "xapi-merge-conflicts.json");
 
             if (Directory.Exists(destPath))
             {
                 Directory.Move(destPath, backupPath);
-                Debug.Log($"Moved existing 'xapi' folder to backup: {backupPath}");
+                if (!Directory.Exists(backupFolder))
+                    Directory.CreateDirectory(backupFolder);
+                var fullBackupPath = Path.Combine(backupPath, filename);
+                FileHelper.CreateZip(backupFolder, fullBackupPath);
+                Directory.Delete(backupPath, true);
+                Debug.Log($"Created backup: {fullBackupPath}");
             }
 
-            _settings.localSource.path = destPath;
-            _settings.Save();
+            Settings.localSource.path = destPath;
+            Settings.Save();
 
             var url = $"https://gitlab.com/learntech-rwth/xapi/-/archive/{branch}/{filename}.zip";
 
@@ -139,25 +145,13 @@ namespace xAPI4Unity.Editor
             });
         }
         
-        public static string GetRelativePath(string basePath, string fullPath)
-        {
-            Uri baseUri = new Uri(AppendDirectorySeparatorChar(basePath));
-            Uri fullUri = new Uri(fullPath);
-            return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
-        }
-
-        private static string AppendDirectorySeparatorChar(string path)
-        {
-            if (!path.EndsWith(Path.DirectorySeparatorChar.ToString()))
-                return path + Path.DirectorySeparatorChar;
-            return path;
-        }
+       
         
         private static void MergeXapiFolder(string sourceDir, string destDir, List<MergeConflict> conflictLog)
         {
             foreach (var sourceFilePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
             {
-                var relativePath = GetRelativePath(sourceDir, sourceFilePath).Replace("\\", "/");
+                var relativePath = FileHelper.GetRelativePath(sourceDir, sourceFilePath).Replace("\\", "/");
                 var destFilePath = Path.Combine(destDir, relativePath);
 
                 Directory.CreateDirectory(Path.GetDirectoryName(destFilePath)!);
@@ -196,8 +190,8 @@ namespace xAPI4Unity.Editor
             
             var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
             var extractPath = Path.Combine(Application.dataPath, "__ExtractedXAPI__");
-            _settings.localSource.path = destPath;
-            _settings.Save();
+            Settings.localSource.path = destPath;
+            Settings.Save();
             // download
             FileHelper.Download("https://gitlab.com/learntech-rwth/xapi/-/archive/master/xapi-master.zip", zipPath,
                 () =>
@@ -216,23 +210,23 @@ namespace xAPI4Unity.Editor
                 });
         }
 
-        public void Show()
+        public void Show(Action callback)
         {
             // Local copy
             CustomGUI.Horizontal.Wrap(() =>
             {
-                _settings.localSource.path = CustomGUI.TextField("Path of local copy",
-                    _settings.localSource.path, Path.GetDirectoryName(_settings.localSource.path));
+                Settings.localSource.path = CustomGUI.TextField("Path of local copy",
+                    Settings.localSource.path, Path.GetDirectoryName(Settings.localSource.path));
                 
                 if (CustomGUI.Button("Browse path"))
                 {
-                    _settings.localSource.path =
-                        EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", _settings.fetcher.localPath,
+                    Settings.localSource.path =
+                        EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", Settings.fetcher.localPath,
                             "xapi");
-                    if (string.IsNullOrEmpty(_settings.localSource.path))
-                        _settings.localSource.path = _git.RepoDirectory;
+                    if (string.IsNullOrEmpty(Settings.localSource.path))
+                        Settings.localSource.path = _git.RepoDirectory;
                     
-                    _settings.Save();
+                    Settings.Save();
                     
                     GUI.FocusControl(null);
                 }
@@ -241,16 +235,16 @@ namespace xAPI4Unity.Editor
                 {
                     if (CustomGUI.Button("Open folder"))
                     {
-                        Process.Start(_settings.localSource.path);
+                        Process.Start(Settings.localSource.path);
                     }
                 });
             });
 
-            if (!GitHelper.HasDefinitionsFolder(_settings.localSource.path))
+            if (!GitHelper.HasDefinitionsFolder(Settings.localSource.path))
             {
                 CustomGUI.Horizontal.Wrap(() =>
                 {
-                    CustomGUI.Error($"The path '{_settings.localSource.path}' has no 'definitions' folder. Make sure you extract the repository content correctly.");
+                    CustomGUI.Error($"The path '{Settings.localSource.path}' has no 'definitions' folder. Make sure you extract the repository content correctly.");
                 });
             }
 
@@ -258,8 +252,8 @@ namespace xAPI4Unity.Editor
                 new CustomGUI.Tab("(Option 1) I want to download a local copy and place it in project 'Assets' folder.", () =>
                 {
                     CustomGUI.Subtitle("Local copy in Assets instructions");
-                    _settings.localSource.repoBranch =
-                        CustomGUI.TextField("Branch", _settings.localSource.repoBranch, DefaultValues.RepoBranch);
+                    Settings.localSource.repoBranch =
+                        CustomGUI.TextField("Branch", Settings.localSource.repoBranch, DefaultValues.RepoBranch);
                     CustomGUI.Bullets(
                         "The file will be downloaded and extracted automatically. You don't have to do anything more.",
                         "Enjoy!"
@@ -269,6 +263,7 @@ namespace xAPI4Unity.Editor
                         // DownloadToAssets();
                         //DownloadUnityPackage();
                         DownloadToAssetsAndPatch();
+                        callback();
                     }
                 }),
                 new CustomGUI.Tab("(Option 2) I want just download a local copy to selected path", () =>
@@ -289,11 +284,11 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Subtitle("Git Settings");
                 CustomGUI.Disabled(_git.IsBusy, () =>
                 {
-                    _settings.localSource.repoUrl =
-                        CustomGUI.TextField("Git repository", _settings.localSource.repoUrl, DefaultValues.RepoUrl);
+                    Settings.localSource.repoUrl =
+                        CustomGUI.TextField("Git repository", Settings.localSource.repoUrl, DefaultValues.RepoUrl);
 
-                    _settings.localSource.repoBranch =
-                        CustomGUI.TextField("Git branch", _settings.localSource.repoBranch, default);
+                    Settings.localSource.repoBranch =
+                        CustomGUI.TextField("Git branch", Settings.localSource.repoBranch, default);
                     CustomGUI.Description(
                         "If the 'Git branch' is empty, a new branch will be created automatically. You can rename it later.");
                 });
@@ -301,8 +296,8 @@ namespace xAPI4Unity.Editor
 
                 CustomGUI.Horizontal.Wrap(() =>
                 {
-                    _git.Url = _settings.localSource.repoUrl;
-                    _git.Directory = Path.GetDirectoryName(_settings.localSource.path);
+                    _git.Url = Settings.localSource.repoUrl;
+                    _git.Directory = Path.GetDirectoryName(Settings.localSource.path);
 
                     CustomGUI.Disabled(_git.IsCloned, () =>
                     {
@@ -316,16 +311,18 @@ namespace xAPI4Unity.Editor
                             {
                                 if (CustomGUI.StateButton("Clone as submodule", _git.IsBusy, "Cloning..."))
                                 {
-                                    _git.SubmoduleClone(_settings.localSource.GetNewBranchName());
-                                    _settings.localSource.path = _git.RepoDirectory;
+                                    _git.SubmoduleClone(Settings.localSource.GetNewBranchName());
+                                    Settings.localSource.path = _git.RepoDirectory;
+                                    callback();
                                 }
                             }
                             else
                             {
                                 if (CustomGUI.StateButton("Clone repository", _git.IsBusy, "Cloning..."))
                                 {
-                                    _git.Clone(_settings.localSource.GetNewBranchName());
-                                    _settings.localSource.path = _git.RepoDirectory;
+                                    _git.Clone(Settings.localSource.GetNewBranchName());
+                                    Settings.localSource.path = _git.RepoDirectory;
+                                    callback();
                                 }
                             }
                         }

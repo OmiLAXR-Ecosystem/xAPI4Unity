@@ -17,24 +17,44 @@ namespace xAPI4Unity.Editor
     [Serializable]
     public class Settings : ISettings
     {
-        private static string SettingsKey => $"xAPI4Unity_{Application.dataPath.GetHashCode()}";
-
-        public static Settings Instance = new Settings();
-        private static Settings _savedInstance = new Settings();
-
+        private static string SettingsKey
+        {
+            get
+            {
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(Application.dataPath));
+                var shortHash = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                return $"xAPI4Unity::{shortHash}";
+            }
+        }
+        
+        private static Settings _instance;
+        public static Settings Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new Settings();
+                    _instance.Load(); // <- ensures values come from EditorPrefs
+                }
+                return _instance;
+            }
+        }
+        
         [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
         [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
 
         [SerializeField] public string @namespace = DefaultValues.Namespace;
+        [SerializeField] public bool isOpeningOnStartup = true;
 
-        public string AsmDefFilename => @namespace + ".asmdef"; 
-        public string AsmDefMetaFilename => AsmDefFilename + ".meta"; 
-        
+        public string AsmDefFilename => @namespace + ".asmdef";
+        public string AsmDefMetaFilename => AsmDefFilename + ".meta";
+
         public void Reset()
         {
             EditorPrefs.DeleteKey(SettingsKey);
-            Instance = new Settings();
-            _savedInstance = Instance.Clone<Settings>();
+            _instance = new Settings();
         }
 
         public T Clone<T>()
@@ -44,22 +64,40 @@ namespace xAPI4Unity.Editor
                 fetcher = fetcher.Clone<FetcherSettings>(),
                 localSource = localSource.Clone<LocalSourceSettings>(),
                 @namespace = @namespace,
+                isOpeningOnStartup = isOpeningOnStartup
             };
             return (T)(object)s;
         }
 
         public bool Equals(ISettings so)
         {
+            if (so == null) return false;
             var s = so as Settings;
-            return fetcher.Equals(s.fetcher) && localSource.Equals(s.localSource);
+            return s!.isOpeningOnStartup == isOpeningOnStartup &&
+                   s.@namespace == @namespace &&
+                   s.AsmDefFilename == AsmDefFilename &&
+                   s.AsmDefMetaFilename == AsmDefMetaFilename &&
+                   fetcher.Equals(s.fetcher) &&
+                   localSource.Equals(s.localSource);
         }
 
         public void Load()
         {
-            var data = PlayerPrefs.GetString(SettingsKey, JsonUtility.ToJson(Instance, false));
-            JsonUtility.FromJsonOverwrite(data, Instance);
+            var defaultJson = JsonUtility.ToJson(Instance, false);
+            var data = EditorPrefs.GetString(SettingsKey, defaultJson);
+            // Debug.Log($"[xAPI4Unity] Load settings from EditorPrefs: {data}");
 
-            // Fallback-Initialisierung – UNITY < 2020 hat kein ??=
+            try
+            {
+                JsonUtility.FromJsonOverwrite(data, Instance);
+            }
+            catch (Exception e)
+            {
+                // Debug.LogError($"[xAPI4Unity] Failed to load settings: {e.Message}");
+                _instance = new Settings(); // Fallback if corrupted
+            }
+
+            // Ensure subfields are not null (Unity does not deserialize nulls well)
 #if UNITY_2020_1_OR_NEWER
             Instance.fetcher ??= new FetcherSettings();
             Instance.localSource ??= new LocalSourceSettings();
@@ -69,20 +107,14 @@ namespace xAPI4Unity.Editor
     if (Instance.localSource == null)
         Instance.localSource = new LocalSourceSettings();
 #endif
-
-            _savedInstance = Instance.Clone<Settings>();
         }
-
-
+        
         public void Save()
         {
-            var data = JsonUtility.ToJson(this, false);
-            // And we save it
-            PlayerPrefs.SetString(SettingsKey, data);
-            _savedInstance = Instance.Clone<Settings>();
+            var json = JsonUtility.ToJson(Instance, false);
+            EditorPrefs.SetString(SettingsKey, json);
+            // Debug.Log($"[xAPI4Unity] Saved:\n{json}");
         }
-
-        public static bool IsDirty() => !Instance.Equals(_savedInstance);
     }
 
     [Serializable]
@@ -91,6 +123,7 @@ namespace xAPI4Unity.Editor
         public class FetcherArguments : Dictionary<string, string>
         {
         }
+
         [SerializeField] public string localPath = DefaultValues.HomeDirectory;
         [SerializeField] public bool watcherEnabled = DefaultValues.WatcherEnabled;
 
@@ -118,7 +151,7 @@ namespace xAPI4Unity.Editor
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
         [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
         [SerializeField] public int gitCloneAmount = 0;
-        
+
         public T Clone<T>()
         {
             return (T)(object)(new LocalSourceSettings() { path = path });
@@ -126,7 +159,7 @@ namespace xAPI4Unity.Editor
 
         public bool Equals(ISettings s)
             => (s as LocalSourceSettings)?.path == path;
-        
+
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
     }
 }
