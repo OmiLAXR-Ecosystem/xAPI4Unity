@@ -31,9 +31,11 @@ namespace xAPI4Unity.Editor
         private string _renameJsonFileName = "";
         private string _previousSelection = null;
 
-        // NEW FOLDER UI STATE
         private bool _showCreateFolderDialog = false;
         private string _newFolderName = "New Folder";
+
+        private readonly Dictionary<string, string> _unsavedChanges = new Dictionary<string, string>();
+        private bool _jsonDirty = false;
 
         [MenuItem("xAPI4Unity/Edit xAPI definitions", priority = 1)]
         public static void ShowWindow()
@@ -44,41 +46,33 @@ namespace xAPI4Unity.Editor
         private void OnGUI()
         {
             UpdateRenameField();
-            
+
             var rootFolder = Settings.localSource.path;
             GUILayout.Label($"Showing file structure for: {rootFolder}", EditorStyles.boldLabel);
 
-            // Update rename field when selection changes
             var currentSelection = _selectedJsonPath ?? _selectedDirectory;
             if (_previousSelection != currentSelection)
             {
-                // Always update the rename field on selection change
                 if (_selectedJsonPath != null)
                     _renameJsonFileName = Path.GetFileNameWithoutExtension(_selectedJsonPath);
                 else if (_selectedDirectory != null)
                     _renameJsonFileName = Path.GetFileName(_selectedDirectory);
-
                 _previousSelection = currentSelection;
             }
 
-            // --- Top Buttons ---
             EditorGUILayout.BeginHorizontal();
-
             if (GUILayout.Button("Refresh", GUILayout.Width(100))) Repaint();
-
             if (GUILayout.Button("Create Definition", GUILayout.Width(140)))
             {
                 _showCreateDialog = true;
-                _showRenameDialog = false;
-                _showCreateFolderDialog = false;
+                _showRenameDialog = _showCreateFolderDialog = false;
                 _newJsonFileName = "newDefinition";
             }
 
             if (GUILayout.Button("Create Folder", GUILayout.Width(140)))
             {
                 _showCreateFolderDialog = true;
-                _showCreateDialog = false;
-                _showRenameDialog = false;
+                _showCreateDialog = _showRenameDialog = false;
                 _newFolderName = "New Folder";
             }
 
@@ -88,8 +82,7 @@ namespace xAPI4Unity.Editor
                 if (GUILayout.Button("Rename", GUILayout.Width(140)))
                 {
                     _showRenameDialog = true;
-                    _showCreateDialog = false;
-                    _showCreateFolderDialog = false;
+                    _showCreateDialog = _showCreateFolderDialog = false;
                 }
             }
 
@@ -111,7 +104,6 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            // --- Create Dialog ---
             if (_showCreateDialog)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -124,12 +116,10 @@ namespace xAPI4Unity.Editor
                     _showCreateDialog = false;
                 }
 
-                if (GUILayout.Button("Cancel", GUILayout.Width(70)))
-                    _showCreateDialog = false;
+                if (GUILayout.Button("Cancel", GUILayout.Width(70))) _showCreateDialog = false;
                 EditorGUILayout.EndHorizontal();
             }
 
-            // --- Create Folder Dialog ---
             if (_showCreateFolderDialog)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -141,12 +131,10 @@ namespace xAPI4Unity.Editor
                     _showCreateFolderDialog = false;
                 }
 
-                if (GUILayout.Button("Cancel", GUILayout.Width(70)))
-                    _showCreateFolderDialog = false;
+                if (GUILayout.Button("Cancel", GUILayout.Width(70))) _showCreateFolderDialog = false;
                 EditorGUILayout.EndHorizontal();
             }
 
-            // --- Rename Dialog (File or Folder) ---
             if (_showRenameDialog)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -155,25 +143,19 @@ namespace xAPI4Unity.Editor
                 if (_selectedJsonPath != null) EditorGUILayout.LabelField(".json", GUILayout.Width(30));
                 if (GUILayout.Button("Rename", GUILayout.Width(70)))
                 {
-                    if (_selectedJsonPath != null)
-                        RenameDefinitionFile();
-                    else if (_selectedDirectory != null)
-                        RenameDirectory();
-
+                    if (_selectedJsonPath != null) RenameDefinitionFile();
+                    else if (_selectedDirectory != null) RenameDirectory();
                     _showRenameDialog = false;
                 }
 
-                if (GUILayout.Button("Cancel", GUILayout.Width(70)))
-                    _showRenameDialog = false;
+                if (GUILayout.Button("Cancel", GUILayout.Width(70))) _showRenameDialog = false;
                 EditorGUILayout.EndHorizontal();
             }
 
-            // --- Path Info Header ---
             EditorGUILayout.BeginHorizontal();
             DrawPathHeader();
             EditorGUILayout.EndHorizontal();
 
-            // --- Main Layout (Directory + Editor) ---
             EditorGUILayout.BeginHorizontal();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
@@ -336,14 +318,12 @@ namespace xAPI4Unity.Editor
             if (string.IsNullOrEmpty(folderName))
                 folderName = path;
 
-            // Unique key for each folder
             var sessionKey = $"XapiDefinitionsEditorWindow.Foldout.{path.GetHashCode()}";
-            var isOpen = SessionState.GetBool(sessionKey, depth < 2); // open first 2 levels by default
+            var isOpen = SessionState.GetBool(sessionKey, depth < 2);
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(depth * 16f);
 
-            // Ändere den Foldout zu einem Button mit Foldout-Look
             var style = (_selectedDirectory == path) ? EditorStyles.boldLabel : EditorStyles.label;
             var rect = EditorGUILayout.GetControlRect();
             var foldoutRect = new Rect(rect.x, rect.y, 15, rect.height);
@@ -352,6 +332,7 @@ namespace xAPI4Unity.Editor
             var newIsOpen = EditorGUI.Foldout(foldoutRect, isOpen, "", true);
             if (GUI.Button(labelRect, folderName, style))
             {
+                GUI.FocusControl(null);
                 _selectedDirectory = path;
                 _selectedJsonPath = null;
                 _renameJsonFileName = folderName;
@@ -373,9 +354,13 @@ namespace xAPI4Unity.Editor
                 GUILayout.Space((depth + 1) * 16f + 5f);
 
                 var fileStyle = (_selectedJsonPath == file) ? EditorStyles.boldLabel : EditorStyles.label;
+                var displayName = Path.GetFileName(file);
+                if (_unsavedChanges.ContainsKey(file))
+                    displayName += "*";
 
-                if (GUILayout.Button(Path.GetFileName(file), fileStyle))
+                if (GUILayout.Button(displayName, fileStyle))
                 {
+                    GUI.FocusControl(null);
                     _selectedJsonPath = file;
                     _selectedDirectory = null;
                     _renameJsonFileName = Path.GetFileNameWithoutExtension(file);
@@ -514,7 +499,7 @@ namespace xAPI4Unity.Editor
 
             return string.Concat(words);
         }
-        
+
         private void UpdateRenameField()
         {
             var current = _selectedJsonPath ?? _selectedDirectory;
@@ -525,6 +510,7 @@ namespace xAPI4Unity.Editor
                     ? Path.GetFileNameWithoutExtension(_selectedJsonPath)
                     : Path.GetFileName(_selectedDirectory);
             }
+
             _previousSelection = current;
         }
 
@@ -543,9 +529,22 @@ namespace xAPI4Unity.Editor
         {
             try
             {
-                _lastLoadedJson = File.ReadAllText(path, Encoding.UTF8);
-                _jsonObj = JObject.Parse(_lastLoadedJson);
-                _editableRawJson = _lastLoadedJson;
+                if (_unsavedChanges.TryGetValue(path, out var cachedJson))
+                {
+                    // Only update editable and parsed JSON
+                    _editableRawJson = cachedJson;
+                    _jsonObj = JObject.Parse(cachedJson);
+
+                    // ⚠ Don't update _lastLoadedJson! This file was NOT saved yet
+                }
+                else
+                {
+                    _lastLoadedJson = File.ReadAllText(path, Encoding.UTF8);
+                    _editableRawJson = _lastLoadedJson;
+                    _jsonObj = JObject.Parse(_lastLoadedJson);
+                }
+
+                _jsonDirty = _unsavedChanges.ContainsKey(path); // Ensure consistency
             }
             catch (System.Exception ex)
             {
@@ -564,6 +563,8 @@ namespace xAPI4Unity.Editor
                 FetcherWindow.QuickFetch();
                 AssetDatabase.Refresh();
                 _lastLoadedJson = json;
+                _unsavedChanges.Remove(path);
+                _jsonDirty = false;
             }
             catch (System.Exception ex)
             {
@@ -606,7 +607,16 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            // --- FULL FILE PREVIEW CANVAS ---
+            if (_jsonDirty)
+            {
+                var currentJson = JsonConvert.SerializeObject(_jsonObj, Formatting.Indented);
+                _unsavedChanges[_selectedJsonPath] = currentJson;
+            }
+            else
+            {
+                _unsavedChanges.Remove(_selectedJsonPath);
+            }
+
             EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Full File Preview", EditorStyles.boldLabel);
@@ -636,7 +646,6 @@ namespace xAPI4Unity.Editor
             string keyToRenameTo = null;
             string valueToSet = null;
 
-            // Take snapshot of keys for safe iteration
             var keysSnapshot = new List<string>();
             foreach (var prop in locObj.Properties())
                 keysSnapshot.Add(prop.Name);
@@ -652,19 +661,24 @@ namespace xAPI4Unity.Editor
                 if (GUILayout.Button("-", GUILayout.Width(24)))
                 {
                     keysToRemove.Add(oldKey);
+                    _jsonDirty = true;
                 }
-                else if (newKey != oldKey && !locObj.ContainsKey(newKey))
+
+                if (newKey != oldKey && !locObj.ContainsKey(newKey))
                 {
                     keyToRenameFrom = oldKey;
                     keyToRenameTo = newKey;
                     valueToSet = newVal;
+                    _jsonDirty = true;
                     EditorGUILayout.EndHorizontal();
                     break;
                 }
-                else if (newVal != oldVal)
-                {
-                    locObj[oldKey] = newVal;
-                }
+
+                // ✅ Always assign newVal to keep GUI in sync with JObject
+                if (newVal != oldVal)
+                    _jsonDirty = true;
+
+                locObj[oldKey] = newVal;
 
                 EditorGUILayout.EndHorizontal();
             }
@@ -678,7 +692,6 @@ namespace xAPI4Unity.Editor
                 locObj[keyToRenameTo] = valueToSet;
             }
 
-            // Add new language
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(16);
             if (GUILayout.Button("+ Add language", GUILayout.Width(120)))
@@ -688,6 +701,7 @@ namespace xAPI4Unity.Editor
                 while (locObj.ContainsKey(newKey))
                     newKey = $"xx-XX{counter++}";
                 locObj[newKey] = "";
+                _jsonDirty = true;
             }
 
             EditorGUILayout.EndHorizontal();
