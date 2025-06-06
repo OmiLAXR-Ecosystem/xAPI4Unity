@@ -2,7 +2,9 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -17,17 +19,21 @@ namespace xAPI4Unity.Editor
 
         private string _selectedJsonPath = null;
         private string _selectedDirectory = null;
-        private JObject _jsonObj = null; // JObject for dynamic JSON editing
+        private JObject _jsonObj = null;
         private string _lastLoadedJson = null;
         private bool _showRawJson = false;
         private string _editableRawJson = "";
         private Vector2 _rawJsonScroll;
 
-        // --- Added for Create Definition ---
-        private string _newJsonFileName = "newDefinition.json";
+        private string _newJsonFileName = "newDefinition";
         private bool _showCreateDialog = false;
         private bool _showRenameDialog = false;
         private string _renameJsonFileName = "";
+        private string _previousSelection = null;
+
+        // NEW FOLDER UI STATE
+        private bool _showCreateFolderDialog = false;
+        private string _newFolderName = "New Folder";
 
         [MenuItem("xAPI4Unity/Edit xAPI definitions", priority = 1)]
         public static void ShowWindow()
@@ -37,51 +43,71 @@ namespace xAPI4Unity.Editor
 
         private void OnGUI()
         {
+            UpdateRenameField();
+            
             var rootFolder = Settings.localSource.path;
             GUILayout.Label($"Showing file structure for: {rootFolder}", EditorStyles.boldLabel);
 
-            if (!Directory.Exists(rootFolder))
+            // Update rename field when selection changes
+            var currentSelection = _selectedJsonPath ?? _selectedDirectory;
+            if (_previousSelection != currentSelection)
             {
-                EditorGUILayout.HelpBox($"{rootFolder} does not exist.", MessageType.Warning);
-                if (GUILayout.Button("Refresh"))
-                    Repaint();
-                return;
+                // Always update the rename field on selection change
+                if (_selectedJsonPath != null)
+                    _renameJsonFileName = Path.GetFileNameWithoutExtension(_selectedJsonPath);
+                else if (_selectedDirectory != null)
+                    _renameJsonFileName = Path.GetFileName(_selectedDirectory);
+
+                _previousSelection = currentSelection;
             }
 
-            // --- Buttons Row ---
+            // --- Top Buttons ---
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Refresh", GUILayout.Width(100)))
-                Repaint();
+            if (GUILayout.Button("Refresh", GUILayout.Width(100))) Repaint();
 
             if (GUILayout.Button("Create Definition", GUILayout.Width(140)))
             {
                 _showCreateDialog = true;
-                _showRenameDialog = false; // Only one at a time!
-                _newJsonFileName = "newDefinition.json";
+                _showRenameDialog = false;
+                _showCreateFolderDialog = false;
+                _newJsonFileName = "newDefinition";
             }
 
-            GUI.enabled = _selectedJsonPath != null && File.Exists(_selectedJsonPath);
-            if (GUILayout.Button("Rename Definition", GUILayout.Width(140)))
+            if (GUILayout.Button("Create Folder", GUILayout.Width(140)))
             {
-                _showRenameDialog = true;
-                _showCreateDialog = false; // Only one at a time!
-                _renameJsonFileName = Path.GetFileName(_selectedJsonPath);
+                _showCreateFolderDialog = true;
+                _showCreateDialog = false;
+                _showRenameDialog = false;
+                _newFolderName = "New Folder";
             }
-            
-            GUI.enabled = _selectedJsonPath != null && File.Exists(_selectedJsonPath); // Only enable if a JSON is selected
-            GUI.backgroundColor = Color.red;
-            if (GUILayout.Button("Delete Definition", GUILayout.Width(140)))
+
+            if ((_selectedJsonPath != null && File.Exists(_selectedJsonPath)) ||
+                !string.IsNullOrEmpty(_selectedDirectory))
             {
-                if (EditorUtility.DisplayDialog("Delete Definition",
-                        $"Are you sure you want to permanently delete '{Path.GetFileName(_selectedJsonPath)}'?",
-                        "Delete", "Cancel"))
+                if (GUILayout.Button("Rename", GUILayout.Width(140)))
                 {
-                    DeleteDefinition(_selectedJsonPath);
+                    _showRenameDialog = true;
+                    _showCreateDialog = false;
+                    _showCreateFolderDialog = false;
                 }
             }
-            GUI.backgroundColor = Color.white;
-            GUI.enabled = true;
+
+            if (_selectedJsonPath != null && File.Exists(_selectedJsonPath))
+            {
+                GUI.backgroundColor = Color.red;
+                if (GUILayout.Button("Delete Definition", GUILayout.Width(140)))
+                {
+                    if (EditorUtility.DisplayDialog("Delete Definition",
+                            $"Are you sure you want to permanently delete '{Path.GetFileName(_selectedJsonPath)}'?",
+                            "Delete", "Cancel"))
+                    {
+                        DeleteDefinition(_selectedJsonPath);
+                    }
+                }
+
+                GUI.backgroundColor = Color.white;
+            }
 
             EditorGUILayout.EndHorizontal();
 
@@ -91,47 +117,69 @@ namespace xAPI4Unity.Editor
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("File name:", GUILayout.Width(70));
                 _newJsonFileName = EditorGUILayout.TextField(_newJsonFileName, GUILayout.Width(200));
+                EditorGUILayout.LabelField(".json", GUILayout.Width(30));
                 if (GUILayout.Button("Create", GUILayout.Width(70)))
                 {
                     CreateNewDefinitionFile();
                     _showCreateDialog = false;
                 }
+
                 if (GUILayout.Button("Cancel", GUILayout.Width(70)))
-                {
                     _showCreateDialog = false;
-                }
                 EditorGUILayout.EndHorizontal();
             }
-            
+
+            // --- Create Folder Dialog ---
+            if (_showCreateFolderDialog)
+            {
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Label("Folder name:", GUILayout.Width(90));
+                _newFolderName = EditorGUILayout.TextField(_newFolderName, GUILayout.Width(200));
+                if (GUILayout.Button("Create", GUILayout.Width(70)))
+                {
+                    CreateNewFolder();
+                    _showCreateFolderDialog = false;
+                }
+
+                if (GUILayout.Button("Cancel", GUILayout.Width(70)))
+                    _showCreateFolderDialog = false;
+                EditorGUILayout.EndHorizontal();
+            }
+
+            // --- Rename Dialog (File or Folder) ---
             if (_showRenameDialog)
             {
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("Rename to:", GUILayout.Width(80));
                 _renameJsonFileName = EditorGUILayout.TextField(_renameJsonFileName, GUILayout.Width(200));
+                if (_selectedJsonPath != null) EditorGUILayout.LabelField(".json", GUILayout.Width(30));
                 if (GUILayout.Button("Rename", GUILayout.Width(70)))
                 {
-                    RenameDefinitionFile();
+                    if (_selectedJsonPath != null)
+                        RenameDefinitionFile();
+                    else if (_selectedDirectory != null)
+                        RenameDirectory();
+
                     _showRenameDialog = false;
                 }
+
                 if (GUILayout.Button("Cancel", GUILayout.Width(70)))
-                {
                     _showRenameDialog = false;
-                }
                 EditorGUILayout.EndHorizontal();
             }
 
+            // --- Path Info Header ---
             EditorGUILayout.BeginHorizontal();
-            DrawPathHeader();  
+            DrawPathHeader();
             EditorGUILayout.EndHorizontal();
 
+            // --- Main Layout (Directory + Editor) ---
             EditorGUILayout.BeginHorizontal();
 
-            // LEFT: Folder/File Tree
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
             DrawDirectory(rootFolder, 0);
             EditorGUILayout.EndScrollView();
 
-            // RIGHT: Details/Edit panel
             EditorGUILayout.BeginVertical(GUILayout.ExpandHeight(true));
             _scrollRight = EditorGUILayout.BeginScrollView(_scrollRight);
 
@@ -152,17 +200,55 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.EndHorizontal();
         }
-        
+
+        private void CreateNewFolder()
+        {
+            var folderName = _newFolderName.Trim();
+            if (string.IsNullOrEmpty(folderName) || folderName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                EditorUtility.DisplayDialog("Invalid Folder Name", "Please enter a valid folder name.", "OK");
+                return;
+            }
+
+            string parentFolder;
+            if (!string.IsNullOrEmpty(_selectedDirectory))
+                parentFolder = _selectedDirectory;
+            else if (!string.IsNullOrEmpty(_selectedJsonPath))
+                parentFolder = Path.GetDirectoryName(_selectedJsonPath);
+            else
+                parentFolder = Settings.localSource.path;
+
+            var newFolderPath = Path.Combine(parentFolder, folderName);
+            if (Directory.Exists(newFolderPath))
+            {
+                EditorUtility.DisplayDialog("Folder Exists", "A folder with this name already exists.", "OK");
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(newFolderPath);
+                SessionState.SetBool($"XapiDefinitionsEditorWindow.Foldout.{newFolderPath.GetHashCode()}", true);
+                AssetDatabase.Refresh();
+                _selectedDirectory = newFolderPath;
+                _selectedJsonPath = null;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Failed to create folder: " + ex.Message);
+                EditorUtility.DisplayDialog("Error", "Could not create folder:\n" + ex.Message, "OK");
+            }
+        }
+
         private void RenameDefinitionFile()
         {
             if (string.IsNullOrEmpty(_selectedJsonPath) || !File.Exists(_selectedJsonPath))
                 return;
 
             var folder = Path.GetDirectoryName(_selectedJsonPath);
-            var newFileName = _renameJsonFileName.Trim();
 
-            if (!newFileName.EndsWith(".json"))
-                newFileName += ".json";
+            var fileNameWithoutExtension = ToCamelCase(Path.GetFileNameWithoutExtension(_renameJsonFileName.Trim()));
+            var newFileName = fileNameWithoutExtension + ".json";
 
             if (string.IsNullOrEmpty(newFileName) || newFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             {
@@ -202,7 +288,7 @@ namespace xAPI4Unity.Editor
                 EditorUtility.DisplayDialog("Error", "Could not rename file:\n" + ex.Message, "OK");
             }
         }
-        
+
         private void DrawPathHeader()
         {
             var headerStyle = new GUIStyle(EditorStyles.helpBox)
@@ -218,7 +304,7 @@ namespace xAPI4Unity.Editor
             };
 
             EditorGUILayout.BeginVertical(headerStyle);
-    
+
             string displayPath = null;
             string label = null;
 
@@ -256,20 +342,21 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(depth * 16f);
-    
+
             // Ändere den Foldout zu einem Button mit Foldout-Look
             var style = (_selectedDirectory == path) ? EditorStyles.boldLabel : EditorStyles.label;
             var rect = EditorGUILayout.GetControlRect();
             var foldoutRect = new Rect(rect.x, rect.y, 15, rect.height);
             var labelRect = new Rect(rect.x + 15, rect.y, rect.width - 15, rect.height);
-    
+
             var newIsOpen = EditorGUI.Foldout(foldoutRect, isOpen, "", true);
             if (GUI.Button(labelRect, folderName, style))
             {
                 _selectedDirectory = path;
                 _selectedJsonPath = null;
+                _renameJsonFileName = folderName;
             }
-    
+
             EditorGUILayout.EndHorizontal();
 
             if (newIsOpen != isOpen)
@@ -291,6 +378,7 @@ namespace xAPI4Unity.Editor
                 {
                     _selectedJsonPath = file;
                     _selectedDirectory = null;
+                    _renameJsonFileName = Path.GetFileNameWithoutExtension(file);
                     LoadJson(file);
                     _showRawJson = false;
                 }
@@ -304,7 +392,42 @@ namespace xAPI4Unity.Editor
                 DrawDirectory(dir, depth + 1);
             }
         }
-        
+
+        private void RenameDirectory()
+        {
+            if (string.IsNullOrEmpty(_selectedDirectory) || !Directory.Exists(_selectedDirectory))
+                return;
+
+            var parent = Path.GetDirectoryName(_selectedDirectory);
+            var newFolderName = ToCamelCase(_renameJsonFileName.Trim());
+
+            if (string.IsNullOrEmpty(newFolderName) || newFolderName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                EditorUtility.DisplayDialog("Invalid Folder Name", "Please enter a valid folder name.", "OK");
+                return;
+            }
+
+            var newPath = Path.Combine(parent, newFolderName);
+            if (Directory.Exists(newPath))
+            {
+                EditorUtility.DisplayDialog("Folder Exists", "A folder with this name already exists.", "OK");
+                return;
+            }
+
+            try
+            {
+                Directory.Move(_selectedDirectory, newPath);
+                AssetDatabase.Refresh();
+                _selectedDirectory = newPath;
+                _selectedJsonPath = null;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Failed to rename folder: " + ex.Message);
+                EditorUtility.DisplayDialog("Error", "Could not rename folder:\n" + ex.Message, "OK");
+            }
+        }
+
         private void DeleteDefinition(string path)
         {
             try
@@ -317,6 +440,7 @@ namespace xAPI4Unity.Editor
                         File.Delete(metaPath);
                     AssetDatabase.Refresh();
                 }
+
                 _selectedJsonPath = null;
                 _jsonObj = null;
                 _lastLoadedJson = null;
@@ -330,9 +454,8 @@ namespace xAPI4Unity.Editor
 
         private void CreateNewDefinitionFile()
         {
-            var fileName = _newJsonFileName.Trim();
-            if (!fileName.EndsWith(".json"))
-                fileName += ".json";
+            var fileNameWithoutExtension = ToCamelCase(Path.GetFileNameWithoutExtension(_newJsonFileName.Trim()));
+            var fileName = fileNameWithoutExtension + ".json";
             if (string.IsNullOrEmpty(fileName) || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             {
                 EditorUtility.DisplayDialog("Invalid File Name", "Please enter a valid JSON file name.", "OK");
@@ -360,8 +483,8 @@ namespace xAPI4Unity.Editor
 
             var newObj = new JObject
             {
-                ["name"] = new JObject { ["en-US"] = "" },
-                ["description"] = new JObject { ["en-US"] = "" }
+                ["name"] = new JObject { ["en-US"] = ToLowercaseWords(Path.GetFileNameWithoutExtension(fileName)) },
+                ["description"] = new JObject { ["en-US"] = "Put a description here..." }
             };
             var json = JsonConvert.SerializeObject(newObj, Formatting.Indented);
             File.WriteAllText(filePath, json, Encoding.UTF8);
@@ -370,6 +493,50 @@ namespace xAPI4Unity.Editor
             _selectedDirectory = null; // Setze die Verzeichnisauswahl zurück
             LoadJson(filePath);
             _showRawJson = false;
+        }
+
+        public static string ToCamelCase(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Split by spaces, underscores, or hyphens
+            var words = Regex.Split(input, @"[\s_\-]+");
+
+            for (var i = 0; i < words.Length; i++)
+            {
+                if (string.IsNullOrEmpty(words[i])) continue;
+
+                if (i == 0)
+                    words[i] = words[i].Substring(0, 1).ToLowerInvariant() + words[i].Substring(1);
+                else
+                    words[i] = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(words[i].ToLowerInvariant());
+            }
+
+            return string.Concat(words);
+        }
+        
+        private void UpdateRenameField()
+        {
+            var current = _selectedJsonPath ?? _selectedDirectory;
+            if (_previousSelection == current) return;
+            if (!_showRenameDialog) // Only update if not actively editing
+            {
+                _renameJsonFileName = _selectedJsonPath != null
+                    ? Path.GetFileNameWithoutExtension(_selectedJsonPath)
+                    : Path.GetFileName(_selectedDirectory);
+            }
+            _previousSelection = current;
+        }
+
+        public static string ToLowercaseWords(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Insert a space before each capital letter (except the first character)
+            var split = Regex.Replace(input, "(\\B[A-Z])", " $1");
+
+            // Lowercase the entire result
+            return split.ToLowerInvariant();
         }
 
         private void LoadJson(string path)
@@ -408,7 +575,7 @@ namespace xAPI4Unity.Editor
         {
             if (string.IsNullOrEmpty(path))
                 return;
-            
+
             EditorGUILayout.LabelField("Editing:", Path.GetFileName(path), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
@@ -425,15 +592,18 @@ namespace xAPI4Unity.Editor
             {
                 LoadJson(path);
             }
+
             if (GUILayout.Button("Save"))
             {
                 SaveJson(path);
             }
+
             if (GUILayout.Button("Edit raw JSON"))
             {
                 _editableRawJson = _lastLoadedJson ?? "";
                 _showRawJson = true;
             }
+
             EditorGUILayout.EndHorizontal();
 
             // --- FULL FILE PREVIEW CANVAS ---
@@ -495,8 +665,10 @@ namespace xAPI4Unity.Editor
                 {
                     locObj[oldKey] = newVal;
                 }
+
                 EditorGUILayout.EndHorizontal();
             }
+
             foreach (var key in keysToRemove)
                 locObj.Remove(key);
 
@@ -517,6 +689,7 @@ namespace xAPI4Unity.Editor
                     newKey = $"xx-XX{counter++}";
                 locObj[newKey] = "";
             }
+
             EditorGUILayout.EndHorizontal();
         }
 
@@ -545,10 +718,12 @@ namespace xAPI4Unity.Editor
                     Debug.LogError("Failed to save raw JSON: " + ex.Message);
                 }
             }
+
             if (GUILayout.Button("Close Raw JSON"))
             {
                 _showRawJson = false;
             }
+
             EditorGUILayout.EndHorizontal();
         }
     }
