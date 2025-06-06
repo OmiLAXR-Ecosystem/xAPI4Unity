@@ -29,7 +29,7 @@ namespace xAPI4Unity.Editor
         private Dictionary<string, Vector2> _existingScrolls = new();
         private Dictionary<string, Vector2> _incomingScrolls = new();
 
-        [MenuItem("xAPI4Unity / Resolve Conflicts from Report")]
+        [MenuItem("xAPI4Unity / Resolve Conflicts from Report", priority = 101)]
         public static void ShowWindow()
         {
             var window = GetWindow<XapiMergeWindow>(true, "xAPI Conflict Resolver");

@@ -61,7 +61,7 @@ namespace xAPI4Unity.Editor
             localSourceView.UpdateXApiFolder();
         }
         
-        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 101)]
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 102)]
         public static void QuickFetch()
             => ExecuteFetcher();
         
