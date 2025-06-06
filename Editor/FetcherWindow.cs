@@ -16,14 +16,22 @@ namespace xAPI4Unity.Editor
         private Vector2 _scrollPosition = Vector2.zero;
 
         private static FetcherWindow Instance { get; set; }
+        private LocalSourceView _localSourceView;
 
-        private readonly LocalSourceView _localSourceView = new LocalSourceView(Settings);
-
-        private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path);
+        public LocalSourceView LocalSourceView
+        {
+            get
+            {
+                _localSourceView ??= new LocalSourceView();
+                return _localSourceView;
+            }
+        }
         
         private FetcherWindow()
         {
         }
+        
+        private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path);
         
         [MenuItem("xAPI4Unity / Setup xAPI definitions", priority = 0)]
         public static void ShowWindow()
@@ -35,18 +43,25 @@ namespace xAPI4Unity.Editor
 #else
             Instance.title = title;
 #endif
-            Instance.minSize = new Vector2(1000, 700);
+            Instance.minSize = new Vector2(1000, 800);
             Instance.Show(true);
         }
 
         [MenuItem("xAPI4Unity / Open registry page")]
-        public static void OpenXApiRegistryPage()
+        private static void OpenXApiRegistryPage()
         {
             Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
         }
+
+        [MenuItem("xAPI4Unity / Download newest 'xapi' patch into mine", priority = 100)]
+        private static void UpdateXApiFolder()
+        {
+            var localSourceView = new LocalSourceView();
+            Settings.Instance.Load();
+            localSourceView.UpdateXApiFolder();
+        }
         
-        
-        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 2)]
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 102)]
         public static void QuickFetch()
             => ExecuteFetcher();
         
@@ -56,6 +71,14 @@ namespace xAPI4Unity.Editor
             
             CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
             
+            Settings.isOpeningOnStartup =
+                CustomGUI.YesNoPopup("Open at load or startup on demand", Settings.isOpeningOnStartup , newValue =>
+                {
+                    Settings.isOpeningOnStartup = newValue;
+                    Settings.Instance.Save();
+                });            
+            CustomGUI.Description("(Recommended Yes) If no xAPI Registry exists it opens this window on startup automatically.");
+
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {
                 CustomGUI.Region(() =>
@@ -65,7 +88,10 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Description(
                         "Here you can get a local copy of xAPI repository into your project. You can either work with a downloaded copy or use git instead. In case of git, you will ne write permissions in the git repository to at least a branch. Alternatively you can use your git fork repository.");
 
-                    _localSourceView.Show();
+                    LocalSourceView.Show(() =>
+                    {
+                        //ExecuteFetcher();
+                    });
                 });
                 
                 CustomGUI.Region(() =>
@@ -76,8 +102,9 @@ namespace xAPI4Unity.Editor
                     CustomGUI.Description("This feature listen for changes in the JSON files automatically and trigger the transformation on each change automatically.");
                     CustomGUI.Description("If you don't want to use the watcher, you can trigger the transformation manually by clicking on the button below.");
                     Settings.fetcher.watcherEnabled =
-                        CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled, _ =>
+                        CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled, newValue =>
                         {
+                            Settings.fetcher.watcherEnabled = newValue;
                             Settings.Instance.Save();
                         });
                     CustomGUI.Description("(Recommended Yes)");
@@ -115,7 +142,6 @@ namespace xAPI4Unity.Editor
             });
       
         }
-        
 
         private void OnDisable()
         {
@@ -127,7 +153,13 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private static void ExecuteFetcher()
         {
-            Generator.Generate(Settings.@namespace, Path.Combine(Settings.localSource.path, "definitions"));
+            var definitionsPath = Path.Combine(Settings.localSource.path, "definitions");
+            if (!Directory.Exists(definitionsPath))
+            {
+                Debug.LogError($"Cannot transform JSON files, because '{definitionsPath}' doesn't exist.");
+                return;
+            }
+            Generator.Generate(Settings.@namespace, definitionsPath);
             AssetDatabase.Refresh();
         }
 

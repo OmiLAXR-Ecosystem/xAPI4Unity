@@ -1,8 +1,7 @@
 ﻿#if UNITY_EDITOR
 using System;
 using System.Linq;
-using System.Text;
-using UnityEngine;
+using System.Text.RegularExpressions;
 
 namespace xAPI4Unity.Editor.Parser {
     /// <summary>

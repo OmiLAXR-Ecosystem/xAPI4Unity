@@ -49,6 +49,9 @@ namespace xAPI4Unity.Editor
             var @namespace = settings.@namespace;
 
             definitionsPath = Path.Combine(definitionsPath, "definitions");
+            if (!Directory.Exists(definitionsPath))
+                return;
+            
             Generator.Generate(@namespace, definitionsPath);
             Debug.Log("Generated " + definitionsPath);
         }

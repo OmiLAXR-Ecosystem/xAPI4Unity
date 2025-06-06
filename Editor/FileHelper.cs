@@ -3,11 +3,69 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using UnityEngine;
+using CompressionLevel = System.IO.Compression.CompressionLevel;
 
 namespace xAPI4Unity.Editor
 {
     internal static class FileHelper
     {
+        public static string GetRelativePath(string basePath, string fullPath)
+        {
+            var baseUri = new Uri(AppendDirectorySeparatorChar(basePath));
+            var fullUri = new Uri(fullPath);
+            return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fullUri).ToString().Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        private static string AppendDirectorySeparatorChar(string path)
+        {
+            if (!path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                return path + Path.DirectorySeparatorChar;
+            return path;
+        }
+
+        public static void EnsurePath(string path)
+        {
+            if (path.Contains("."))
+            {
+                var file = Path.GetFileName(path);
+                path = path.Replace(file, "");
+            }
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+        
+        public static void CreateZip(string sourceDirectory, string zipPath)
+        {
+            if (File.Exists(zipPath))
+            {
+                File.Delete(zipPath);
+            }
+
+            using (var zipToCreate = new FileStream(zipPath, FileMode.Create))
+            using (var archive = new ZipArchive(zipToCreate, ZipArchiveMode.Create))
+            {
+                var files = Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories);
+
+                foreach (var file in files)
+                {
+                    // Create a relative path for the archive entry
+                    var relativePath = GetRelativePath(sourceDirectory, file).Replace("\\", "/");
+
+                    var entry = archive.CreateEntry(relativePath, CompressionLevel.Optimal);
+
+                    using (var entryStream = entry.Open())
+                    using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+                    {
+                        fileStream.CopyTo(entryStream);
+                    }
+                }
+            }
+
+            Debug.Log($"Created zip archive at: {zipPath}");
+        }
         public static void ExtractZip(string zipPath, string extractPath)
         {
             // Open the zip file and extract it

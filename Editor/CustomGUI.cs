@@ -23,21 +23,37 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        internal static int TabsLimit = 10;
+        
         internal static int Tabs(int selectedTab, params Tab[] tabs)
+            => Tabs(selectedTab, tabs, null);
+        internal static int Tabs(int selectedTab, Tab[] tabs, Action<int> onChangeTab)
         {
             Horizontal.Wrap(() =>
             {
-                for (var i = 0; i < tabs.Length; i++)
+                if (tabs.Length > TabsLimit)
                 {
-                    var tab = tabs[i];
-                    Disabled(i == selectedTab, () =>
-                    {
-                        if (Button(tab.TabLabel))
+                    selectedTab = Popup("Download Options", tabs.Select(t => t.TabLabel).ToArray(), selectedTab,
+                        index =>
                         {
-                            selectedTab = i;
-                            tab.ClickTab?.Invoke();
-                        }
-                    });
+                            tabs[index].ClickTab?.Invoke();
+                            onChangeTab?.Invoke(index);
+                        });
+                }
+                else
+                {
+                    for (var i = 0; i < tabs.Length; i++)
+                    {
+                        var tab = tabs[i];
+                        Disabled(i == selectedTab, () =>
+                        {
+                            if (Button(tab.TabLabel))
+                            {
+                                selectedTab = i;
+                                tab.ClickTab?.Invoke();
+                            }
+                        });
+                    }
                 }
             });
 
@@ -49,16 +65,28 @@ namespace xAPI4Unity.Editor
 
             return selectedTab;
         }
-        
+
+        internal static class Vertical
+        {
+            public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginVertical(options);
+            public static void End() => EditorGUILayout.EndVertical();
+
+            public static void Wrap(Action content, params GUILayoutOption[] options)
+            {
+                Begin(options);
+                content();
+                End();
+            }
+        }
         internal static class Horizontal
         {
-            public static void Begin() => EditorGUILayout.BeginHorizontal();
+            public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginHorizontal(options);
             public static void End() => EditorGUILayout.EndHorizontal();
 
-            public static void Wrap(Action action)
+            public static void Wrap(Action content, params GUILayoutOption[] options)
             {
-                Begin();
-                action();
+                Begin(options);
+                content();
                 End();
             }
         }
@@ -359,11 +387,31 @@ namespace xAPI4Unity.Editor
             var newValue = opts[EditorGUILayout.Popup(label, optsIndex, opts, newOptions)];
             return newValue;
         }
+        
+        public static int Popup(string label, IEnumerable<string> selectionOptions, int selectedIndex,
+            Action<int> onChange = null,
+            params GUILayoutOption[] options)
+        {
+            var opts = selectionOptions.Prepend("").ToArray();
 
-        public static T Popup<T>(string label, T value, params GUILayoutOption[] options) where T : Enum
+            var optsIndex = Array.IndexOf(opts, selectedIndex);
+            if (optsIndex < 0)
+                optsIndex = 0;
+            
+            var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
+
+            var newIndex = EditorGUILayout.Popup(label, optsIndex, opts, newOptions);
+            if (newIndex != selectedIndex)
+                onChange?.Invoke(newIndex);
+            return newIndex;
+        }
+
+        public static T Popup<T>(string label, T value, Action<T> onChange = null, params GUILayoutOption[] options) where T : Enum
         {
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
             var newValue = (T)EditorGUILayout.EnumPopup(label, value, newOptions);
+            if (!newValue.Equals(value))
+                onChange?.Invoke(newValue);
             return newValue;
         }
 
