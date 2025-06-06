@@ -34,7 +34,7 @@ namespace xAPI4Unity.Editor
         private bool _showCreateFolderDialog = false;
         private string _newFolderName = "New Folder";
 
-        private readonly Dictionary<string, string> _unsavedChanges = new Dictionary<string, string>();
+        private Dictionary<string, string> _unsavedChanges = new Dictionary<string, string>();
         private bool _jsonDirty = false;
 
         [MenuItem("xAPI4Unity/Edit xAPI definitions", priority = 1)]
@@ -597,6 +597,7 @@ namespace xAPI4Unity.Editor
             if (GUILayout.Button("Save"))
             {
                 SaveJson(path);
+                StoreState();
             }
 
             /*if (GUILayout.Button("Edit raw JSON"))
@@ -627,6 +628,92 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
             EditorGUI.EndDisabledGroup();
+        }
+
+        private void StoreState()
+        {
+            // Save unsaved changes
+            if (_unsavedChanges.Count > 0)
+            {
+                var savedState = JsonConvert.SerializeObject(_unsavedChanges);
+                EditorPrefs.SetString("XapiEditor.UnsavedChanges", savedState);
+            }
+            else
+            {
+                EditorPrefs.DeleteKey("XapiEditor.UnsavedChanges");
+            }
+
+            // Save selection state
+            EditorPrefs.SetString("XapiEditor.LastSelectedJson", _selectedJsonPath ?? "");
+            EditorPrefs.SetString("XapiEditor.LastSelectedDir", _selectedDirectory ?? "");
+        }
+        
+        private void OnDestroy()
+        {
+            StoreState();
+            
+            if (_unsavedChanges.Count < 1)
+                return;
+
+            var discard = EditorUtility.DisplayDialog(
+                "Unsaved Changes",
+                "You have unsaved changes in one or more definitions. If you close this window, they will be lost.\n\nAre you sure you want to exit?",
+                "Discard and Close",
+                "Cancel"
+            );
+
+            if (!discard)
+            {
+                // Reopen the window immediately to simulate canceling the close
+                // because Unity does not support cancelling `OnDestroy`
+                EditorApplication.delayCall += ShowWindow;
+            }
+            else
+            {
+                EditorPrefs.DeleteKey("XapiEditor.UnsavedChanges");
+                _unsavedChanges.Clear();
+            }
+        }
+
+        private void RestoreState()
+        {
+            // Restore unsaved changes
+            _unsavedChanges.Clear();
+            if (EditorPrefs.HasKey("XapiEditor.UnsavedChanges"))
+            {
+                var saved = EditorPrefs.GetString("XapiEditor.UnsavedChanges");
+                try
+                {
+                    var restored = JsonConvert.DeserializeObject<Dictionary<string, string>>(saved);
+                    foreach (var kvp in restored)
+                        _unsavedChanges[kvp.Key] = kvp.Value;
+                }
+                catch
+                {
+                    Debug.LogWarning("Failed to restore unsaved changes.");
+                }
+            }
+
+            // Restore selection
+            var json = EditorPrefs.GetString("XapiEditor.LastSelectedJson", null);
+            var dir = EditorPrefs.GetString("XapiEditor.LastSelectedDir", null);
+
+            if (!string.IsNullOrEmpty(json) && File.Exists(json))
+            {
+                _selectedJsonPath = json;
+                LoadJson(json);
+            }
+            else if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+            {
+                _selectedDirectory = dir;
+            }
+
+            _previousSelection = _selectedJsonPath ?? _selectedDirectory;
+        }
+        
+        private void OnEnable()
+        {
+            RestoreState();
         }
 
         private void DrawLocalization(string field)
