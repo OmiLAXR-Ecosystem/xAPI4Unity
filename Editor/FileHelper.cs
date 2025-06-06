@@ -26,7 +26,7 @@ namespace xAPI4Unity.Editor
 
         public static void EnsurePath(string path)
         {
-            if (path.Contains('.'))
+            if (path.Contains("."))
             {
                 var file = Path.GetFileName(path);
                 path = path.Replace(file, "");
