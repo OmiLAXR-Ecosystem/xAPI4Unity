@@ -589,21 +589,21 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Reload"))
+            /*if (GUILayout.Button("Reload"))
             {
                 LoadJson(path);
-            }
+            }*/
 
             if (GUILayout.Button("Save"))
             {
                 SaveJson(path);
             }
 
-            if (GUILayout.Button("Edit raw JSON"))
+            /*if (GUILayout.Button("Edit raw JSON"))
             {
                 _editableRawJson = _lastLoadedJson ?? "";
                 _showRawJson = true;
-            }
+            }*/
 
             EditorGUILayout.EndHorizontal();
 
