@@ -26,8 +26,8 @@ namespace xAPI4Unity.Editor
         private MergeReport _mergeReport;
         
         private List<Conflict> _conflicts = new List<Conflict>();
-        private Dictionary<string, Vector2> _existingScrolls = new();
-        private Dictionary<string, Vector2> _incomingScrolls = new();
+        private Dictionary<string, Vector2> _existingScrolls = new Dictionary<string, Vector2>();
+        private Dictionary<string, Vector2> _incomingScrolls = new Dictionary<string, Vector2>();
 
         [MenuItem("xAPI4Unity / Resolve Conflicts from Report", priority = 101)]
         public static void ShowWindow()

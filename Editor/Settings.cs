@@ -150,7 +150,7 @@ namespace xAPI4Unity.Editor
         [SerializeField] public string path = DefaultValues.RepoPath;
         [SerializeField] public int selectedOptionIndex = 0;
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
-        [SerializeField] public string repoDownloadUrl = DefaultValues.RepoUrl;
+        [SerializeField] public string repoDownloadUrl = DefaultValues.RepoDownloadUrl;
         [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
         [SerializeField] public int gitCloneAmount = 0;
 
