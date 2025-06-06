@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.2.0] - 2025-06-06
+
+### Added
+- The xAPI Definitions Editor window now opens automatically at startup if no xAPI Registry is set.
+- Export your xAPI Registry as a `.unitypackage` via the new menu entry: `xAPI4Unity / Export .unitypackage`.
+- Added “Create folder” option in the xAPI Definitions Editor.
+- Unsaved files in the xAPI Definitions Editor are now marked with an asterisk `*`.
+
+### Changed
+- Improved UI for better usability.
+- Removed obsolete warnings.
+- Resolved minor compatibility issues.
+
+### Fixed
+- Various small fixes and stability improvements.
+
+---
+
 ## [2.1.10] - 2025-05-22
 
 ### Changed
