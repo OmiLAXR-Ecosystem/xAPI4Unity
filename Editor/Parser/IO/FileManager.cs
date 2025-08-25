@@ -1,4 +1,9 @@
-﻿#if UNITY_EDITOR
+﻿/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,30 +12,35 @@ using System.Threading.Tasks;
 
 namespace xAPI4Unity.Editor.Parser.IO
 {
-
     /// <summary>
-    /// Manages the read and write operations of local files
+    /// Implements the IOManager to manage local file-based xAPI definition access.
+    /// Provides functionality for reading, writing, and traversing JSON-based directories and files.
     /// </summary>
     internal class FileManager : IOManager
     {
         private readonly string _rootPath;
+
         /// <summary>
-        /// Key of the manager's source type
+        /// Gets the associated source type for this file manager.
         /// </summary>
         public static SourceType SourceKey => SourceType.Local;
 
+        /// <summary>
+        /// Initializes a new instance of the FileManager class.
+        /// </summary>
+        /// <param name="rootPath">The root directory for local file access.</param>
         public FileManager(string rootPath)
         {
             _rootPath = rootPath;
         }
 
         /// <summary>
-        /// Gets the directories in a path
+        /// Retrieves subdirectories within the specified path.
         /// </summary>
-        /// <param name="rootPath">Path to get directories from.</param>
-        /// <param name="exclude">Files to exclude.</param>
-        /// <param name="ignoreNotFoundException">If true, don't throw DirectoryNotFoundException.</param>
-        /// <returns>List of directories</returns>
+        /// <param name="rootPath">The path to search.</param>
+        /// <param name="exclude">Names of folders to exclude.</param>
+        /// <param name="ignoreNotFoundException">Whether to suppress exceptions if the directory does not exist.</param>
+        /// <returns>List of FileMeta representing the directories found.</returns>
         private static List<FileMeta> GetDirectories(string rootPath, string[] exclude = null, bool ignoreNotFoundException = false)
         {
             var dirs = new List<FileMeta>();
@@ -38,49 +48,61 @@ namespace xAPI4Unity.Editor.Parser.IO
             {
                 if (ignoreNotFoundException)
                     return dirs;
-                
                 throw new DirectoryNotFoundException("Cannot find directory: " + rootPath);
             }
+
             dirs.AddRange(from path in Directory.GetDirectories(rootPath)
-                let name = Path.GetFileNameWithoutExtension(path)
-                where exclude == null || !exclude.Contains(name)
-                select new FileMeta(name, path));
+                          let name = Path.GetFileNameWithoutExtension(path)
+                          where exclude == null || !exclude.Contains(name)
+                          select new FileMeta(name, path));
+
             return dirs;
         }
 
         /// <summary>
-        /// Gets the files in a path
+        /// Recursively retrieves all files and subdirectories matching criteria from the root path.
         /// </summary>
-        /// <param name="rootPath">Path to get files from</param>
-        /// <param name="exclude">Files to exclude</param>
-        /// <returns>List of files</returns>
+        /// <param name="rootPath">The path to scan.</param>
+        /// <param name="exclude">Names to exclude.</param>
+        /// <returns>List of FileMeta representing files and folders.</returns>
         private static List<FileMeta> GetFiles(string rootPath, string[] exclude = null)
         {
             var files = new List<FileMeta>();
             if (!Directory.Exists(rootPath)) return files;
+
             files.AddRange(from path in Directory.GetDirectories(rootPath)
-                let name = Path.GetFileNameWithoutExtension(path)
-                where exclude == null || !exclude.Contains(name)
-                select new FileMeta(name, path, GetFiles(path, exclude)));
+                           let name = Path.GetFileNameWithoutExtension(path)
+                           where exclude == null || !exclude.Contains(name)
+                           select new FileMeta(name, path, GetFiles(path, exclude)));
+
             files.AddRange(from path in Directory.GetFiles(rootPath)
-                where Path.GetExtension(path) == ".json"
-                let name = Path.GetFileNameWithoutExtension(path)
-                where exclude == null || !exclude.Contains(name)
-                select new FileMeta(name, path));
+                           where Path.GetExtension(path) == ".json"
+                           let name = Path.GetFileNameWithoutExtension(path)
+                           where exclude == null || !exclude.Contains(name)
+                           select new FileMeta(name, path));
+
             return files;
         }
 
+        /// <summary>
+        /// Gets all file paths under the root directory, including subdirectories.
+        /// </summary>
         private static IEnumerable<string> GetAllFiles(string rootPath, string pattern = "*.*")
             => Directory.GetFiles(rootPath, pattern, SearchOption.AllDirectories);
 
+        /// <inheritdoc/>
         public override List<FileMeta> ListDeep(string rootPath, string[] includes = null)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc/>
         public override IEnumerable<string> GetAllKeys(string rootPath)
             => GetAllFiles(rootPath).Select(s => s.Replace(rootPath, "").Replace(".json", "")).ToArray();
 
+        /// <summary>
+        /// Reads the full content of a file as string.
+        /// </summary>
         private string GetFileContent(string path)
         {
 #if UNITY_2020_1_OR_NEWER
@@ -95,43 +117,50 @@ namespace xAPI4Unity.Editor.Parser.IO
             }
 #endif
         }
-        
+
+        /// <inheritdoc/>
         public override IEnumerable<DefinitionFile> GetAllEntries()
         {
             var allFiles = GetAllFiles(_rootPath, "*.json");
             return allFiles.Select(f => new DefinitionFile(f.Substring(_rootPath.Length + 1), GetFileContent(f))).Where(f => f.Name[0] != '.');
         }
 
+        /// <summary>
+        /// Gets the keys (paths) filtered by include patterns.
+        /// </summary>
         private IEnumerable<string> GetKeys(string rootPath, IEnumerable<string> includes)
         {
-            // clear slash notations
             var safeIncludes = includes.Select(MakeSafePath).ToArray();
             var keys = GetAllKeys(rootPath);
             var filteredKeys = new List<string>();
             foreach (var key in keys)
                 filteredKeys.AddRange(from i in safeIncludes
-                    where key.IndexOf(i, StringComparison.Ordinal) == 0
-                    select key);
+                                      where key.IndexOf(i, StringComparison.Ordinal) == 0
+                                      select key);
             return filteredKeys.OrderBy(k => k).ToArray();
         }
 
-        protected override List<FileMeta> ListActivities(FileMeta context) =>
-            GetFiles(Path.Combine(context.Path, "activities"));
-
+        /// <summary>
+        /// Normalizes path format (adds leading slash, removes trailing slash).
+        /// </summary>
         private static string MakeSafePath(string path)
         {
-            // ensure slash at beginning
             if (path[0] != '/')
                 path = '/' + path;
-            // remote slash in the end
             if (path[path.Length - 1] == '/')
                 path = path.Substring(0, path.Length - 1);
             return path;
         }
 
+        /// <inheritdoc/>
+        protected override List<FileMeta> ListActivities(FileMeta context) =>
+            GetFiles(Path.Combine(context.Path, "activities"));
+
+        /// <inheritdoc/>
         protected override List<FileMeta> ListContexts(string rootPath, string[] exclude = null) =>
             GetDirectories(rootPath, exclude);
 
+        /// <inheritdoc/>
         public override List<FileMeta> GetFileMetasByDefs(string rootPath, IEnumerable<string> includes)
         {
             var dirs = new List<FileMeta>();
@@ -139,15 +168,12 @@ namespace xAPI4Unity.Editor.Parser.IO
                 return dirs;
 
             var keys = GetKeys(rootPath, includes);
-            var metas = keys.Select(k
-                => new FileMeta(
-                    Path.GetFileNameWithoutExtension(k),
-                    rootPath + k + ".json")
-            );
+            var metas = keys.Select(k => new FileMeta(Path.GetFileNameWithoutExtension(k), rootPath + k + ".json"));
 
             return metas.ToList();
         }
 
+        /// <inheritdoc/>
         public override List<Context> ReadContextsByDefs(string rootPath, IEnumerable<string> includes)
         {
             var contexts = new Dictionary<string, Context>();
@@ -155,12 +181,10 @@ namespace xAPI4Unity.Editor.Parser.IO
                 return contexts.Values.ToList();
 
             var keys = GetKeys(rootPath, includes);
-
             var subPathMetas = new Dictionary<string, FileMeta>();
 
             foreach (var key in keys)
             {
-                // file information
                 var filePath = rootPath + key;
 
                 var keyParts = key.Substring(1).Split('/');
@@ -171,7 +195,6 @@ namespace xAPI4Unity.Editor.Parser.IO
                 var fileName = Path.GetFileNameWithoutExtension(filePath);
                 var fileMeta = new FileMeta(fileName.ClearName(), filePath);
 
-                // fetch context
                 var context = contexts[s0];
 
                 Console.WriteLine("s0:{0},s1:{1},s2:{2}", s0, s1, s2);
@@ -213,13 +236,10 @@ namespace xAPI4Unity.Editor.Parser.IO
                         context.AddActivity(fileMeta);
                         break;
                     case "extensions":
-                    {
                         context.AddExtension(s2, fileMeta);
                         continue;
-                    }
                 }
 
-                // save context
                 if (contexts.ContainsKey(s0))
                     contexts[s0] = context;
                 else
@@ -229,13 +249,17 @@ namespace xAPI4Unity.Editor.Parser.IO
             return contexts.Values.ToList();
         }
 
+        /// <inheritdoc/>
         protected override List<FileMeta> ListExtensions(FileMeta contextExtType) => GetFiles(contextExtType.Path);
 
+        /// <inheritdoc/>
         protected override List<FileMeta> ListExtensionTypes(FileMeta context) =>
             GetDirectories(rootPath: Path.Combine(context.Path, "extensions"), ignoreNotFoundException: true);
 
+        /// <inheritdoc/>
         protected override List<FileMeta> ListVerbs(FileMeta context) => GetFiles(Path.Combine(context.Path, "verbs"));
 
+        /// <inheritdoc/>
         protected override List<FileMeta> ReadFiles(List<FileMeta> files)
         {
             foreach (var file in files)
@@ -254,6 +278,7 @@ namespace xAPI4Unity.Editor.Parser.IO
             return files;
         }
 
+        /// <inheritdoc/>
         protected override async Task<List<FileMeta>> ReadFilesAsync(List<FileMeta> files)
         {
             foreach (var file in files)
@@ -272,12 +297,14 @@ namespace xAPI4Unity.Editor.Parser.IO
             return files;
         }
 
+        /// <inheritdoc/>
         protected override string ReadFile(string path)
         {
             Log($"FileManager reading file: {path}");
             return File.ReadAllText(path);
         }
 
+        /// <inheritdoc/>
         protected override async Task<string> ReadFileAsync(string path)
         {
             Log($"FileManager reading file: {path}");
@@ -285,6 +312,7 @@ namespace xAPI4Unity.Editor.Parser.IO
             return await task;
         }
 
+        /// <inheritdoc/>
         protected override void WriteFiles(string dest, List<FileMeta> files)
         {
             if (dest != null && !Directory.Exists(dest))
@@ -309,6 +337,7 @@ namespace xAPI4Unity.Editor.Parser.IO
             }
         }
 
+        /// <inheritdoc/>
         protected override async Task WriteFilesAsync(string dest, List<FileMeta> files)
         {
             if (dest != null && !Directory.Exists(dest))
@@ -341,6 +370,7 @@ namespace xAPI4Unity.Editor.Parser.IO
             }
         }
 
+        /// <inheritdoc/>
         protected override string CombinePaths(params string[] paths)
         {
             return Path.Combine(paths);

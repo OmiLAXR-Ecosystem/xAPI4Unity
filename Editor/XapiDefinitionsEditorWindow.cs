@@ -1,48 +1,60 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
 using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using xAPI4Unity.Editor.Settings;
 
 namespace xAPI4Unity.Editor
 {
     public class XapiDefinitionsEditorWindow : EditorWindow
     {
-        private static Settings Settings => Settings.Instance;
+        private static MainSettings Settings => MainSettings.Instance;
         private Vector2 _scroll;
         private Vector2 _scrollRight;
         private Vector2 _previewScroll;
 
-        private string _selectedJsonPath = null;
-        private string _selectedDirectory = null;
-        private JObject _jsonObj = null;
-        private string _lastLoadedJson = null;
-        private bool _showRawJson = false;
+        private string _selectedJsonPath;
+        private string _selectedDirectory;
+        private JObject _jsonObj;
+        private string _lastLoadedJson;
+        private bool _showRawJson;
         private string _editableRawJson = "";
         private Vector2 _rawJsonScroll;
 
         private string _newJsonFileName = "newDefinition";
-        private bool _showCreateDialog = false;
-        private bool _showRenameDialog = false;
+        private bool _showCreateDialog;
+        private bool _showRenameDialog;
         private string _renameJsonFileName = "";
-        private string _previousSelection = null;
+        private string _previousSelection;
 
-        private bool _showCreateFolderDialog = false;
+        private bool _showCreateFolderDialog;
         private string _newFolderName = "New Folder";
 
         private Dictionary<string, string> _unsavedChanges = new Dictionary<string, string>();
-        private bool _jsonDirty = false;
+        private bool _jsonDirty;
 
+        /// <summary>
+        /// Opens the xAPI Definitions Editor window via the Unity menu.
+        /// </summary>
         [MenuItem("xAPI4Unity/Edit xAPI definitions", priority = 1)]
         public static void ShowWindow()
         {
             GetWindow<XapiDefinitionsEditorWindow>("xAPI Definitions Editor");
         }
-
+        /// <summary>
+        /// Unity callback for rendering and handling the Editor window UI.
+        /// </summary>
         private void OnGUI()
         {
             UpdateRenameField();
@@ -159,7 +171,8 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.BeginHorizontal();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
-            DrawDirectory(rootFolder, 0);
+            var configFile = ConfigFile.Read(rootFolder + ".config.json");
+            DrawDirectory(rootFolder + "/definitions", 0, configFile?.ignoredContexts);
             EditorGUILayout.EndScrollView();
 
             EditorGUILayout.BeginVertical(GUILayout.ExpandHeight(true));
@@ -182,7 +195,9 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.EndHorizontal();
         }
-
+        /// <summary>
+        /// Creates a new folder in the selected directory or root if none selected.
+        /// </summary>
         private void CreateNewFolder()
         {
             var folderName = _newFolderName.Trim();
@@ -200,7 +215,7 @@ namespace xAPI4Unity.Editor
             else
                 parentFolder = Settings.localSource.path;
 
-            var newFolderPath = Path.Combine(parentFolder, folderName);
+            var newFolderPath = Path.Combine(parentFolder!, folderName);
             if (Directory.Exists(newFolderPath))
             {
                 EditorUtility.DisplayDialog("Folder Exists", "A folder with this name already exists.", "OK");
@@ -221,7 +236,9 @@ namespace xAPI4Unity.Editor
                 EditorUtility.DisplayDialog("Error", "Could not create folder:\n" + ex.Message, "OK");
             }
         }
-
+        /// <summary>
+        /// Renames the currently selected JSON file.
+        /// </summary>
         private void RenameDefinitionFile()
         {
             if (string.IsNullOrEmpty(_selectedJsonPath) || !File.Exists(_selectedJsonPath))
@@ -238,7 +255,7 @@ namespace xAPI4Unity.Editor
                 return;
             }
 
-            var newPath = Path.Combine(folder, newFileName);
+            var newPath = Path.Combine(folder!, newFileName);
 
             if (File.Exists(newPath))
             {
@@ -271,6 +288,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Draws the header that displays the current path or file selection.
+        /// </summary>
         private void DrawPathHeader()
         {
             var headerStyle = new GUIStyle(EditorStyles.helpBox)
@@ -312,11 +332,22 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.EndVertical();
         }
 
-        private void DrawDirectory(string path, int depth)
+        /// <summary>
+        /// Recursively draws folders and JSON files within the given path.
+        /// </summary>
+        /// <param name="path">The root directory to draw from.</param>
+        /// <param name="depth">The current recursion depth for indentation.</param>
+        /// <param name="ignoredContexts">List of contexts that need to be ignored.</param>
+        private void DrawDirectory(string path, int depth, string[] ignoredContexts = null)
         {
             var folderName = Path.GetFileName(path);
             if (string.IsNullOrEmpty(folderName))
                 folderName = path;
+
+            if (depth < 2 && ignoredContexts != null && ignoredContexts.Contains(folderName))
+            {
+                return;
+            }
 
             var sessionKey = $"XapiDefinitionsEditorWindow.Foldout.{path.GetHashCode()}";
             var isOpen = SessionState.GetBool(sessionKey, depth < 2);
@@ -370,14 +401,17 @@ namespace xAPI4Unity.Editor
 
                 EditorGUILayout.EndHorizontal();
             }
-
+            
             var dirs = Directory.GetDirectories(path);
             foreach (var dir in dirs)
             {
-                DrawDirectory(dir, depth + 1);
+                DrawDirectory(dir, depth + 1, ignoredContexts);
             }
         }
 
+        /// <summary>
+        /// Renames the currently selected directory.
+        /// </summary>
         private void RenameDirectory()
         {
             if (string.IsNullOrEmpty(_selectedDirectory) || !Directory.Exists(_selectedDirectory))
@@ -392,7 +426,7 @@ namespace xAPI4Unity.Editor
                 return;
             }
 
-            var newPath = Path.Combine(parent, newFolderName);
+            var newPath = Path.Combine(parent!, newFolderName);
             if (Directory.Exists(newPath))
             {
                 EditorUtility.DisplayDialog("Folder Exists", "A folder with this name already exists.", "OK");
@@ -412,7 +446,10 @@ namespace xAPI4Unity.Editor
                 EditorUtility.DisplayDialog("Error", "Could not rename folder:\n" + ex.Message, "OK");
             }
         }
-
+        /// <summary>
+        /// Deletes a JSON definition file and its meta file, if it exists.
+        /// </summary>
+        /// <param name="path">The full path to the file to delete.</param>
         private void DeleteDefinition(string path)
         {
             try
@@ -436,7 +473,9 @@ namespace xAPI4Unity.Editor
                 EditorUtility.DisplayDialog("Error", "Could not delete file:\n" + ex.Message, "OK");
             }
         }
-
+        /// <summary>
+        /// Creates a new JSON definition file at the selected location.
+        /// </summary>
         private void CreateNewDefinitionFile()
         {
             var fileNameWithoutExtension = ToCamelCase(Path.GetFileNameWithoutExtension(_newJsonFileName.Trim()));
@@ -459,7 +498,7 @@ namespace xAPI4Unity.Editor
             else
                 folder = Settings.localSource.path;
 
-            var filePath = Path.Combine(folder, fileName);
+            var filePath = Path.Combine(folder!, fileName);
             if (File.Exists(filePath))
             {
                 EditorUtility.DisplayDialog("File Exists", "A file with this name already exists.", "OK");
@@ -479,7 +518,11 @@ namespace xAPI4Unity.Editor
             LoadJson(filePath);
             _showRawJson = false;
         }
-
+        /// <summary>
+        /// Converts a string to camelCase using space, underscore, and hyphen as separators.
+        /// </summary>
+        /// <param name="input">The input string to convert.</param>
+        /// <returns>The camelCase version of the string.</returns>
         public static string ToCamelCase(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
@@ -499,7 +542,9 @@ namespace xAPI4Unity.Editor
 
             return string.Concat(words);
         }
-
+        /// <summary>
+        /// Updates the rename text field to reflect the currently selected file or folder.
+        /// </summary>
         private void UpdateRenameField()
         {
             var current = _selectedJsonPath ?? _selectedDirectory;
@@ -513,7 +558,11 @@ namespace xAPI4Unity.Editor
 
             _previousSelection = current;
         }
-
+        /// <summary>
+        /// Converts a PascalCase or CamelCase string to a lowercase, space-separated sentence.
+        /// </summary>
+        /// <param name="input">The string to convert.</param>
+        /// <returns>The transformed lowercase string.</returns>
         public static string ToLowercaseWords(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
@@ -524,7 +573,10 @@ namespace xAPI4Unity.Editor
             // Lowercase the entire result
             return split.ToLowerInvariant();
         }
-
+        /// <summary>
+        /// Loads a JSON file and updates the current editor state, including unsaved edits.
+        /// </summary>
+        /// <param name="path">The full path to the JSON file.</param>
         private void LoadJson(string path)
         {
             try
@@ -553,7 +605,10 @@ namespace xAPI4Unity.Editor
                 _editableRawJson = "";
             }
         }
-
+        /// <summary>
+        /// Saves the currently loaded JSON object to disk and refreshes the editor.
+        /// </summary>
+        /// <param name="path">The path of the JSON file to save.</param>
         private void SaveJson(string path)
         {
             try
@@ -571,7 +626,10 @@ namespace xAPI4Unity.Editor
                 Debug.LogError("Failed to save JSON: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Renders the structured JSON editor UI for localized name and description fields.
+        /// </summary>
+        /// <param name="path">The full path to the selected JSON file.</param>
         private void DrawJsonEditor(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -624,12 +682,14 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.BeginVertical(GUI.skin.box);
             var pretty = JsonConvert.SerializeObject(_jsonObj, Formatting.Indented);
             _previewScroll = EditorGUILayout.BeginScrollView(_previewScroll, GUILayout.Height(300));
-            EditorGUILayout.TextArea(pretty ?? "", GUILayout.ExpandHeight(true));
+            EditorGUILayout.TextArea(pretty, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
             EditorGUI.EndDisabledGroup();
         }
-
+        /// <summary>
+        /// Stores unsaved changes and selection state in EditorPrefs.
+        /// </summary>
         private void StoreState()
         {
             // Save unsaved changes
@@ -647,7 +707,9 @@ namespace xAPI4Unity.Editor
             EditorPrefs.SetString("XapiEditor.LastSelectedJson", _selectedJsonPath ?? "");
             EditorPrefs.SetString("XapiEditor.LastSelectedDir", _selectedDirectory ?? "");
         }
-        
+        /// <summary>
+        /// Unity callback called when the window is closed. Warns if unsaved changes exist.
+        /// </summary>
         private void OnDestroy()
         {
             StoreState();
@@ -674,7 +736,9 @@ namespace xAPI4Unity.Editor
                 _unsavedChanges.Clear();
             }
         }
-
+        /// <summary>
+        /// Restores the last session's state from EditorPrefs, including unsaved edits and selections.
+        /// </summary>
         private void RestoreState()
         {
             // Restore unsaved changes
@@ -710,12 +774,17 @@ namespace xAPI4Unity.Editor
 
             _previousSelection = _selectedJsonPath ?? _selectedDirectory;
         }
-        
+        /// <summary>
+        /// Unity callback called when the window is reloaded or enabled. Restores previous state.
+        /// </summary>
         private void OnEnable()
         {
             RestoreState();
         }
-
+        /// <summary>
+        /// Renders a language-specific JSON localization field (e.g. name, description).
+        /// </summary>
+        /// <param name="field">The JSON field to render and edit (e.g. "name").</param>
         private void DrawLocalization(string field)
         {
             EditorGUILayout.Space();
@@ -793,7 +862,10 @@ namespace xAPI4Unity.Editor
 
             EditorGUILayout.EndHorizontal();
         }
-
+        /// <summary>
+        /// Displays the raw JSON text editor with a scrollable view and Save/Close buttons.
+        /// </summary>
+        /// <param name="path">The full path to the JSON file being edited.</param>
         private void DrawRawJsonEditor(string path)
         {
             EditorGUILayout.LabelField("Raw JSON Editor", EditorStyles.boldLabel);

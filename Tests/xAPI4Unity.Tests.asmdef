@@ -1,0 +1,6 @@
+﻿{
+  "name": "xAPI4Unity.Tests",
+  "includePlatforms": ["Editor"],
+  "references": ["xAPI4Unity"],
+  "rootNamespace": "xAPI4Unity.Tests"
+}

@@ -1,0 +1,46 @@
+# CITATION.cff
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "OmiLAXR Ecosystem - xAPI4Unity"
+version: 2.2.1
+date-released: 2025-08-07
+license: "AGPL-3.0-or-later"
+
+authors:
+  - family-names: "Görzen"
+    given-names: "Sergej"
+    orcid: "https://orcid.org/0000-0003-3853-2435"
+    affiliation: "RWTH Aachen University"
+
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.16940051"
+
+repository-code: "https://gitlab.com/learntech-rwth/omilaxr-ecosystem/xapi-4-unity"
+url: "https://github.com/SGoerzen/xAPI4Unity"
+
+abstract: >
+  This project is part of the OmiLAXR Ecosystem and converts xAPI definitions from
+  https://gitlab.com/learntech-rwth/xapi repository into strictly-typed C# classes
+  that can be used to build IDE-supported high reliable xAPI statements.
+
+keywords:
+  - "xapi"
+  - "learning-analytics" 
+  - "virtual-reality"
+  - "augmented-reality"
+  - "xr"
+  - "unity"
+  - "unity package"
+
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Görzen"
+      given-names: "Sergej"
+      orcid: "https://orcid.org/0000-0000-0000-0000"
+      affiliation: "RWTH Aachen University"
+  title: "OmiLAXR Ecosystem - xAPI4Unity"
+  version: 2.2.1
+  year: 2025
+  url: "https://github.com/SGoerzen/xAPI4Unity"
