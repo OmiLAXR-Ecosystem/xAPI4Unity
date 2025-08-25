@@ -1,4 +1,9 @@
-﻿#if UNITY_EDITOR
+﻿/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +27,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         protected virtual string ModifiersToString(IReadOnlyList<Modifier> modifiers)
         {
             var str = string.Empty;
+            // If there are modifiers, map known ones to their string form and join with spaces
             if (modifiers != null)
             {
                 str = modifiers
@@ -62,9 +68,11 @@ namespace xAPI4Unity.Editor.Parser.Code
             if (properties == null) return propsStr;
             for (var i = 0; i < properties.Count; ++i)
             {
+                // Append current property
                 propsStr += PropertyToString(properties[i], indentDepth);
                 if (i < properties.Count - 1)
                 {
+                    // Add a newline between properties, but not after the last one
                     propsStr += Environment.NewLine;
                 }
             }
@@ -84,9 +92,11 @@ namespace xAPI4Unity.Editor.Parser.Code
             if (constructors == null) return constStr;
             for (var i = 0; i < constructors.Count; ++i)
             {
+                // Append constructor serialization
                 constStr += ConstructorToString(constructors[i], indentDepth);
                 if (i < constructors.Count - 1)
                 {
+                    // Separate constructors with newline
                     constStr += Environment.NewLine;
                 }
             }
@@ -106,9 +116,11 @@ namespace xAPI4Unity.Editor.Parser.Code
             if (properties == null) return getablePropsStr;
             for (var i = 0; i < properties.Count; ++i)
             {
+                // Append current get-only property
                 getablePropsStr += GetablePropertyToString(properties[i], indentDepth);
                 if (i < properties.Count - 1)
                 {
+                    // Add a newline between entries
                     getablePropsStr += Environment.NewLine;
                 }
             }
@@ -128,9 +140,11 @@ namespace xAPI4Unity.Editor.Parser.Code
             if (methods == null) return methodsStr;
             for (var i = 0; i < methods.Count; ++i)
             {
+                // Append method serialization
                 methodsStr += MethodToString(methods[i], indentDepth);
                 if (i < methods.Count - 1)
                 {
+                    // Separate methods with newline
                     methodsStr += Environment.NewLine;
                 }
             }
@@ -191,11 +205,11 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// </summary>
         /// <param name="args">Arguments</param>
         /// <param name="indentDepth">Indentation depth to use in serialization</param>
-        /// <param name="newLines">Should every argument be in its own line</param>
+        /// <param name="newLines">Should every argument be in its own line?</param>
         /// <param name="withName">Should the name be included in the arguments list (i.e. "name: value")</param>
         /// <returns>Serialized arguments string</returns>
         protected abstract string ArgumentsToString(IReadOnlyList<Argument> args, int indentDepth,
-            bool newLines = default, bool withName = default);
+            bool newLines = false, bool withName = false);
 
         /// <summary>
         /// Serializes a list of parameters
@@ -251,9 +265,11 @@ namespace xAPI4Unity.Editor.Parser.Code
         protected virtual string MethodBodyToString(MethodBody body, int indentDepth)
         {
             var str = string.Empty;
+            // Precompute indentation string for the body lines
             var indentBodyStr = CodeGenerator.Indent(indentDepth);
             if (body?.Statements == null) return str;
 
+            // For each non-null statement value, split by lines and indent each non-empty line
             return body.Statements.Where(statement => statement.Value != null)
                 .Aggregate(str, (current1, statement) 
                     => statement.Value.Split(Environment.NewLine.ToCharArray())

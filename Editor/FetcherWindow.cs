@@ -1,23 +1,37 @@
-﻿#if UNITY_EDITOR
+﻿/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using xAPI4Unity.Editor.Parser;
+using xAPI4Unity.Editor.Settings;
+using xAPI4Unity.Editor.Types;
 using Debug = UnityEngine.Debug;
 
 namespace xAPI4Unity.Editor
 {
+    /// <summary>
+    /// Editor window for managing xAPI definitions.
+    /// Provides functionality for downloading, transforming, and editing JSON definition files.
+    /// </summary>
     public class FetcherWindow : EditorWindow
     {
-        private static Settings Settings => Settings.Instance;
+        private static MainSettings mainSettings => MainSettings.Instance;
         private bool _isDownloading;
-        
         private Vector2 _scrollPosition = Vector2.zero;
 
         private static FetcherWindow Instance { get; set; }
         private LocalSourceView _localSourceView;
 
+        /// <summary>
+        /// Gets the local source view for managing local copies of the xAPI repository.
+        /// </summary>
         public LocalSourceView LocalSourceView
         {
             get
@@ -27,12 +41,16 @@ namespace xAPI4Unity.Editor
             }
         }
         
-        private FetcherWindow()
-        {
-        }
+        private FetcherWindow() { }
         
-        private static bool IsTransformationPossible => GitHelper.IsValidRepo(Settings.localSource.path);
+        /// <summary>
+        /// Determines whether JSON to C# transformation is possible.
+        /// </summary>
+        private static bool IsTransformationPossible => GitHelper.IsValidRepo(mainSettings.localSource.path);
         
+        /// <summary>
+        /// Opens the xAPI definitions setup window.
+        /// </summary>
         [MenuItem("xAPI4Unity / Setup xAPI definitions", priority = 0)]
         public static void ShowWindow()
         {
@@ -47,92 +65,97 @@ namespace xAPI4Unity.Editor
             Instance.Show(true);
         }
 
+        /// <summary>
+        /// Opens the xAPI registry web page in the default browser.
+        /// </summary>
         [MenuItem("xAPI4Unity / Open registry page")]
         private static void OpenXApiRegistryPage()
         {
             Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
         }
 
+        /// <summary>
+        /// Downloads the latest xAPI patch into the local folder.
+        /// </summary>
         [MenuItem("xAPI4Unity / Download newest 'xapi' patch into mine", priority = 100)]
         private static void UpdateXApiFolder()
         {
             var localSourceView = new LocalSourceView();
-            Settings.Instance.Load();
+            MainSettings.Instance.Load();
             localSourceView.UpdateXApiFolder();
         }
         
-        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 102)]
-        public static void QuickFetch()
-            => ExecuteFetcher();
+        /// <summary>
+        /// Quickly transforms JSON definitions into corresponding C# classes.
+        /// </summary>
+        [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 1000)]
+        public static void QuickFetch() => ExecuteFetcher();
         
         private void OnGUI()
         {
             CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
             
-            CustomGUI.Description("With this package you can download the needed xAPI repository definition files as json. Further it transforms the JSON files into C# code you can use in your project. If you want to create a new definition file, just create a new json file and this tool does the rest. If Watcher is enabled, everything will be updated automatically.");
-            
-            Settings.isOpeningOnStartup =
-                CustomGUI.YesNoPopup("Open at load or startup on demand", Settings.isOpeningOnStartup , newValue =>
+            // Add description and options
+            CustomGUI.Description("With this package you can download the needed xAPI repository definition files as JSON. Further, it transforms the JSON files into C# code you can use in your project. If Watcher is enabled, everything will be updated automatically."); 
+
+            // Toggle for auto-opening the window on startup
+            mainSettings.isOpeningOnStartup =
+                CustomGUI.YesNoPopup("Open at load or startup on demand", mainSettings.isOpeningOnStartup, newValue =>
                 {
-                    Settings.isOpeningOnStartup = newValue;
-                    Settings.Instance.Save();
+                    mainSettings.isOpeningOnStartup = newValue;
+                    MainSettings.Instance.Save();
                 });            
             CustomGUI.Description("(Recommended Yes) If no xAPI Registry exists it opens this window on startup automatically.");
 
+            // Scrollable region for GUI elements
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {
+                // Section 1: Manage xAPI JSON Definitions
                 CustomGUI.Region(() =>
                 {
                     CustomGUI.Subtitle("1) xAPI JSON Definitions Location");
-
                     CustomGUI.Description(
-                        "Here you can get a local copy of xAPI repository into your project. You can either work with a downloaded copy or use git instead. In case of git, you will ne write permissions in the git repository to at least a branch. Alternatively you can use your git fork repository.");
-
-                    LocalSourceView.Show(() =>
-                    {
-                        //ExecuteFetcher();
-                    });
+                        "Here you can get a local copy of the xAPI repository into your project. You can either work with a downloaded copy or use git instead.");
+                    LocalSourceView.Show(() => { });
                 });
                 
+                // Section 2: Transform JSON to C#
                 CustomGUI.Region(() =>
                 {
                     CustomGUI.Subtitle("2) Do transformation!");
-                    CustomGUI.Description("Now, you have a local copy of the xAPI registry repository. It contains several JSON files which define the xAPI registry.");
-                    CustomGUI.Description("The next step is to transform them into C# code which you can use in your project. We strongly recommend to enable the watcher.");
-                    CustomGUI.Description("This feature listen for changes in the JSON files automatically and trigger the transformation on each change automatically.");
-                    CustomGUI.Description("If you don't want to use the watcher, you can trigger the transformation manually by clicking on the button below.");
-                    Settings.fetcher.watcherEnabled =
-                        CustomGUI.YesNoPopup("Watcher Enabled", Settings.fetcher.watcherEnabled, newValue =>
+                    CustomGUI.Description("Use this section to transform JSON definitions into usable C# classes.");
+                    
+                    mainSettings.fetcher.watcherEnabled =
+                        CustomGUI.YesNoPopup("Watcher Enabled", mainSettings.fetcher.watcherEnabled, newValue =>
                         {
-                            Settings.fetcher.watcherEnabled = newValue;
-                            Settings.Instance.Save();
+                            mainSettings.fetcher.watcherEnabled = newValue;
+                            MainSettings.Instance.Save();
                         });
                     CustomGUI.Description("(Recommended Yes)");
-                    CustomGUI.Warning("If watcher is enabled, than the transformation is done each time when you change a JSON definition file.");
-                });
-                
-                CustomGUI.Horizontal.Wrap(() =>
-                {
-                    CustomGUI.Disabled(!IsTransformationPossible, () => {
-                        if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
-                                GUILayout.MaxWidth(1000), 
-                                GUILayout.Height(50), 
-                                GUILayout.ExpandWidth(true)))
-                        {
-                            GUI.FocusControl(null);
-                            ExecuteFetcher();
-                        }
+                    
+                    // Execute transformation via button
+                    CustomGUI.Horizontal.Wrap(() =>
+                    {
+                        CustomGUI.Disabled(!IsTransformationPossible, () => {
+                            if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
+                                    GUILayout.MaxWidth(1000), 
+                                    GUILayout.Height(50), 
+                                    GUILayout.ExpandWidth(true)))
+                            {
+                                GUI.FocusControl(null);
+                                ExecuteFetcher();
+                            }
+                        });
                     });
                 });
                 
+                // Section 3: Using xAPI Definitions
                 CustomGUI.Region(() =>
                 {
                     CustomGUI.Subtitle("3) Work with xAPI Definitions");
-                    CustomGUI.Description("Now, you have C# files you can use in your project to define xAPI statements. For creating new definitions or edit existing you have two options:");
-                    CustomGUI.Description("For searching fast for definitions you can also use our registry website.");
-                    CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de");
-                    CustomGUI.Description("1) Create a new JSON file in the 'definitions' folder structure of your local copy of the xAPI registry according the folder rules or you can edit existing files. This can be done with your IDE.");
-                    CustomGUI.Description("2) Use our 'xAPI Definitions Editor' window for create new definitions or for changing existing. You can reopen this window anytime on menu 'xAPI4Unity > Edit xAPI definitions'.");
+                    CustomGUI.Description("Use C# files generated from xAPI JSON definitions in your project.");
+                    CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de"); // Link to registry site for reference
+                    
                     if (CustomGUI.Button("Open xAPI Definitions Editor", GUILayout.MaxWidth(1000), GUILayout.Height(50),
                             GUILayout.ExpandWidth(true)))
                     {
@@ -140,28 +163,111 @@ namespace xAPI4Unity.Editor
                     }
                 });
             });
-      
         }
 
         private void OnDisable()
         {
-            Settings.Instance.Save();
+            // Save settings when the window is closed
+            MainSettings.Instance.Save();
         }
         
         /// <summary>
-        /// Triggers to run the CLI command to transforms JSON to C#.
+        /// Executes the transformation of JSON files into C# classes.
         /// </summary>
         private static void ExecuteFetcher()
         {
-            var definitionsPath = Path.Combine(Settings.localSource.path, "definitions");
+            var definitionsPath = Path.Combine(mainSettings.localSource.path, "definitions");
             if (!Directory.Exists(definitionsPath))
             {
-                Debug.LogError($"Cannot transform JSON files, because '{definitionsPath}' doesn't exist.");
+                Debug.LogError($"[xAPI4Unity] Cannot transform JSON files because '{definitionsPath}' doesn't exist.");
                 return;
             }
-            Generator.Generate(Settings.@namespace, definitionsPath);
+
+            var folder = Path.GetDirectoryName(definitionsPath);
+            var configFile = ReadConfigFile(folder);
+            var aliases = new Aliases();
+            var typeNameResolver = new TypeNameResolver(aliases);
+
+            var typesSchema = ReadTypesSchema(configFile, typeNameResolver);
+
+            if (typesSchema != null)
+            {
+                Debug.Log($"[xAPI4Unity] Parsed Types Schema for '{typesSchema.Count}' definitions..");
+            }
+
+            // Generate C# classes from JSON definitions
+            Generator.Generate(
+                mainSettings.@namespace, 
+                definitionsPath, 
+                configFile?.references, 
+                typesSchema, 
+                configFile?.ignoredContexts);
+
             AssetDatabase.Refresh();
         }
+
+        /// <summary>
+        /// Debugs and validates the configuration file.
+        /// </summary>
+        [MenuItem("xAPI4Unity / Validate '*.config.json'", priority = 201)]
+        private static void DebugTypes()
+        {
+            var configFile = ReadConfigFile(mainSettings.localSource.path);
+            if (configFile == null)
+            {
+                Debug.LogError("Failed to read config file.");
+                return;           
+            }
+
+            var aliases = new Aliases();
+            var typeNameResolver = new TypeNameResolver(aliases);
+            
+            var typesSchema = ReadTypesSchema(configFile, typeNameResolver);
+            if (typesSchema != null)
+            {
+                Debug.Log($"[xAPI4Unity] Parsed Types Schema for '{typesSchema.Count}' definitions..");
+            }
+            else
+            {
+                Debug.LogError("Type schema is null.");
+            }
+
+            foreach (var ts in typesSchema!)
+            {
+                var types = ts.Value.ResolveAll(typeNameResolver);
+                Debug.Log(ts.Key + ":" + string.Join(",", types.Select(t => t.GetTypeSyntax())));
+            }
+        }
+
+        /// <summary>
+        /// Reads and deserializes the configuration file from a given path.
+        /// </summary>
+        private static ConfigFile ReadConfigFile(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Debug.LogError($"[xAPI4Unity] Cannot find '{path}'.");
+                return null;
+            }
+
+            var folderName = path.Replace('\\', '/').Split('/').Last();
+            var typesFilename = folderName + ".config.json";
+            var typesFilepath = Path.Combine(Directory.GetParent(path)!.FullName, typesFilename);
+
+            if (!File.Exists(typesFilepath))
+            {
+                Debug.LogWarning($"[xAPI4Unity] Cannot find '{typesFilepath}'. Default types will be applied.");
+                return null;
+            }
+
+            return ConfigFile.Read(typesFilepath);
+        }
+
+        /// <summary>
+        /// Parses the type schema from a configuration file.
+        /// </summary>
+        private static TypeSchema ReadTypesSchema(ConfigFile configFile, TypeNameResolver resolver)
+            => configFile == null ? null : TypeSchema.Parse(configFile?.Types, validateResolution: true, resolver);
 
         private static string SafePath(string path) => $"\"{path}\"";
 
@@ -171,7 +277,11 @@ namespace xAPI4Unity.Editor
         private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
             => Debug.Log(e.Data);
 
-        protected void OnEnable() => Settings.Instance.Load();
+        protected void OnEnable()
+        {
+            // Load settings when the window is enabled
+            MainSettings.Instance.Load();
+        }
     }
 }
 #endif
