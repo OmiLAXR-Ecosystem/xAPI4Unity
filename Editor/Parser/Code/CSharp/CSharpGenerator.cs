@@ -144,7 +144,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             {
                 if (t.IsRegexExpr)
                 {
-                    var fieldName = "_regex_" + Math.Abs(t.GetHashCode());
+                    var fieldName = "Regex_" + Math.Abs(t.GetHashCode());
 
                     // Clean pattern (remove surrounding slashes if present)
                     var pattern = t.Definition;
@@ -155,7 +155,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
                     var escapedPattern = pattern.Replace("\\", "\\\\").Replace("\"", "\\\"");
                     
                     // Create a compiled regex and add it as a static, readonly field on the owning class
-                    var regexCode = $"new System.Text.RegularExpressions.Regex(\"{escapedPattern}\", System.Text.RegularExpressions.RegexOptions.Compiled)";
+                    var regexCode = $"new System.Text.RegularExpressions.Regex(@\"{escapedPattern}\", System.Text.RegularExpressions.RegexOptions.Compiled)";
                     var regexProperty = new Property(fieldName, "System.Text.RegularExpressions.Regex")
                         .AddModifier(Modifier.Private)
                         .AddModifier(Modifier.Static)
@@ -172,12 +172,30 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
                 else if (t is ResolvedRange range)
                 {
                     // Build inclusive/exclusive operators and validate bounds
-                    var minOp = range.MinInclusive ? "<" : "<=";
-                    var maxOp = range.MaxInclusive ? ">" : ">=";
-                    var expr = $"if (value {minOp} {range.RawMin} || value {maxOp} {range.RawMax}) " +
-                               "throw new System.ArgumentOutOfRangeException(\"value\");";
-                    
-                    methodBody.AddStatement(new Statement(expr));           
+                    var conditions = new List<string>();
+
+                    // Check if RawMin is defined (not null or "_")
+                    if (!string.IsNullOrEmpty(range.RawMin) && range.RawMin != "_")
+                    {
+                        var minOp = range.MinInclusive ? "<" : "<=";
+                        conditions.Add($"value {minOp} {range.RawMin}");
+                    }
+
+                    // Check if RawMax is defined (not null or "_")
+                    if (!string.IsNullOrEmpty(range.RawMax) && range.RawMax != "_")
+                    {
+                        var maxOp = range.MaxInclusive ? ">" : ">=";
+                        conditions.Add($"value {maxOp} {range.RawMax}");
+                    }
+
+                    // If at least one bound is present, emit the validation statement
+                    if (conditions.Count > 0)
+                    {
+                        var expr = $"if ({string.Join(" || ", conditions)}) " +
+                                   "throw new System.ArgumentOutOfRangeException(\"value\");";
+
+                        methodBody.AddStatement(new Statement(expr));
+                    }
                 }
             }
             
