@@ -91,7 +91,7 @@ namespace xAPI4Unity.Editor.Types
             // Handle range syntax (e.g., "int[1,10]")
             if (IsRangeSyntax(CoreName))
             {
-                typeNameResolver.TryParseRange(CoreName, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
+                ResolvedRange.TryParseRange(CoreName, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
                 elementType = new ResolvedRange(typeNameResolver.ResolveType(type), min, max, minInclusive, maxInclusive, CoreName);
             }
             // Handle tuple syntax (e.g., "(int, string)")

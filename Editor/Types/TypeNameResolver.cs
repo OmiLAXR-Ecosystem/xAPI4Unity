@@ -21,46 +21,6 @@ namespace xAPI4Unity.Editor.Types
         {
             Aliases = aliases;
         }
-        /// <summary>
-        /// Attempts to parse a range definition from the input string in the form of type[min,max].
-        /// </summary>
-        /// <param name="input">The input string to parse.</param>
-        /// <param name="type">Extracted type name.</param>
-        /// <param name="min">Minimum range value.</param>
-        /// <param name="max">Maximum range value.</param>
-        /// <param name="minInclusive">Indicates if the minimum value is inclusive.</param>
-        /// <param name="maxInclusive">Indicates if the maximum value is inclusive.</param>
-        /// <returns>True if parsing was successful, otherwise false.</returns>
-        public bool TryParseRange(string input, out string type, out string min, out string max, out bool minInclusive, out bool maxInclusive)
-        {
-            type = min = max = null;
-            minInclusive = maxInclusive = false;
-
-            if (string.IsNullOrWhiteSpace(input))
-                return false;
-
-            var open = input.IndexOfAny(new[] { '[', '(' });
-            var close = input.LastIndexOfAny(new[] { ']', ')' });
-
-            if (open <= 0 || close <= open) return false;
-
-            // Extract the type name before the range brackets.
-            type = input.Substring(0, open).Trim();
-
-            var rangeContent = input.Substring(open + 1, close - open - 1);
-            var parts = rangeContent.Split(',');
-
-            if (parts.Length != 2)
-                return false;
-
-            min = parts[0].Trim();
-            max = parts[1].Trim();
-
-            minInclusive = input[open] == '[';
-            maxInclusive = input[close] == ']';
-
-            return true;
-        }
         
         /// <summary>
         /// Resolves an alias or fully qualified type name to the corresponding type. 
@@ -80,7 +40,7 @@ namespace xAPI4Unity.Editor.Types
             // Handle range definitions such as "int[1,10]" or "double(0.1,1.0)"
             if (!name.StartsWith("(") && !name.StartsWith("[") && name.EndsWith(")") || name.EndsWith("]"))
             {
-                TryParseRange(name, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
+                ResolvedRange.TryParseRange(name, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
                 return new ResolvedRange(ResolveType(type), min, max, minInclusive, maxInclusive, name);
             }
 

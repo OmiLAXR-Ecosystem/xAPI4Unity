@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.2.1] - 2025-08-25
+
+### Added
+- Support for strict typing of xAPI extensions via `{def_folder}.config.json` placed alongside the definition folder.
+- Support for custom types based on any available Unity C# assembly, including user-defined serializable types.
+- Support for predefined type aliases such as `str` for `string`, `vec3` for `UnityEngine.Vector3`, and more.
+- Support for nullable types using the `?` suffix (e.g., `float?`).
+- Pattern matching using regular expressions (e.g., for ISO 8601 duration strings like `blinkDuration`).
+- Range validation for numeric types using syntax like `int[0, 3]` or `float(0, 5]`.
+- Support for tuples (e.g., `(vec3, vec3, vec3)` for a triangle) and jagged arrays (e.g., `int[][]`).
+- Transformation configuration option `ignoredContexts` to exclude specific contexts from xAPI processing.
+
+### Changed
+- `fixationDuration` and `blinkDuration` are now mapped to `OmiLAXR.Types.Duration` and validated using ISO 8601 regex patterns.
+- If no explicit type is defined for an extension path, it now defaults to `object`.
+
+### Fixed
+- Improved general user experience (UX).
+- Added code documentation, citation metadata, and structural improvements.
+
+---
+
 ## [2.2.0] - 2025-06-06
 
 ### Added
