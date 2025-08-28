@@ -37,6 +37,8 @@ namespace xAPI4Unity.Editor
         /// </summary>
         public string[] ignoredContexts = Array.Empty<string>();
 
+        public Dictionary<string, string> Variables = new Dictionary<string, string>();
+
         /// <summary>
         /// Reads and deserializes a ConfigFile instance from the specified path.
         /// </summary>

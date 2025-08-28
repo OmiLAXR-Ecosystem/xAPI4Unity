@@ -42,7 +42,7 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         /// </summary>
         public IReadOnlyList<Method> Methods => _methods.AsReadOnly();
 
-        public Dictionary<string, string> CachedRegexFields = new Dictionary<string, string>();
+        public readonly Dictionary<string, string> CachedRegexFields = new Dictionary<string, string>();
         
         /// <summary>
         /// Initializes a class node with no name/comment.
