@@ -117,6 +117,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             return new List<Import>();
         }
 
+        
         /// <summary>
         /// Builds the method body that adds a new extension instance to the owning collection,
         /// optionally emitting validation logic based on a strict resolved type.
@@ -144,29 +145,35 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             {
                 if (t.IsRegexExpr)
                 {
-                    var fieldName = "Regex_" + Math.Abs(t.GetHashCode());
-
-                    // Clean pattern (remove surrounding slashes if present)
                     var pattern = t.Definition;
-                    if (pattern.StartsWith("/") && pattern.EndsWith("/") && pattern.Length > 1)
-                        pattern = pattern.Substring(1, pattern.Length - 2);
+                    var fieldName = "";
+                    if (owner.CachedRegexFields.ContainsKey(pattern))
+                    {
+                        fieldName = owner.CachedRegexFields[pattern];
+                    }
+                    else
+                    {
+                        fieldName = "Regex_" + Math.Abs(t.GetHashCode());
+                        owner.CachedRegexFields[pattern] = fieldName;
+                        
+                        // Clean pattern (remove surrounding slashes if present)
+                        if (pattern.StartsWith("/") && pattern.EndsWith("/") && pattern.Length > 1)
+                            pattern = pattern.Substring(1, pattern.Length - 2);
 
-                    // Escape for use inside a C# string literal
-                    var escapedPattern = pattern.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                        // Escape for use inside a C# string literal
+                        // Create a compiled regex and add it as a static, readonly field on the owning class
+                        var regexCode = $"new System.Text.RegularExpressions.Regex(@\"{pattern}\", System.Text.RegularExpressions.RegexOptions.Compiled)";
+                        var regexProperty = new Property(fieldName, "System.Text.RegularExpressions.Regex")
+                            .AddModifier(Modifier.Private)
+                            .AddModifier(Modifier.Static)
+                            .AddModifier(Modifier.ReadOnly);
+
+                        regexProperty.Initializer = regexCode;
+                        owner.AddProperty(regexProperty);
+                    }
                     
-                    // Create a compiled regex and add it as a static, readonly field on the owning class
-                    var regexCode = $"new System.Text.RegularExpressions.Regex(@\"{escapedPattern}\", System.Text.RegularExpressions.RegexOptions.Compiled)";
-                    var regexProperty = new Property(fieldName, "System.Text.RegularExpressions.Regex")
-                        .AddModifier(Modifier.Private)
-                        .AddModifier(Modifier.Static)
-                        .AddModifier(Modifier.ReadOnly);
-
-                    regexProperty.Initializer = regexCode;
-
-                    owner.AddProperty(regexProperty);
-
                     // Validate the incoming 'value' using the cached regex
-                    var expr = $"if (!{fieldName}.IsMatch(value)) throw new System.ArgumentException(\"value does not match pattern\", \"value\");";
+                    var expr = "if (!" + fieldName + ".IsMatch(value)) throw new System.ArgumentException($\"'{value}' does not match pattern '{" + fieldName + "}'.\", \"value\");";
                     methodBody.AddStatement(new Statement(expr));
                 }
                 else if (t is ResolvedRange range)

@@ -171,7 +171,9 @@ namespace xAPI4Unity.Editor
             EditorGUILayout.BeginHorizontal();
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Width(position.width / 2f));
-            var configFile = ConfigFile.Read(rootFolder + ".config.json");
+
+            var configFilePath = rootFolder + ".config.json";
+            var configFile = File.Exists(configFilePath) ? ConfigFile.Read(configFilePath) : null;
             DrawDirectory(rootFolder + "/definitions", 0, configFile?.ignoredContexts);
             EditorGUILayout.EndScrollView();
 

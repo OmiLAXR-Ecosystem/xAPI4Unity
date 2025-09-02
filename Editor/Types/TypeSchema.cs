@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace xAPI4Unity.Editor.Types
@@ -41,6 +42,11 @@ namespace xAPI4Unity.Editor.Types
             return entry.ResolveAll(_resolver).ToArray();
         }
 
+        
+        private static readonly Regex PlaceholderRegex = new(
+            @"(?<!\\)\$\{\s*(?<id>[A-Za-z_][A-Za-z0-9_.-]*)\s*\}",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        
         /// <summary>
         /// Parses a schema from a dictionary of type mappings.
         /// Throws exceptions on validation or parsing errors.
@@ -53,23 +59,28 @@ namespace xAPI4Unity.Editor.Types
         public static TypeSchema Parse(
             IDictionary<string, string> input,
             bool validateResolution = true,
-            TypeNameResolver resolver = null)
+            TypeNameResolver resolver = null,
+            IReadOnlyDictionary<string, string> variables = null,
+            bool strictVariables = true)
         {
             if (input == null) 
                 throw new ArgumentNullException("input");
 
             var result = new TypeSchema(resolver);
-
+            
             foreach (var kv in input)
             {
                 var key = kv.Key?.Trim();
                 var expr = kv.Value?.Trim();
-
+                
                 if (string.IsNullOrWhiteSpace(key))
                     Debug.LogError($"Schema key in {nameof(input)} must not be empty.");
                 if (string.IsNullOrWhiteSpace(expr))
                     Debug.LogError($"Schema for '{key}' in {nameof(input)} is empty.");
 
+                // >>> expand ${...} here
+                expr = ExpandVariables(expr!, variables, strictVariables);
+                
                 var set = TypeExpressionSet.Parse(expr);
 
                 if (validateResolution)
@@ -86,6 +97,67 @@ namespace xAPI4Unity.Editor.Types
 
             return result;
         }
+        
+        private static string ExpandVariables(
+            string expr,
+            IReadOnlyDictionary<string, string>? variables,
+            bool strict = true,
+            int maxPasses = 8)
+        {
+            if (string.IsNullOrEmpty(expr) || variables is null || variables.Count == 0)
+                return expr ?? string.Empty;
+
+            var current = expr;
+            var pass = 0;
+            bool changed;
+
+            do
+            {
+                pass++;
+                changed = false;
+
+                current = PlaceholderRegex.Replace(current, m =>
+                {
+                    var id = m.Groups["id"].Value;
+                    if (variables.TryGetValue(id, out var val))
+                    {
+                        changed = true;
+                        return val ?? string.Empty;
+                    }
+                    if (strict)
+                        UnityEngine.Debug.LogError($"Unknown variable '{id}' in: {expr}");
+                    return m.Value; // leave unknown placeholders as-is
+                });
+            } while (changed && pass < maxPasses);
+
+            if (pass >= maxPasses)
+                UnityEngine.Debug.LogError($"Variable expansion likely cyclic/too deep: {expr}");
+
+            // Unescape: \${name}  -> ${name}
+            return current.Replace(@"\${", "${");
+        }
+        
+        public static Dictionary<string, string> ExpandAll(
+            IDictionary<string, string> input,
+            IReadOnlyDictionary<string, string>? variables,
+            bool strictVariables = true)
+        {
+            var output = new Dictionary<string, string>(input.Count, StringComparer.Ordinal);
+            foreach (var kv in input)
+            {
+                var key = kv.Key?.Trim();
+                var expr = kv.Value?.Trim();
+
+                if (string.IsNullOrWhiteSpace(key))
+                    UnityEngine.Debug.LogError($"Schema key must not be empty.");
+                if (string.IsNullOrWhiteSpace(expr))
+                    UnityEngine.Debug.LogError($"Schema for '{key}' is empty.");
+
+                output[key!] = ExpandVariables(expr!, variables, strictVariables);
+            }
+            return output;
+        }
+
 
         /// <summary>
         /// Attempts to parse a schema, collecting errors instead of throwing exceptions.
