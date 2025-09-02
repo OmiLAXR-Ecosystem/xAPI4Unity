@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.2] - 2025-08-25
+
+### Added
+- Support for variables in `xapi.config.json` to allow reuse of patterns or type definitions across multiple entries.
+
+### Changed
+- Cached and reused pre-compiled regular expressions instead of instantiating identical patterns multiple times to improve performance.
+
+---
+
 ## [2.2.1] - 2025-08-25
 
 ### Added
