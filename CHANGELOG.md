@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.3] - 2025-10-13
+
+### Added
+- Unterstützung für Arrays als Werte in `xAPI.Extensions`.
+
+### Changed
+- Kompatibilität mit Unity 2020 hergestellt.
+
+---
+
 ## [2.2.2] - 2025-08-25
 
 ### Added

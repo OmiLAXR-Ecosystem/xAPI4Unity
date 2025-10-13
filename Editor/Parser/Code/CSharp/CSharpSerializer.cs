@@ -122,9 +122,14 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
         {
             string propStr;
 
+            var propName = property!.Name;
+            
+            if (propName.Contains('-'))
+                propName = propName.Replace('-', '_');
+            
             if (!string.IsNullOrWhiteSpace(property?.Initializer))
             {
-                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {property.Name} = {property.Initializer};{Environment.NewLine}";
+                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {propName} = {property.Initializer};{Environment.NewLine}";
             }
             else
             {
@@ -135,7 +140,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                     argsStr = $"{Environment.NewLine}{CodeGenerator.Indent(indentDepth + 1)}{argsStr}";
                 }
 
-                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property?.Modifiers)}{property?.Type} {property?.Name} = " +
+                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {propName} = " +
                           $"new {property?.Type}({argsStr});{Environment.NewLine}";
             }
 
