@@ -4,13 +4,14 @@
 * This file is part of xAPI4Unity.
 */
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace xAPI.Registry
 {
     /// <summary>
-    /// Version: 2.2.1
+    /// Version: 2.2.3
     /// </summary>
     public class xAPI_Extensions : List<KeyValuePair<xAPI_Extension, object>>
     {
@@ -110,13 +111,56 @@ namespace xAPI.Registry
                 {
                     sb.Append(",");
                 }
-                sb.Append($"\"{kvp.Key.Key}\":\"{kvp.Value}\"");
+                sb.Append($"\"{kvp.Key.Key}\": {DisplayValue(kvp.Value)}");
                 first = false;
             }
 
             sb.Append("}");
 
             return sb.ToString();
+        }
+
+        private static string DisplayValue(object? v)
+        {
+            if (v == null)
+                return "null";
+
+            if (v is string s)
+                return $"\"{s}\"";
+
+            if (v is IDictionary dict)
+                return ExpandDictionary(dict);
+
+            if (v is IEnumerable e && !(v is string))
+                return ExpandArray(e);
+
+            return v.ToString();
+        }
+        
+        private static string ExpandArray(IEnumerable array)
+        {
+            var items = new List<string>();
+
+            foreach (var item in array)
+            {
+                items.Add(DisplayValue(item));
+            }
+
+            return "[" + string.Join(", ", items) + "]";
+        }
+
+        private static string ExpandDictionary(IDictionary dict)
+        {
+            var items = new List<string>();
+
+            foreach (DictionaryEntry entry in dict)
+            {
+                var key = DisplayValue(entry.Key);
+                var value = DisplayValue(entry.Value);
+                items.Add($"{key}: {value}");
+            }
+
+            return "{" + string.Join(", ", items) + "}";
         }
 
         public override string ToString()

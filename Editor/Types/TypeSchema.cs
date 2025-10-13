@@ -43,7 +43,7 @@ namespace xAPI4Unity.Editor.Types
         }
 
         
-        private static readonly Regex PlaceholderRegex = new(
+        private static readonly Regex PlaceholderRegex = new Regex(
             @"(?<!\\)\$\{\s*(?<id>[A-Za-z_][A-Za-z0-9_.-]*)\s*\}",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
         
