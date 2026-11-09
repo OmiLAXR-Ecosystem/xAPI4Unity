@@ -54,5 +54,50 @@ namespace xAPI4Unity.Editor.Settings
         /// </summary>
         /// <returns>A unique branch name string.</returns>
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
+
+        // Repository the definitions came from before 2.2.4, as SSH and HTTPS URL without '.git'
+        private static readonly string[] LegacyRepoUrls =
+        {
+            "git@gitlab.com:learntech-rwth/xapi",
+            "https://gitlab.com/learntech-rwth/xapi"
+        };
+        private const string LegacyRepoBranch = "master";
+
+        /// <summary>
+        /// Replaces the GitLab repository and its 'master' branch, saved by versions before 2.2.4, with the GitHub defaults.
+        /// Other URLs, such as forks, are kept.
+        /// </summary>
+        /// <returns>True if a value changed.</returns>
+        internal bool MigrateLegacyRepository()
+        {
+            var changed = false;
+            if (IsLegacyRepoUrl(repoUrl))
+            {
+                repoUrl = DefaultValues.RepoUrl;
+                changed = true;
+            }
+            if (IsLegacyRepoUrl(repoDownloadUrl))
+            {
+                repoDownloadUrl = DefaultValues.RepoDownloadUrl;
+                changed = true;
+            }
+            // The GitHub repository has no 'master' branch
+            if (repoDownloadUrl == DefaultValues.RepoDownloadUrl && repoBranch == LegacyRepoBranch)
+            {
+                repoBranch = DefaultValues.RepoBranch;
+                changed = true;
+            }
+            return changed;
+        }
+
+        private static bool IsLegacyRepoUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                return false;
+            var normalized = url.Trim().TrimEnd('/');
+            if (normalized.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+                normalized = normalized.Substring(0, normalized.Length - 4);
+            return Array.Exists(LegacyRepoUrls, legacy => string.Equals(normalized, legacy, StringComparison.OrdinalIgnoreCase));
+        }
     }
 }
