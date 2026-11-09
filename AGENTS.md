@@ -23,7 +23,7 @@ How to work in `com.rwth.unity.omilaxr.xapi4unity`. Architecture and commands ar
 - SemVer: patch for fixes, minor for new backward-compatible API, major for breaking changes.
 - Update every place that holds the version, in one commit:
   - `package.json`
-  - `CITATION.cff` (`version`, `date-released`, both blocks; currently behind at 2.2.1)
+  - `CITATION.cff` (`version`, `date-released`, both blocks)
   - `CHANGELOG.md`
 - The release date in `CITATION.cff` and the CHANGELOG heading is the day of the release. Update it when tagging.
 
