@@ -10,6 +10,7 @@
 - The wizard replaces the setup window. The menu item `xAPI4Unity / Setup xAPI definitions` is gone, and `FetcherWindow.ShowWindow()` opens the wizard. A setup window restored from a saved editor layout only links to the wizard.
 - On editor start, the wizard opens when the definitions folder or the generated registry is missing. A missing `XAPI_REGISTRY_EXISTS` define alone no longer opens it, because OmiLAXR.xAPI sets the define. Nothing opens in batch mode.
 - `CustomGUI` uses colors that are readable in the light editor skin too, and shows errors and warnings as help boxes.
+- `CodeGenerator.XAPI_BASE_URI` is the new xAPI Registry base `https://omilaxr-ecosystem.github.io/xapi/` instead of `https://xapi.elearn.rwth-aachen.de/`, so the `URI:` comments in a generated registry show the new IRIs. The IRIs in statements come from `xApiRegistry.uri` in OmiLAXR.xAPI.
 
 ### Deprecated
 - `LocalSourceView.Show(Action)`: the wizard replaces this view. It will be removed in the next major version.
