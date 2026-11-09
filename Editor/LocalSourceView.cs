@@ -361,6 +361,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Renders the LocalSourceView interface and performs the respective actions based on user interactions.
         /// </summary>
+        [Obsolete("The xAPI4Unity wizard (XapiWizardWindow) replaces this view. It will be removed in the next major version.")]
         public void Show(Action callback)
         {
             LocalPathView();

@@ -3,9 +3,12 @@
 * Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
 * This file is part of xAPI4Unity.
 */
+using System.IO;
 using UnityEditor;
 using System.Linq;
+using UnityEngine;
 using xAPI4Unity.Editor.Settings;
+using xAPI4Unity.Editor.Wizard;
 
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.Build; 
@@ -44,10 +47,14 @@ namespace xAPI4Unity.Editor
         
         /// <summary>
         /// Static constructor runs automatically when Unity Editor loads.
-        /// Checks configuration and optionally opens the Fetcher Window if necessary.
+        /// Checks configuration and optionally opens the wizard if necessary.
         /// </summary>
         static Startup()
         {
+            // Windows cannot open in batch mode
+            if (Application.isBatchMode)
+                return;
+
             // Load main settings
             var settings = MainSettings.Instance;
 
@@ -58,11 +65,12 @@ namespace xAPI4Unity.Editor
             // Delay the execution until the Editor is ready
             EditorApplication.delayCall += () =>
             {
-                // Check if the "XAPI_REGISTRY_EXISTS" define exists or if the xAPI definitions folder is missing
-                if (!DefineExist("XAPI_REGISTRY_EXISTS") || !GitHelper.HasDefinitionsFolder(settings.localSource.path))
+                // XAPI_REGISTRY_EXISTS is not checked here: OmiLAXR.xAPI sets it once the registry exists
+                var hasRegistry = Directory.Exists(Path.Combine(Application.dataPath, settings.@namespace));
+                if (!hasRegistry || !GitHelper.HasDefinitionsFolder(settings.localSource.path))
                 {
-                    // Open the Fetcher Window to guide the user
-                    FetcherWindow.ShowWindow();
+                    // Open the wizard to guide the user
+                    XapiWizardWindow.Open();
                 }
             };
         }

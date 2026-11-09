@@ -2,21 +2,23 @@
 
 ## [2.2.4] - 2026-11-09
 
+### Added
+- xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard. It guides through five steps: Welcome, Source (local path and how to get the definitions: patch into `Assets`, download a zip, or git clone/submodule with "Pull latest changes"), Generate (status checks, "Regenerate on changes", generate and validate), Use (definitions editor, merge conflicts, `.unitypackage` export, registry website) and Done (summary and links). It shows the OmiLAXR logo if the core package is installed.
+
 ### Changed
 - The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Projects that already saved their source settings keep the GitLab URL and `master` until they change them in the settings.
-- Reworked the setup window (`xAPI4Unity / Setup xAPI definitions`): a status list at the top shows whether the JSON definitions, the generated registry and `XAPI_REGISTRY_EXISTS` exist, the three source options are real tabs with short names, repository URL and branch sit in one foldout instead of being repeated per option, and settings use toggles instead of Yes/No dropdowns. "Open on startup" moved into a "Settings" foldout at the bottom. The window's minimum size dropped from 1000×800 to 480×500.
-- The "Git clone" option shows "Pull latest changes" once a clone exists and no longer shows a branch field that cloning ignored. The "Patch into Assets" option has a "Resolve conflicts" button that opens the conflict resolver.
-- Messages, titles, status marks and links in the setup window are readable in the light editor skin too. Errors and warnings are shown as help boxes.
+- The wizard replaces the setup window. The menu item `xAPI4Unity / Setup xAPI definitions` is gone, and `FetcherWindow.ShowWindow()` opens the wizard. A setup window restored from a saved editor layout only links to the wizard.
+- On editor start, the wizard opens when the definitions folder or the generated registry is missing. A missing `XAPI_REGISTRY_EXISTS` define alone no longer opens it, because OmiLAXR.xAPI sets the define. Nothing opens in batch mode.
+- `CustomGUI` uses colors that are readable in the light editor skin too, and shows errors and warnings as help boxes.
+
+### Deprecated
+- `LocalSourceView.Show(Action)`: the wizard replaces this view. It will be removed in the next major version.
 
 ### Fixed
 - Downloading definitions from a GitHub repository uses GitHub's archive URL (`/archive/refs/heads/<branch>.zip`). Before, `LocalSourceSettings.GetDownloadUrl()` always built a GitLab URL. A trailing `/` in the download URL is ignored.
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
-- The setup window no longer logs an error on every repaint while the "Clone" option is open and no clone exists. The message also no longer points to the non-existent `xAPI4Unity > Settings` menu.
 - `xAPI4Unity / Download newest 'xapi' patch into mine` runs `git pull` in the local copy when the "Clone" option is selected. Before, it only logged "Invalid Option 3".
-- "Open folder" in the setup window works for every existing local path, not only for clones in the default location, and opens the folder on macOS too (`EditorUtility.RevealInFinder` instead of `Process.Start`).
-- Switching the source option in the setup window saves the choice right away.
 - `CustomGUI.Popup` with an index selection returned the wrong index.
-- Cancelling "Browse" for the local path no longer resets the path to the default clone location.
 
 ---
 
