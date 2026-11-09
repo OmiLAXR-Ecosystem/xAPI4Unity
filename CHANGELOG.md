@@ -8,6 +8,7 @@
 ### Fixed
 - Downloading definitions from a GitHub repository uses GitHub's archive URL (`/archive/refs/heads/<branch>.zip`). Before, `LocalSourceSettings.GetDownloadUrl()` always built a GitLab URL. A trailing `/` in the download URL is ignored.
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
+- The setup window no longer logs an error on every repaint while the "Clone" option is open and no clone exists. The message also no longer points to the non-existent `xAPI4Unity > Settings` menu.
 
 ---
 

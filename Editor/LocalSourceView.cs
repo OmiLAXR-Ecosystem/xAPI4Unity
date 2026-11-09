@@ -369,10 +369,8 @@ namespace xAPI4Unity.Editor
 
                             if (!_git.IsCloned)
                             {
-                                const string errorMessage =
-                                    "You need a local copy of the xAPI registry. Browse in `xAPI4Unity > Settings` for it or clone using the 'Clone repository' option.";
-                                CustomGUI.Error(errorMessage);
-                                Debug.LogError(errorMessage);
+                                CustomGUI.Error(
+                                    "You need a local copy of the xAPI registry. Browse for it in 'Path of local copy' or clone the repository.");
                             }
                         });
                     });
