@@ -37,7 +37,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Opens the download URL in the default browser, saving the download to the user's downloads folder.
         /// </summary>
-        private void DownloadToDownloads()
+        internal void DownloadToDownloads()
         {
             Application.OpenURL(_settings.GetDownloadUrl());
         }
@@ -97,7 +97,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Downloads and merges the xAPI repository into the "Assets/xapi" folder.
         /// </summary>
-        private void DownloadToAssetsAndPatch()
+        internal void DownloadToAssetsAndPatch()
         {
             var filename = _settings.DownloadFilename;
             var destPath = Path.Combine(Application.dataPath, "xapi");
@@ -265,18 +265,73 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Pulls the latest changes into the git clone at the local path.
         /// </summary>
-        private void PullClone()
+        internal void PullClone()
         {
             // A clone has a .git folder, a submodule has a .git file
             var gitPath = Path.Combine(_settings.path, ".git");
             if (!Directory.Exists(gitPath) && !File.Exists(gitPath))
             {
-                Debug.LogError($"[xAPI4Unity] '{_settings.path}' is not a git clone. Clone it first or use Option 1 or 2.");
+                Debug.LogError($"[xAPI4Unity] '{_settings.path}' is not a git clone. Clone it first or use 'Patch into Assets' or 'Download zip'.");
                 return;
             }
 
             _git.Pull(_settings.path);
             AssetDatabase.Refresh();
+        }
+
+        /// <summary>
+        /// Whether the Unity project is a git repository, so the definitions are added as a submodule.
+        /// </summary>
+        internal static bool ProjectHasGit
+        {
+            get
+            {
+                var parent = Directory.GetParent(Application.dataPath);
+                return parent != null && Directory.Exists(Path.Combine(parent.ToString(), ".git"));
+            }
+        }
+
+        /// <summary>
+        /// Whether the repository is already cloned next to the local path.
+        /// </summary>
+        internal bool IsCloned
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_settings.path))
+                    return false;
+                SyncGit();
+                return _git.IsCloned;
+            }
+        }
+
+        /// <summary>
+        /// Whether a git operation is running.
+        /// </summary>
+        internal bool IsBusy => _git.IsBusy;
+
+        /// <summary>
+        /// Clones the repository next to the local path, as a submodule if the project is a git repository,
+        /// and points the local path to the clone.
+        /// </summary>
+        internal void CloneRepository()
+        {
+            SyncGit();
+            if (ProjectHasGit)
+                _git.SubmoduleClone(_settings.GetNewBranchName());
+            else
+                _git.Clone(_settings.GetNewBranchName());
+            _settings.path = _git.RepoDirectory;
+            MainSettings.Instance.Save();
+        }
+
+        /// <summary>
+        /// Points the git helper to the repository URL and the parent folder of the local path.
+        /// </summary>
+        private void SyncGit()
+        {
+            _git.Url = _settings.repoUrl;
+            _git.Directory = Path.GetDirectoryName(_settings.path);
         }
 
         /// <summary>
@@ -354,33 +409,23 @@ namespace xAPI4Unity.Editor
                 }),
                 new CustomGUI.Tab("Git clone", () =>
                 {
-                    _git.Url = _settings.repoUrl;
-                    _git.Directory = Path.GetDirectoryName(_settings.path);
-
-                    var parent = Directory.GetParent(Application.dataPath);
-                    var projectHasGit = parent != null && Directory.Exists(Path.Combine(parent.ToString(), ".git"));
-
-                    CustomGUI.Description(projectHasGit
+                    CustomGUI.Description(ProjectHasGit
                         ? "Adds the repository as a git submodule next to 'Path' and checks out a new local branch."
                         : "Clones the repository next to 'Path' and checks out a new local branch.");
-                    CustomGUI.Disabled(_git.IsBusy, () => RepositoryView(true));
+                    CustomGUI.Disabled(IsBusy, () => RepositoryView(true));
                     CustomGUI.Space();
 
-                    if (_git.IsCloned)
+                    if (IsCloned)
                     {
-                        if (CustomGUI.StateButton("Pull latest changes", _git.IsBusy, "Pulling...", GUILayout.Height(28)))
+                        if (CustomGUI.StateButton("Pull latest changes", IsBusy, "Pulling...", GUILayout.Height(28)))
                             PullClone();
                         return;
                     }
 
-                    if (CustomGUI.StateButton(projectHasGit ? "Clone as submodule" : "Clone repository", _git.IsBusy,
+                    if (CustomGUI.StateButton(ProjectHasGit ? "Clone as submodule" : "Clone repository", IsBusy,
                             "Cloning...", GUILayout.Height(28)))
                     {
-                        if (projectHasGit)
-                            _git.SubmoduleClone(_settings.GetNewBranchName());
-                        else
-                            _git.Clone(_settings.GetNewBranchName());
-                        _settings.path = _git.RepoDirectory;
+                        CloneRepository();
                         callback();
                     }
                 })

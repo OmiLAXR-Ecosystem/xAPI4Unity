@@ -234,7 +234,7 @@ namespace xAPI4Unity.Editor
         /// Debugs and validates the configuration file.
         /// </summary>
         [MenuItem("xAPI4Unity / Validate '*.config.json'", priority = 201)]
-        private static void DebugTypes()
+        internal static void DebugTypes()
         {
             var configFile = ReadConfigFile(mainSettings.localSource.path);
             if (configFile == null)
