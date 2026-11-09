@@ -13,6 +13,7 @@
 - "Open folder" in the setup window works for every existing local path, not only for clones in the default location, and opens the folder on macOS too (`EditorUtility.RevealInFinder` instead of `Process.Start`).
 - Switching the source option in the setup window saves the choice right away.
 - `CustomGUI.Popup` with an index selection returned the wrong index.
+- Cancelling "Browse" for the local path no longer resets the path to the default clone location.
 
 ---
 

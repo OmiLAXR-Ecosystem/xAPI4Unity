@@ -222,11 +222,12 @@ namespace xAPI4Unity.Editor
 
                 if (CustomGUI.Button("Browse path"))
                 {
-                    _settings.path =
+                    var browsedPath =
                         EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", _settings.path,
                             "xapi");
-                    if (string.IsNullOrEmpty(_settings.path))
-                        _settings.path = _git.RepoDirectory;
+                    // An empty path means the dialog was cancelled
+                    if (!string.IsNullOrEmpty(browsedPath))
+                        _settings.path = browsedPath;
 
                     MainSettings.Instance.Save();
                     GUI.FocusControl(null);
