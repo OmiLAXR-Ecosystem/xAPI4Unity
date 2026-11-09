@@ -10,6 +10,9 @@
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
 - The setup window no longer logs an error on every repaint while the "Clone" option is open and no clone exists. The message also no longer points to the non-existent `xAPI4Unity > Settings` menu.
 - `xAPI4Unity / Download newest 'xapi' patch into mine` runs `git pull` in the local copy when the "Clone" option is selected. Before, it only logged "Invalid Option 3".
+- "Open folder" in the setup window works for every existing local path, not only for clones in the default location, and opens the folder on macOS too (`EditorUtility.RevealInFinder` instead of `Process.Start`).
+- Switching the source option in the setup window saves the choice right away.
+- `CustomGUI.Popup` with an index selection returned the wrong index.
 
 ---
 

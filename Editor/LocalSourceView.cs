@@ -5,7 +5,6 @@
 */
 #if UNITY_EDITOR
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -233,11 +232,11 @@ namespace xAPI4Unity.Editor
                     GUI.FocusControl(null);
                 }
 
-                CustomGUI.Disabled(!_git.IsCloned, () =>
+                CustomGUI.Disabled(!Directory.Exists(_settings.path), () =>
                 {
                     if (CustomGUI.Button("Open folder"))
                     {
-                        Process.Start(_settings.path);
+                        EditorUtility.RevealInFinder(_settings.path);
                     }
                 });
             });

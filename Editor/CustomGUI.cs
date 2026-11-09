@@ -84,6 +84,7 @@ namespace xAPI4Unity.Editor
                             {
                                 selectedTab = i;
                                 tab.ClickTab?.Invoke();
+                                onChangeTab?.Invoke(i);
                             }
                         });
                     }
@@ -558,15 +559,11 @@ namespace xAPI4Unity.Editor
             Action<int> onChange = null,
             params GUILayoutOption[] options)
         {
-            var opts = selectionOptions.Prepend("").ToArray();
+            var opts = selectionOptions.ToArray();
 
-            var optsIndex = Array.IndexOf(opts, selectedIndex);
-            if (optsIndex < 0)
-                optsIndex = 0;
-            
             var newOptions = options.Prepend(GUILayout.MaxWidth(300)).ToArray();
 
-            var newIndex = EditorGUILayout.Popup(label, optsIndex, opts, newOptions);
+            var newIndex = EditorGUILayout.Popup(label, selectedIndex, opts, newOptions);
             
             if (newIndex != selectedIndex)
                 onChange?.Invoke(newIndex);
