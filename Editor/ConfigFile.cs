@@ -70,6 +70,15 @@ namespace xAPI4Unity.Editor
                 }
             }
 
+            Create(filePath);
+        }
+
+        /// <summary>
+        /// Writes a default config file to the given path, overwriting an existing one.
+        /// </summary>
+        /// <param name="filePath">Path of the config file, '{def_folder}.config.json' next to the definitions folder.</param>
+        internal static void Create(string filePath)
+        {
             // Create a new default ConfigFile instance
             var file = new ConfigFile
             {
@@ -87,7 +96,8 @@ namespace xAPI4Unity.Editor
             // Write the JSON file to the Assets directory
             File.WriteAllText(filePath, json);
 
-            Debug.Log($"'xapi.config.json' has been created at {filePath}");
+            Debug.Log($"'{Path.GetFileName(filePath)}' has been created at {filePath}");
+            AssetDatabase.Refresh();
         }
     }
 }
