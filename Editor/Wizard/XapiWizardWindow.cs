@@ -372,7 +372,10 @@ namespace xAPI4Unity.Editor.Wizard
                 {
                     Label = $"Types config '{Path.GetFileName(ConfigPath)}'",
                     Passed = HasConfig,
-                    Hint = "Without it, extension values use default types. Create one with 'xAPI4Unity > Create 'xapi.config.json' file'.",
+                    Hint = $"Types the extension values and lists contexts to skip. Without it, extensions use default types and every context is generated. " +
+                           $"'Create' writes a default config to '{ToDisplayPath(ConfigPath)}'.",
+                    FixLabel = "Create",
+                    Fix = ConfigPath != null ? () => ConfigFile.Create(ConfigPath) : (Action)null,
                     Optional = true
                 },
                 new Check
@@ -602,7 +605,7 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Building blocks
 
-        private static VisualElement ChecksCard(params Check[] checks)
+        private VisualElement ChecksCard(params Check[] checks)
         {
             var card = Css(new VisualElement(), "card");
             foreach (var check in checks)
@@ -610,7 +613,7 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
-        private static VisualElement CheckRow(Check check)
+        private VisualElement CheckRow(Check check)
         {
             var row = Css(new VisualElement(), "check");
 
@@ -624,7 +627,11 @@ namespace xAPI4Unity.Editor.Wizard
             row.Add(body);
 
             if (!check.Passed && check.Fix != null)
-                row.Add(Css(new Button(Deferred(check.Fix)) { text = check.FixLabel ?? "Fix" }, "btn", "btn--primary"));
+                row.Add(Css(new Button(Deferred(() =>
+                {
+                    check.Fix();
+                    Evaluate();
+                })) { text = check.FixLabel ?? "Fix" }, "btn", "btn--primary"));
             return row;
         }
 
