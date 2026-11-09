@@ -27,7 +27,7 @@ namespace xAPI4Unity.Editor.Wizard
         // Shown only if the OmiLAXR core package is installed, xAPI4Unity does not depend on it
         private const string LogoPath = "Packages/com.rwth.unity.omilaxr/Editor/Wizard/Images/OmiLAXR_Logo.png";
         private const string StepKey = "xAPI4Unity.Wizard.Step";
-        private const string RegistryUrl = "https://xapi.elearn.rwth-aachen.de/";
+        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/";
         private const string RegistryDefine = "XAPI_REGISTRY_EXISTS";
 
         private enum Step
@@ -488,7 +488,7 @@ namespace xAPI4Unity.Editor.Wizard
                 Enabled(Css(new Button(UnityPackageExporter.ExportBoth) { text = "Both" }, "btn"), HasDefinitions && HasRegistry)));
 
             page.Add(ToolCard("xAPI registry",
-                "Browse all published verbs, activities and extensions, and propose new ones.",
+                "Search all published verbs, activities and extensions, with the history and raw JSON of each definition.",
                 Css(new Button(() => Application.OpenURL(RegistryUrl)) { text = "Open website" }, "btn")));
         }
 
