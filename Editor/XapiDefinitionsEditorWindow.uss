@@ -1,0 +1,181 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+
+/* Layout of the definitions editor. Cards, buttons, badges and headings come from Wizard/XapiWizardWindow.uss,
+   which the window loads first. No USS variables or transitions, so the sheet also works in Unity 2020.3. */
+
+/* Body without TwoPaneSplitView (before Unity 2022.1) */
+.split-fallback {
+    flex-direction: row;
+}
+
+.split-fallback .tree-pane {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+/* Tree */
+.tree-pane {
+    min-width: 200px;
+    border-right-width: 1px;
+}
+
+.light .tree-pane { background-color: #F3F6FA; border-color: #D5DDE8; }
+.dark .tree-pane { background-color: #25282D; border-color: #3A3F47; }
+
+.tree-search {
+    margin: 6px;
+    width: auto;
+}
+
+.tree {
+    flex-grow: 1;
+}
+
+.tree-row {
+    flex-direction: row;
+    align-items: center;
+    height: 20px;
+    padding-right: 6px;
+}
+
+.light .tree-row:hover { background-color: #E3EAF4; }
+.dark .tree-row:hover { background-color: #333840; }
+
+.wizard .tree-row--selected,
+.wizard .tree-row--selected:hover {
+    background-color: #2959A5;
+}
+
+.tree-row--selected .tree-label,
+.tree-row--selected .tree-count,
+.tree-row--selected .tree-arrow {
+    color: #FFFFFF;
+}
+
+.tree-row--ignored .tree-label {
+    -unity-font-style: italic;
+}
+
+.light .tree-row--ignored .tree-label { color: #8A94A3; }
+.dark .tree-row--ignored .tree-label { color: #7A828E; }
+
+.tree-arrow {
+    width: 12px;
+    font-size: 9px;
+    -unity-text-align: middle-center;
+}
+
+.tree-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    -unity-text-align: middle-left;
+}
+
+.tree-folder {
+    -unity-font-style: bold;
+}
+
+.tree-count {
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.light .tree-count { color: #6B7A90; }
+.dark .tree-count { color: #9AA3B0; }
+
+.tree-dirty {
+    color: #D9822B;
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.tree-empty {
+    margin: 8px;
+}
+
+/* Detail */
+.detail-pane {
+    flex-grow: 1;
+    min-width: 320px;
+}
+
+.badge-row {
+    flex-direction: row;
+    margin-bottom: 6px;
+}
+
+.badge--verb { background-color: #2959A5; color: #FFFFFF; }
+.badge--activity { background-color: #3C9D5D; color: #FFFFFF; }
+.badge--extension { background-color: #7E57C2; color: #FFFFFF; }
+.badge--unknown { background-color: #8A94A3; color: #FFFFFF; }
+.badge--dirty { background-color: #D9822B; color: #FFFFFF; }
+
+.iri-row {
+    margin-bottom: 4px;
+}
+
+.iri {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 0;
+}
+
+.lang-row {
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.lang-key {
+    width: 96px;
+    min-width: 96px;
+    margin-left: 0;
+    margin-right: 4px;
+}
+
+.lang-value {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-left: 0;
+}
+
+.multiline-text .unity-text-field__input,
+.multiline-text .unity-base-text-field__input {
+    white-space: normal;
+    min-height: 38px;
+}
+
+.wizard .icon-btn {
+    width: 22px;
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+.card-hint {
+    margin-bottom: 6px;
+}
+
+.raw-foldout {
+    margin-top: 14px;
+}
+
+.raw-json .unity-text-field__input,
+.raw-json .unity-base-text-field__input {
+    min-height: 220px;
+    white-space: normal;
+}
+
+.error-text {
+    color: #D9534F;
+    white-space: normal;
+    margin-top: 4px;
+}
+
+.status {
+    flex-shrink: 1;
+}

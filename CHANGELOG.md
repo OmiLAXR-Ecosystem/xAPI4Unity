@@ -4,6 +4,7 @@
 
 ### Added
 - xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard. It guides through five steps: Welcome, Source (local path and how to get the definitions: patch into `Assets`, download a zip, or git clone/submodule with "Pull latest changes"), Generate (status checks, "Create" for a missing types config `<definitions folder>.config.json`, "Regenerate on changes", and generate and validate with the outcome, errors and warnings shown in the wizard), Use (definitions editor, merge conflicts, `.unitypackage` export, registry website) and Done (summary and links). It shows the OmiLAXR logo if the core package is installed.
+- Definitions editor (`xAPI4Unity / Edit xAPI definitions`) rebuilt with UI Toolkit in the style of the wizard: a tree of contexts, kinds and definitions with search, file counts, unsaved markers and a context menu, and for the selected definition its kind, context and registry IRI (copy, open), checks for the English name and description, language rows with a language dropdown, editable `exactMatch` IRIs, and an editable raw JSON view. Fields the editor does not know, such as `choices`, are kept. "New definition" creates a file from context, kind and name and shows its path and IRI first. Save with Ctrl/Cmd+S or "Save all"; unsaved changes survive script reloads, and Unity asks before closing the window with unsaved changes (Unity 2022.1 or newer).
 
 ### Changed
 - The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Saved settings that still point to the GitLab repository or its `master` branch are switched to the new defaults when the settings load (`LocalSourceSettings.MigrateLegacyRepository`). Other URLs, such as forks, are kept.
@@ -22,6 +23,7 @@
 - `CustomGUI.Popup` with an index selection returned the wrong index.
 - "Open website" in the wizard and `xAPI4Unity / Open registry page` open the registry website `https://omilaxr-ecosystem.github.io/xapi` instead of `https://xapi.elearn.rwth-aachen.de`.
 - `xAPI4Unity / Create 'xapi.config.json' file` refreshes the AssetDatabase, so the new file shows up in the Project window right away.
+- Saving in the definitions editor generated the registry twice (once directly, once through the watcher). It now only imports the file, so the watcher generates it once; with the watcher off or definitions outside `Assets`, "Update xAPI.Registry" in the editor's toolbar regenerates it. Saved files use 4-space indentation and `\n` line breaks like the files in the xapi repository, and keep values such as dates and decimals unchanged.
 
 ---
 
