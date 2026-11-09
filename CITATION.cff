@@ -21,7 +21,7 @@ url: "https://github.com/SGoerzen/xAPI4Unity"
 
 abstract: >
   This project is part of the OmiLAXR Ecosystem and converts xAPI definitions from
-  https://gitlab.com/learntech-rwth/xapi repository into strictly-typed C# classes
+  https://github.com/OmiLAXR-Ecosystem/xapi repository into strictly-typed C# classes
   that can be used to build IDE-supported high reliable xAPI statements.
 
 keywords:
