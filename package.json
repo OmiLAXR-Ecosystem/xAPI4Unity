@@ -9,6 +9,10 @@
   "changelogUrl": "https://gitlab.com/learntech-rwth/omilaxr-framework/xapi-4-unity/-/blob/main/CHANGELOG.md",
   "licensesUrl": "https://gitlab.com/learntech-rwth/omilaxr-framework/xapi-4-unity/-/blob/main/LICENSE",
   "homepage": "https://omilaxr.dev/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OmiLAXR-Ecosystem/xAPI4Unity"
+  },
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "2.0.2"
   },
