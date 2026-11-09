@@ -258,8 +258,25 @@ namespace xAPI4Unity.Editor
             } 
             else if (_settings.selectedOptionIndex == 2)
             {
-                Debug.LogError("Invalid Option 3. Please use Option 1 or 2.");
+                PullClone();
             }
+        }
+
+        /// <summary>
+        /// Pulls the latest changes into the git clone at the local path.
+        /// </summary>
+        private void PullClone()
+        {
+            // A clone has a .git folder, a submodule has a .git file
+            var gitPath = Path.Combine(_settings.path, ".git");
+            if (!Directory.Exists(gitPath) && !File.Exists(gitPath))
+            {
+                Debug.LogError($"[xAPI4Unity] '{_settings.path}' is not a git clone. Clone it first or use Option 1 or 2.");
+                return;
+            }
+
+            _git.Pull(_settings.path);
+            AssetDatabase.Refresh();
         }
 
         /// <summary>

@@ -107,6 +107,22 @@ namespace xAPI4Unity.Editor
         }
 
         /// <summary>
+        /// Pulls the latest changes into an existing clone.
+        /// </summary>
+        /// <param name="repoPath">The path to the cloned repository.</param>
+        internal void Pull(string repoPath)
+        {
+            TerminateOngoingProcess();
+
+            IsBusy = true;
+
+            var gitPullProcess = ProcessHelper.Cmd("git", "pull", false, repoPath);
+            gitPullProcess.WaitForExit();
+
+            IsBusy = false;
+        }
+
+        /// <summary>
         /// Terminates any ongoing Git process.
         /// </summary>
         private void TerminateOngoingProcess()
