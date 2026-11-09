@@ -8,6 +8,9 @@
 ### Changed
 - Kompatibilität mit Unity 2020 hergestellt.
 
+### Fixed
+- Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
+
 ---
 
 ## [2.2.2] - 2025-08-25
