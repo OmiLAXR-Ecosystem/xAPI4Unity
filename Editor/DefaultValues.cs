@@ -13,9 +13,9 @@ namespace xAPI4Unity.Editor
     internal static class DefaultValues
     {
         public const bool WatcherEnabled = true;
-        public const string RepoUrl = "git@gitlab.com:learntech-rwth/xapi.git";
-        public const string RepoDownloadUrl = "https://gitlab.com/learntech-rwth/xapi";
-        public const string RepoBranch = "master";
+        public const string RepoUrl = "https://github.com/OmiLAXR-Ecosystem/xapi.git";
+        public const string RepoDownloadUrl = "https://github.com/OmiLAXR-Ecosystem/xapi";
+        public const string RepoBranch = "main";
         public const string Namespace = "xAPI.Registry";
         public static string RepoPath => Path.Combine(AssetRoot, "xapi");
         public static string HomeDirectory => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);

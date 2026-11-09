@@ -100,7 +100,7 @@ namespace xAPI4Unity.Editor.Types
         
         private static string ExpandVariables(
             string expr,
-            IReadOnlyDictionary<string, string>? variables,
+            IReadOnlyDictionary<string, string> variables,
             bool strict = true,
             int maxPasses = 8)
         {
@@ -139,7 +139,7 @@ namespace xAPI4Unity.Editor.Types
         
         public static Dictionary<string, string> ExpandAll(
             IDictionary<string, string> input,
-            IReadOnlyDictionary<string, string>? variables,
+            IReadOnlyDictionary<string, string> variables,
             bool strictVariables = true)
         {
             var output = new Dictionary<string, string>(input.Count, StringComparer.Ordinal);

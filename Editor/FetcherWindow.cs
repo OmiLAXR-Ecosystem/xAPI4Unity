@@ -12,6 +12,7 @@ using UnityEngine;
 using xAPI4Unity.Editor.Parser;
 using xAPI4Unity.Editor.Settings;
 using xAPI4Unity.Editor.Types;
+using xAPI4Unity.Editor.Wizard;
 using Debug = UnityEngine.Debug;
 
 namespace xAPI4Unity.Editor
@@ -23,10 +24,9 @@ namespace xAPI4Unity.Editor
     public class FetcherWindow : EditorWindow
     {
         private static MainSettings mainSettings => MainSettings.Instance;
+        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/";
         private bool _isDownloading;
-        private Vector2 _scrollPosition = Vector2.zero;
 
-        private static FetcherWindow Instance { get; set; }
         private LocalSourceView _localSourceView;
 
         /// <summary>
@@ -42,28 +42,11 @@ namespace xAPI4Unity.Editor
         }
         
         private FetcherWindow() { }
-        
+
         /// <summary>
-        /// Determines whether JSON to C# transformation is possible.
+        /// Opens the xAPI4Unity wizard, which replaces this window.
         /// </summary>
-        private static bool IsTransformationPossible => GitHelper.IsValidRepo(mainSettings.localSource.path);
-        
-        /// <summary>
-        /// Opens the xAPI definitions setup window.
-        /// </summary>
-        [MenuItem("xAPI4Unity / Setup xAPI definitions", priority = 0)]
-        public static void ShowWindow()
-        {
-            const string title = "xAPI4Unity";
-            Instance = GetWindow<FetcherWindow>(title);
-#if UNITY_5_1 || UNITY_5_2 || UNITY_5_3 || UNITY_5_3_OR_NEWER
-            Instance.titleContent = new GUIContent(title);
-#else
-            Instance.title = title;
-#endif
-            Instance.minSize = new Vector2(1000, 800);
-            Instance.Show(true);
-        }
+        public static void ShowWindow() => XapiWizardWindow.Open();
 
         /// <summary>
         /// Opens the xAPI registry web page in the default browser.
@@ -71,7 +54,7 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Open registry page")]
         private static void OpenXApiRegistryPage()
         {
-            Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
+            Application.OpenURL(RegistryUrl);
         }
 
         /// <summary>
@@ -93,76 +76,13 @@ namespace xAPI4Unity.Editor
         
         private void OnGUI()
         {
-            CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
-            
-            // Add description and options
-            CustomGUI.Description("With this package you can download the needed xAPI repository definition files as JSON. Further, it transforms the JSON files into C# code you can use in your project. If Watcher is enabled, everything will be updated automatically."); 
-
-            // Toggle for auto-opening the window on startup
-            mainSettings.isOpeningOnStartup =
-                CustomGUI.YesNoPopup("Open at load or startup on demand", mainSettings.isOpeningOnStartup, newValue =>
-                {
-                    mainSettings.isOpeningOnStartup = newValue;
-                    MainSettings.Instance.Save();
-                });            
-            CustomGUI.Description("(Recommended Yes) If no xAPI Registry exists it opens this window on startup automatically.");
-
-            // Scrollable region for GUI elements
-            CustomGUI.ScrollView(ref _scrollPosition, () =>
+            // Only reached when an editor layout still contains this window
+            EditorGUILayout.HelpBox("The xAPI4Unity setup moved into the wizard.", MessageType.Info);
+            if (GUILayout.Button("Open wizard"))
             {
-                // Section 1: Manage xAPI JSON Definitions
-                CustomGUI.Region(() =>
-                {
-                    CustomGUI.Subtitle("1) xAPI JSON Definitions Location");
-                    CustomGUI.Description(
-                        "Here you can get a local copy of the xAPI repository into your project. You can either work with a downloaded copy or use git instead.");
-                    LocalSourceView.Show(() => { });
-                });
-                
-                // Section 2: Transform JSON to C#
-                CustomGUI.Region(() =>
-                {
-                    CustomGUI.Subtitle("2) Do transformation!");
-                    CustomGUI.Description("Use this section to transform JSON definitions into usable C# classes.");
-                    
-                    mainSettings.fetcher.watcherEnabled =
-                        CustomGUI.YesNoPopup("Watcher Enabled", mainSettings.fetcher.watcherEnabled, newValue =>
-                        {
-                            mainSettings.fetcher.watcherEnabled = newValue;
-                            MainSettings.Instance.Save();
-                        });
-                    CustomGUI.Description("(Recommended Yes)");
-                    
-                    // Execute transformation via button
-                    CustomGUI.Horizontal.Wrap(() =>
-                    {
-                        CustomGUI.Disabled(!IsTransformationPossible, () => {
-                            if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
-                                    GUILayout.MaxWidth(1000), 
-                                    GUILayout.Height(50), 
-                                    GUILayout.ExpandWidth(true)))
-                            {
-                                GUI.FocusControl(null);
-                                ExecuteFetcher();
-                            }
-                        });
-                    });
-                });
-                
-                // Section 3: Using xAPI Definitions
-                CustomGUI.Region(() =>
-                {
-                    CustomGUI.Subtitle("3) Work with xAPI Definitions");
-                    CustomGUI.Description("Use C# files generated from xAPI JSON definitions in your project.");
-                    CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de"); // Link to registry site for reference
-                    
-                    if (CustomGUI.Button("Open xAPI Definitions Editor", GUILayout.MaxWidth(1000), GUILayout.Height(50),
-                            GUILayout.ExpandWidth(true)))
-                    {
-                        XapiDefinitionsEditorWindow.ShowWindow();
-                    }
-                });
-            });
+                XapiWizardWindow.Open();
+                Close();
+            }
         }
 
         private void OnDisable()
@@ -210,7 +130,7 @@ namespace xAPI4Unity.Editor
         /// Debugs and validates the configuration file.
         /// </summary>
         [MenuItem("xAPI4Unity / Validate '*.config.json'", priority = 201)]
-        private static void DebugTypes()
+        internal static void DebugTypes()
         {
             var configFile = ReadConfigFile(mainSettings.localSource.path);
             if (configFile == null)

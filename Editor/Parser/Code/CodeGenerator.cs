@@ -297,7 +297,7 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// Gets a shared base URI for all xAPI content paths.
         /// </summary>
         
-        public const string XAPI_BASE_URI = "https://xapi.elearn.rwth-aachen.de/";
+        public const string XAPI_BASE_URI = "https://omilaxr-ecosystem.github.io/xapi/";
         public static Uri BaseUri => new Uri(new Uri(XAPI_BASE_URI), "definitions");
 
         /// <summary>

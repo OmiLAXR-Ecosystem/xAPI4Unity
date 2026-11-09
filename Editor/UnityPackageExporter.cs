@@ -66,7 +66,7 @@ namespace xAPI4Unity.Editor
         /// Menu option to export only the "xapi" folder as a .unitypackage.
         /// </summary>
         [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xapi' folder", priority = 200)]
-        private static void ExportXApiFolder()
+        internal static void ExportXApiFolder()
         {
             var path = GetRelativePath(MainSettings.Instance.localSource.path);
             ExportAsPackage(path, "xapi.unitypackage");
@@ -76,7 +76,7 @@ namespace xAPI4Unity.Editor
         /// Menu option to export only the "xAPI.Registry" folder as a .unitypackage.
         /// </summary>
         [MenuItem("xAPI4Unity / Export .unitypackage / Only 'xAPI.Registry' folder", priority = 200)]
-        private static void ExportXApiRegistryFolder()
+        internal static void ExportXApiRegistryFolder()
         {
             ExportAsPackage($"Assets/{MainSettings.Instance.@namespace}", "xAPIRegistry.unitypackage");
         }
@@ -85,7 +85,7 @@ namespace xAPI4Unity.Editor
         /// Menu option to export both the "xapi" and "xAPI.Registry" folders as a single .unitypackage.
         /// </summary>
         [MenuItem("xAPI4Unity / Export .unitypackage / 'xapi' and 'xAPI.Registry' folder together", priority = 200)]
-        private static void ExportBoth()
+        internal static void ExportBoth()
         {
             ExportAsPackage(new []
             {

@@ -70,6 +70,31 @@ namespace xAPI4Unity.Editor
                 }
             }
 
+            Create(filePath);
+        }
+
+        /// <summary>
+        /// Reads a config file and parses its types like the generator does. Problems are logged as errors.
+        /// </summary>
+        /// <param name="filePath">Path of the config file.</param>
+        /// <returns>The number of typed extensions.</returns>
+        internal static int Validate(string filePath)
+        {
+            var config = Read(filePath);
+            if (config == null)
+                throw new InvalidDataException($"'{Path.GetFileName(filePath)}' is empty.");
+
+            var types = config.Types ?? new Dictionary<string, string>();
+            TypeSchema.Parse(types, validateResolution: true, new TypeNameResolver(new Aliases()), config.Variables, true);
+            return types.Count;
+        }
+
+        /// <summary>
+        /// Writes a default config file to the given path, overwriting an existing one.
+        /// </summary>
+        /// <param name="filePath">Path of the config file, '{def_folder}.config.json' next to the definitions folder.</param>
+        internal static void Create(string filePath)
+        {
             // Create a new default ConfigFile instance
             var file = new ConfigFile
             {
@@ -87,7 +112,8 @@ namespace xAPI4Unity.Editor
             // Write the JSON file to the Assets directory
             File.WriteAllText(filePath, json);
 
-            Debug.Log($"'xapi.config.json' has been created at {filePath}");
+            Debug.Log($"'{Path.GetFileName(filePath)}' has been created at {filePath}");
+            AssetDatabase.Refresh();
         }
     }
 }

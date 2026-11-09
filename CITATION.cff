@@ -2,8 +2,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "OmiLAXR Ecosystem - xAPI4Unity"
-version: 2.2.1
-date-released: 2025-08-07
+version: 2.2.4
+date-released: 2026-11-09
 license: "AGPL-3.0-or-later"
 
 authors:
@@ -21,7 +21,7 @@ url: "https://github.com/SGoerzen/xAPI4Unity"
 
 abstract: >
   This project is part of the OmiLAXR Ecosystem and converts xAPI definitions from
-  https://gitlab.com/learntech-rwth/xapi repository into strictly-typed C# classes
+  https://github.com/OmiLAXR-Ecosystem/xapi repository into strictly-typed C# classes
   that can be used to build IDE-supported high reliable xAPI statements.
 
 keywords:
@@ -41,6 +41,6 @@ preferred-citation:
       orcid: "https://orcid.org/0000-0000-0000-0000"
       affiliation: "RWTH Aachen University"
   title: "OmiLAXR Ecosystem - xAPI4Unity"
-  version: 2.2.1
-  year: 2025
+  version: 2.2.4
+  year: 2026
   url: "https://github.com/SGoerzen/xAPI4Unity"

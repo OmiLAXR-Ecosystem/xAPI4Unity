@@ -5,7 +5,6 @@
 */
 #if UNITY_EDITOR
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -38,7 +37,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Opens the download URL in the default browser, saving the download to the user's downloads folder.
         /// </summary>
-        private void DownloadToDownloads()
+        internal void DownloadToDownloads()
         {
             Application.OpenURL(_settings.GetDownloadUrl());
         }
@@ -98,7 +97,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Downloads and merges the xAPI repository into the "Assets/xapi" folder.
         /// </summary>
-        private void DownloadToAssetsAndPatch()
+        internal void DownloadToAssetsAndPatch()
         {
             var filename = _settings.DownloadFilename;
             var destPath = Path.Combine(Application.dataPath, "xapi");
@@ -219,25 +218,26 @@ namespace xAPI4Unity.Editor
                 if (string.IsNullOrEmpty(_settings.path))
                     _settings.path = DefaultValues.RepoPath;
 
-                _settings.path = CustomGUI.TextField("Path of local copy", _settings.path, Path.GetDirectoryName(_settings.path));
+                _settings.path = CustomGUI.TextField("Path", _settings.path, DefaultValues.RepoPath);
 
-                if (CustomGUI.Button("Browse path"))
+                if (CustomGUI.Button("Browse"))
                 {
-                    _settings.path =
+                    var browsedPath =
                         EditorUtility.OpenFolderPanel("Browse xAPI Definitions root path", _settings.path,
                             "xapi");
-                    if (string.IsNullOrEmpty(_settings.path))
-                        _settings.path = _git.RepoDirectory;
+                    // An empty path means the dialog was cancelled
+                    if (!string.IsNullOrEmpty(browsedPath))
+                        _settings.path = browsedPath;
 
                     MainSettings.Instance.Save();
                     GUI.FocusControl(null);
                 }
 
-                CustomGUI.Disabled(!_git.IsCloned, () =>
+                CustomGUI.Disabled(!Directory.Exists(_settings.path), () =>
                 {
                     if (CustomGUI.Button("Open folder"))
                     {
-                        Process.Start(_settings.path);
+                        EditorUtility.RevealInFinder(_settings.path);
                     }
                 });
             });
@@ -258,124 +258,177 @@ namespace xAPI4Unity.Editor
             } 
             else if (_settings.selectedOptionIndex == 2)
             {
-                Debug.LogError("Invalid Option 3. Please use Option 1 or 2.");
+                PullClone();
             }
+        }
+
+        /// <summary>
+        /// Pulls the latest changes into the git clone at the local path.
+        /// </summary>
+        internal void PullClone()
+        {
+            // A clone has a .git folder, a submodule has a .git file
+            var gitPath = Path.Combine(_settings.path, ".git");
+            if (!Directory.Exists(gitPath) && !File.Exists(gitPath))
+            {
+                Debug.LogError($"[xAPI4Unity] '{_settings.path}' is not a git clone. Clone it first or use 'Patch into Assets' or 'Download zip'.");
+                return;
+            }
+
+            _git.Pull(_settings.path);
+            AssetDatabase.Refresh();
+        }
+
+        /// <summary>
+        /// Whether the Unity project is a git repository, so the definitions are added as a submodule.
+        /// </summary>
+        internal static bool ProjectHasGit
+        {
+            get
+            {
+                var parent = Directory.GetParent(Application.dataPath);
+                return parent != null && Directory.Exists(Path.Combine(parent.ToString(), ".git"));
+            }
+        }
+
+        /// <summary>
+        /// Whether the repository is already cloned next to the local path.
+        /// </summary>
+        internal bool IsCloned
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_settings.path))
+                    return false;
+                SyncGit();
+                return _git.IsCloned;
+            }
+        }
+
+        /// <summary>
+        /// Whether a git operation is running.
+        /// </summary>
+        internal bool IsBusy => _git.IsBusy;
+
+        /// <summary>
+        /// Clones the repository next to the local path, as a submodule if the project is a git repository,
+        /// and points the local path to the clone.
+        /// </summary>
+        internal void CloneRepository()
+        {
+            SyncGit();
+            if (ProjectHasGit)
+                _git.SubmoduleClone(_settings.GetNewBranchName());
+            else
+                _git.Clone(_settings.GetNewBranchName());
+            _settings.path = _git.RepoDirectory;
+            MainSettings.Instance.Save();
+        }
+
+        /// <summary>
+        /// Points the git helper to the repository URL and the parent folder of the local path.
+        /// </summary>
+        private void SyncGit()
+        {
+            _git.Url = _settings.repoUrl;
+            _git.Directory = Path.GetDirectoryName(_settings.path);
+        }
+
+        /// <summary>
+        /// Displays the repository settings of the selected source option inside a foldout.
+        /// </summary>
+        /// <param name="git">Whether to show the git URL instead of the download URL and branch.</param>
+        private void RepositoryView(bool git)
+        {
+            var summary = git ? _settings.repoUrl : $"{_settings.repoDownloadUrl}, {_settings.repoBranch}";
+            CustomGUI.Foldout($"Repository ({summary})", "LocalSourceView.Repository", () =>
+            {
+                if (git)
+                {
+                    _settings.repoUrl =
+                        CustomGUI.TextField("Git URL", _settings.repoUrl, DefaultValues.RepoUrl);
+                }
+                else
+                {
+                    _settings.repoDownloadUrl = CustomGUI.TextField("Repository URL", _settings.repoDownloadUrl, DefaultValues.RepoDownloadUrl);
+                    _settings.repoBranch =
+                        CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
+                }
+                CustomGUI.Description("Change this only if you work with a fork of the repository.");
+            });
         }
 
         /// <summary>
         /// Renders the LocalSourceView interface and performs the respective actions based on user interactions.
         /// </summary>
+        [Obsolete("The xAPI4Unity wizard (XapiWizardWindow) replaces this view. It will be removed in the next major version.")]
         public void Show(Action callback)
         {
             LocalPathView();
-            var hasDefinitionsFolder = GitHelper.HasDefinitionsFolder(_settings.path);
-
-            if (!hasDefinitionsFolder)
-            {
-                CustomGUI.Horizontal.Wrap(() =>
-                {
-                    CustomGUI.Error(
-                        $"The path '{_settings.path}' has no 'definitions' folder. Make sure you extracted the repository content correctly.");
-                });
-            }
+            CustomGUI.Space();
 
             // Display options for managing the xAPI source
             _settings.selectedOptionIndex = CustomGUI.Tabs(_settings.selectedOptionIndex, new[]
             {
-                new CustomGUI.Tab("(Option 1) Patch a local copy into 'Assets' folder",
+                new CustomGUI.Tab("Patch into Assets",
                     () =>
                     {
-                        CustomGUI.Subtitle("Local copy in Assets instructions");
-                        _settings.repoDownloadUrl = CustomGUI.TextField("xAPI Repository URL", _settings.repoDownloadUrl, DefaultValues.RepoDownloadUrl);
-                        CustomGUI.Description("Change this only if working with a fork of the repository.");
-                        _settings.repoBranch =
-                            CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
-                        CustomGUI.Bullets(
-                            "Backup your 'xapi' folder if not using git.",
-                            $"Download and merge the file from '{_settings.GetDownloadUrl()}' into 'Assets/xapi'.",
-                            "Enjoy!"
-                        );
+                        CustomGUI.Description(
+                            "Downloads the repository archive and merges it into 'Assets/xapi'. New files are added, identical files are skipped, and files that differ from yours are listed in a merge report. Back up 'Assets/xapi' first if it is not under version control.");
+                        RepositoryView(false);
+                        CustomGUI.Space();
 
-                        // Trigger download or patching
-                        if (CustomGUI.Button("Download and Patch into Assets folder"))
+                        CustomGUI.Horizontal.Wrap(() =>
                         {
-                            DownloadToAssetsAndPatch();
-                            callback();
-                        }
+                            if (CustomGUI.Button("Download and patch", GUILayout.Height(28)))
+                            {
+                                DownloadToAssetsAndPatch();
+                                callback();
+                            }
+
+                            CustomGUI.Disabled(!Directory.Exists(_settings.path), () =>
+                            {
+                                if (CustomGUI.Button("Resolve conflicts", GUILayout.Height(28)))
+                                    XapiMergeWindow.ShowWindow();
+                            });
+                        });
                     }),
-                new CustomGUI.Tab("(Option 2) Download a local copy", () =>
+                new CustomGUI.Tab("Download zip", () =>
                 {
-                    CustomGUI.Subtitle("Local copy instructions");
-                    _settings.repoDownloadUrl = CustomGUI.TextField("xAPI Repository URL", _settings.repoDownloadUrl, DefaultValues.RepoDownloadUrl);
-                    CustomGUI.Description("Change this only if working with a fork of the repository.");
-                    _settings.repoBranch =
-                        CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
+                    CustomGUI.Description("Downloads the repository archive with your browser.");
+                    RepositoryView(false);
                     CustomGUI.Bullets(
-                        $"Download from '{_settings.GetDownloadUrl()}'.",
-                        "Extract the content locally.",
-                        $"Ensure the folder '{_settings.path}' has a 'definitions' directory."
+                        "Extract the archive.",
+                        "Set 'Path' above to the extracted folder, the one that contains 'definitions'."
                     );
-                    if (CustomGUI.Button("Download xapi.zip"))
+                    CustomGUI.Space();
+
+                    if (CustomGUI.Button("Download zip", GUILayout.Height(28)))
                     {
                         DownloadToDownloads();
                     }
                 }),
-                new CustomGUI.Tab("(Option 3) Clone into selected path", () =>
+                new CustomGUI.Tab("Git clone", () =>
                 {
-                    CustomGUI.Subtitle("Git Settings");
-                    CustomGUI.Disabled(_git.IsBusy, () =>
+                    CustomGUI.Description(ProjectHasGit
+                        ? "Adds the repository as a git submodule next to 'Path' and checks out a new local branch."
+                        : "Clones the repository next to 'Path' and checks out a new local branch.");
+                    CustomGUI.Disabled(IsBusy, () => RepositoryView(true));
+                    CustomGUI.Space();
+
+                    if (IsCloned)
                     {
-                        _settings.repoUrl =
-                            CustomGUI.TextField("Git repository", _settings.repoUrl, DefaultValues.RepoUrl);
+                        if (CustomGUI.StateButton("Pull latest changes", IsBusy, "Pulling...", GUILayout.Height(28)))
+                            PullClone();
+                        return;
+                    }
 
-                        _settings.repoBranch =
-                            CustomGUI.TextField("Git branch", _settings.repoBranch, default);
-                        CustomGUI.Description(
-                            "If 'Git branch' is empty, a new branch will be created automatically. You can rename it later.");
-                    });
-
-                    CustomGUI.Horizontal.Wrap(() =>
+                    if (CustomGUI.StateButton(ProjectHasGit ? "Clone as submodule" : "Clone repository", IsBusy,
+                            "Cloning...", GUILayout.Height(28)))
                     {
-                        _git.Url = _settings.repoUrl;
-                        _git.Directory = Path.GetDirectoryName(_settings.path);
-
-                        CustomGUI.Disabled(_git.IsCloned, () =>
-                        {
-                            var parent = Directory.GetParent(Application.dataPath);
-                            if (parent != null)
-                            {
-                                var projectRoot = parent.ToString();
-                                var projectHasGit = Directory.Exists(Path.Combine(projectRoot, ".git"));
-
-                                if (projectHasGit)
-                                {
-                                    if (CustomGUI.StateButton("Clone as submodule", _git.IsBusy, "Cloning..."))
-                                    {
-                                        _git.SubmoduleClone(_settings.GetNewBranchName());
-                                        _settings.path = _git.RepoDirectory;
-                                        callback();
-                                    }
-                                }
-                                else
-                                {
-                                    if (CustomGUI.StateButton("Clone repository", _git.IsBusy, "Cloning..."))
-                                    {
-                                        _git.Clone(_settings.GetNewBranchName());
-                                        _settings.path = _git.RepoDirectory;
-                                        callback();
-                                    }
-                                }
-                            }
-
-                            if (!_git.IsCloned)
-                            {
-                                const string errorMessage =
-                                    "You need a local copy of the xAPI registry. Browse in `xAPI4Unity > Settings` for it or clone using the 'Clone repository' option.";
-                                CustomGUI.Error(errorMessage);
-                                Debug.LogError(errorMessage);
-                            }
-                        });
-                    });
+                        CloneRepository();
+                        callback();
+                    }
                 })
             }, newIndex =>
             {
