@@ -55,7 +55,7 @@ namespace xAPI4Unity.Editor.Settings
         /// <returns>A unique branch name string.</returns>
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
 
-        // Repository the definitions came from before 2.2.4, as SSH and HTTPS URL without '.git'
+        // Repository the definitions came from before 2.3.0, as SSH and HTTPS URL without '.git'
         private static readonly string[] LegacyRepoUrls =
         {
             "git@gitlab.com:learntech-rwth/xapi",
@@ -64,7 +64,7 @@ namespace xAPI4Unity.Editor.Settings
         private const string LegacyRepoBranch = "master";
 
         /// <summary>
-        /// Replaces the GitLab repository and its 'master' branch, saved by versions before 2.2.4, with the GitHub defaults.
+        /// Replaces the GitLab repository and its 'master' branch, saved by versions before 2.3.0, with the GitHub defaults.
         /// Other URLs, such as forks, are kept.
         /// </summary>
         /// <returns>True if a value changed.</returns>

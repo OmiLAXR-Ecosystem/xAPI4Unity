@@ -1,14 +1,18 @@
 # Changelog
 
-## [2.2.4] - 2026-11-09
+## [2.3.0] - 2026-11-09
 
 ### Added
-- xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard. It guides through five steps: Welcome, Source (local path and how to get the definitions: patch into `Assets`, download a zip, or git clone/submodule with "Pull latest changes"), Generate (status checks, "Create" for a missing types config `<definitions folder>.config.json`, "Regenerate on changes", and generate and validate with the outcome, errors and warnings shown in the wizard), Use (definitions editor, merge conflicts, `.unitypackage` export, registry website) and Done (summary and links). It shows the OmiLAXR logo if the core package is installed.
+- xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard, with the steps Welcome, Source, Generate, Use and Done. It shows the OmiLAXR logo if the core package is installed.
+- Wizard step "Source": the local path with "Browse" and "Open folder", and the three ways to get the definitions: patch them into `Assets/xapi`, download a zip, or git clone (as a submodule if the project uses git) with "Pull latest changes" once a clone exists.
+- Wizard step "Generate": status checks for the definitions, the registry, the types config and `XAPI_REGISTRY_EXISTS`, "Create" for a missing types config `<definitions folder>.config.json`, and the "Regenerate on changes" toggle. "Update xAPI.Registry" and "Validate config" show their outcome, errors and warnings below the buttons.
+- Wizard step "Use": definitions editor, merge conflict resolver, `.unitypackage` export of the definitions and the registry, and the registry website.
+- Wizard step "Done": summary of the setup and links to the documentation, the registry, the definitions repository and the changelog.
 - Definitions editor (`xAPI4Unity / Edit xAPI definitions`) rebuilt with UI Toolkit in the style of the wizard: a tree of contexts, kinds and definitions with search, file counts, unsaved markers and a context menu, and for the selected definition its kind, context and registry IRI (copy, open), checks for the English name and description, language rows with a language dropdown, editable `exactMatch` IRIs, and an editable raw JSON view. Fields the editor does not know, such as `choices`, are kept. "New definition" creates a file from context, kind and name and shows its path and IRI first. Save with Ctrl/Cmd+S or "Save all"; unsaved changes survive script reloads, and Unity asks before closing the window with unsaved changes (Unity 2022.1 or newer).
 
 ### Changed
-- The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Saved settings that still point to the GitLab repository or its `master` branch are switched to the new defaults when the settings load (`LocalSourceSettings.MigrateLegacyRepository`). Other URLs, such as forks, are kept.
 - The wizard replaces the setup window. The menu item `xAPI4Unity / Setup xAPI definitions` is gone, and `FetcherWindow.ShowWindow()` opens the wizard. A setup window restored from a saved editor layout only links to the wizard.
+- The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Saved settings that still point to the GitLab repository or its `master` branch are switched to the new defaults when the settings load (`LocalSourceSettings.MigrateLegacyRepository`). Other URLs, such as forks, are kept.
 - On editor start, the wizard opens when the definitions folder or the generated registry is missing. A missing `XAPI_REGISTRY_EXISTS` define alone no longer opens it, because OmiLAXR.xAPI sets the define. Nothing opens in batch mode.
 - `CustomGUI` uses colors that are readable in the light editor skin too, and shows errors and warnings as help boxes.
 - `CodeGenerator.XAPI_BASE_URI` is the new xAPI Registry base `https://omilaxr-ecosystem.github.io/xapi/` instead of `https://xapi.elearn.rwth-aachen.de/`, so the `URI:` comments in a generated registry show the new IRIs. The IRIs in statements come from `xApiRegistry.uri` in OmiLAXR.xAPI.
@@ -19,7 +23,7 @@
 ### Fixed
 - Downloading definitions from a GitHub repository uses GitHub's archive URL (`/archive/refs/heads/<branch>.zip`). Before, `LocalSourceSettings.GetDownloadUrl()` always built a GitLab URL. A trailing `/` in the download URL is ignored.
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
-- `xAPI4Unity / Download newest 'xapi' patch into mine` runs `git pull` in the local copy when the "Clone" option is selected. Before, it only logged "Invalid Option 3".
+- `xAPI4Unity / Download newest 'xapi' patch into mine` runs `git pull` in the local copy when the "Git clone" option is selected. Before, it only logged "Invalid Option 3".
 - `CustomGUI.Popup` with an index selection returned the wrong index.
 - "Open website" in the wizard and `xAPI4Unity / Open registry page` open the registry website `https://omilaxr-ecosystem.github.io/xapi` instead of `https://xapi.elearn.rwth-aachen.de`.
 - `xAPI4Unity / Create 'xapi.config.json' file` refreshes the AssetDatabase, so the new file shows up in the Project window right away.
