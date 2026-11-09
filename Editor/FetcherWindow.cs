@@ -23,6 +23,8 @@ namespace xAPI4Unity.Editor
     public class FetcherWindow : EditorWindow
     {
         private static MainSettings mainSettings => MainSettings.Instance;
+        private const string RegistryUrl = "https://xapi.elearn.rwth-aachen.de/";
+        private const string RegistryDefine = "XAPI_REGISTRY_EXISTS";
         private bool _isDownloading;
         private Vector2 _scrollPosition = Vector2.zero;
 
@@ -61,7 +63,7 @@ namespace xAPI4Unity.Editor
 #else
             Instance.title = title;
 #endif
-            Instance.minSize = new Vector2(1000, 800);
+            Instance.minSize = new Vector2(480, 500);
             Instance.Show(true);
         }
 
@@ -71,7 +73,7 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Open registry page")]
         private static void OpenXApiRegistryPage()
         {
-            Application.OpenURL("https://xapi.elearn.rwth-aachen.de/");
+            Application.OpenURL(RegistryUrl);
         }
 
         /// <summary>
@@ -93,76 +95,98 @@ namespace xAPI4Unity.Editor
         
         private void OnGUI()
         {
-            CustomGUI.Title("Using xAPI Definitions Fetcher with xAPI4Unity package");
-            
-            // Add description and options
-            CustomGUI.Description("With this package you can download the needed xAPI repository definition files as JSON. Further, it transforms the JSON files into C# code you can use in your project. If Watcher is enabled, everything will be updated automatically."); 
-
-            // Toggle for auto-opening the window on startup
-            mainSettings.isOpeningOnStartup =
-                CustomGUI.YesNoPopup("Open at load or startup on demand", mainSettings.isOpeningOnStartup, newValue =>
-                {
-                    mainSettings.isOpeningOnStartup = newValue;
-                    MainSettings.Instance.Save();
-                });            
-            CustomGUI.Description("(Recommended Yes) If no xAPI Registry exists it opens this window on startup automatically.");
-
             // Scrollable region for GUI elements
             CustomGUI.ScrollView(ref _scrollPosition, () =>
             {
+                CustomGUI.Title("xAPI4Unity");
+                CustomGUI.Description(
+                    $"Turns xAPI JSON definitions into C# classes in 'Assets/{mainSettings.@namespace}'. With 'Regenerate on changes' on, the classes are updated whenever a definition changes.");
+
+                CustomGUI.Section("Status", StatusView);
+
                 // Section 1: Manage xAPI JSON Definitions
-                CustomGUI.Region(() =>
+                CustomGUI.Section("1) Source", () =>
                 {
-                    CustomGUI.Subtitle("1) xAPI JSON Definitions Location");
-                    CustomGUI.Description(
-                        "Here you can get a local copy of the xAPI repository into your project. You can either work with a downloaded copy or use git instead.");
+                    CustomGUI.Description("Where the xAPI JSON definitions come from. 'Path' must contain a 'definitions' folder.");
                     LocalSourceView.Show(() => { });
                 });
-                
+
                 // Section 2: Transform JSON to C#
-                CustomGUI.Region(() =>
+                CustomGUI.Section("2) Generate", () =>
                 {
-                    CustomGUI.Subtitle("2) Do transformation!");
-                    CustomGUI.Description("Use this section to transform JSON definitions into usable C# classes.");
-                    
                     mainSettings.fetcher.watcherEnabled =
-                        CustomGUI.YesNoPopup("Watcher Enabled", mainSettings.fetcher.watcherEnabled, newValue =>
+                        CustomGUI.Toggle("Regenerate on changes", mainSettings.fetcher.watcherEnabled, newValue =>
                         {
                             mainSettings.fetcher.watcherEnabled = newValue;
                             MainSettings.Instance.Save();
-                        });
-                    CustomGUI.Description("(Recommended Yes)");
-                    
+                        }, "Regenerates the C# classes whenever a JSON file in a 'definitions' folder changes. Recommended.");
+                    CustomGUI.Space();
+
                     // Execute transformation via button
-                    CustomGUI.Horizontal.Wrap(() =>
-                    {
-                        CustomGUI.Disabled(!IsTransformationPossible, () => {
-                            if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
-                                    GUILayout.MaxWidth(1000), 
-                                    GUILayout.Height(50), 
-                                    GUILayout.ExpandWidth(true)))
-                            {
-                                GUI.FocusControl(null);
-                                ExecuteFetcher();
-                            }
-                        });
+                    CustomGUI.Disabled(!IsTransformationPossible, () => {
+                        if (CustomGUI.Button("Update xAPI.Registry (JSON => C#)",
+                                GUILayout.Height(28),
+                                GUILayout.ExpandWidth(true)))
+                        {
+                            GUI.FocusControl(null);
+                            ExecuteFetcher();
+                        }
                     });
                 });
-                
+
                 // Section 3: Using xAPI Definitions
-                CustomGUI.Region(() =>
+                CustomGUI.Section("3) Work with definitions", () =>
                 {
-                    CustomGUI.Subtitle("3) Work with xAPI Definitions");
-                    CustomGUI.Description("Use C# files generated from xAPI JSON definitions in your project.");
-                    CustomGUI.Hyperlink("https://xapi.elearn.rwth-aachen.de"); // Link to registry site for reference
-                    
-                    if (CustomGUI.Button("Open xAPI Definitions Editor", GUILayout.MaxWidth(1000), GUILayout.Height(50),
-                            GUILayout.ExpandWidth(true)))
+                    if (CustomGUI.Button("Open definitions editor", GUILayout.Height(28)))
                     {
                         XapiDefinitionsEditorWindow.ShowWindow();
                     }
+                    CustomGUI.Hyperlink("Browse the xAPI registry website", RegistryUrl);
+                });
+
+                CustomGUI.Space();
+                CustomGUI.Foldout("Settings", "FetcherWindow.Settings", () =>
+                {
+                    // Toggle for auto-opening the window on startup
+                    mainSettings.isOpeningOnStartup =
+                        CustomGUI.Toggle("Open on startup", mainSettings.isOpeningOnStartup, newValue =>
+                        {
+                            mainSettings.isOpeningOnStartup = newValue;
+                            MainSettings.Instance.Save();
+                        }, "Opens this window when the editor starts and the definitions or the registry are missing. Recommended.");
                 });
             });
+        }
+
+        /// <summary>
+        /// Shows whether the definitions, the generated registry and its scripting define exist.
+        /// </summary>
+        private static void StatusView()
+        {
+            var sourcePath = mainSettings.localSource.path;
+            var definitionsPath = string.IsNullOrEmpty(sourcePath) ? null : Path.Combine(sourcePath, "definitions");
+            var registryPath = Path.Combine(Application.dataPath, mainSettings.@namespace);
+
+            var hasDefinitions = definitionsPath != null && Directory.Exists(definitionsPath);
+            var hasRegistry = Directory.Exists(registryPath);
+            var hasDefine = Startup.DefineExist(RegistryDefine);
+
+            CustomGUI.Step("JSON definitions", hasDefinitions,
+                hasDefinitions ? ToDisplayPath(definitionsPath) : "No 'definitions' folder at 'Path'. Get it in 1).");
+            CustomGUI.Step("C# registry", hasRegistry,
+                hasRegistry ? ToDisplayPath(registryPath) : "Not generated yet. Run 2).");
+            CustomGUI.Step(RegistryDefine, hasDefine,
+                hasDefine ? "Set" : "Not set. OmiLAXR.xAPI sets it once the registry exists.");
+        }
+
+        /// <summary>
+        /// Shortens a path inside the Unity project to a project-relative path.
+        /// </summary>
+        private static string ToDisplayPath(string path)
+        {
+            var fullPath = Path.GetFullPath(path).Replace('\\', '/');
+            var projectRoot = Path.GetDirectoryName(Application.dataPath)?.Replace('\\', '/') + "/";
+            return fullPath.StartsWith(projectRoot) ? fullPath.Substring(projectRoot.Length) : fullPath;
         }
 
         private void OnDisable()

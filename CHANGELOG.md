@@ -4,6 +4,9 @@
 
 ### Changed
 - The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Projects that already saved their source settings keep the GitLab URL and `master` until they change them in the settings.
+- Reworked the setup window (`xAPI4Unity / Setup xAPI definitions`): a status list at the top shows whether the JSON definitions, the generated registry and `XAPI_REGISTRY_EXISTS` exist, the three source options are real tabs with short names, repository URL and branch sit in one foldout instead of being repeated per option, and settings use toggles instead of Yes/No dropdowns. "Open on startup" moved into a "Settings" foldout at the bottom. The window's minimum size dropped from 1000×800 to 480×500.
+- The "Git clone" option shows "Pull latest changes" once a clone exists and no longer shows a branch field that cloning ignored. The "Patch into Assets" option has a "Resolve conflicts" button that opens the conflict resolver.
+- Messages, titles, status marks and links in the setup window are readable in the light editor skin too. Errors and warnings are shown as help boxes.
 
 ### Fixed
 - Downloading definitions from a GitHub repository uses GitHub's archive URL (`/archive/refs/heads/<branch>.zip`). Before, `LocalSourceSettings.GetDownloadUrl()` always built a GitLab URL. A trailing `/` in the download URL is ignored.

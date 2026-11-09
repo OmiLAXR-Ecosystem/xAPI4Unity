@@ -40,8 +40,6 @@ namespace xAPI4Unity.Editor
             }
         }
 
-        private static readonly int TabsLimit = 3; // Maximum number of tabs before switching to dropdown mode.
-        
         /// <summary>
         /// Builds a tab layout allowing selection between multiple tabs.
         /// </summary>
@@ -60,42 +58,18 @@ namespace xAPI4Unity.Editor
         /// <returns>The index of the newly selected tab.</returns>
         internal static int Tabs(int selectedTab, Tab[] tabs, Action<int> onChangeTab)
         {
-            Horizontal.Wrap(() =>
-            {
-                if (tabs.Length > TabsLimit)
-                {
-                    // Render a dropdown when tabs exceed the limit.
-                    var options = tabs.Select(t => t.TabLabel).ToArray();
-                    selectedTab = Popup("Download Options", options, selectedTab,
-                        index =>
-                        {
-                            tabs[index].ClickTab?.Invoke();
-                            onChangeTab?.Invoke(index);
-                        });
-                }
-                else
-                {
-                    for (var i = 0; i < tabs.Length; i++)
-                    {
-                        var tab = tabs[i];
-                        Disabled(i == selectedTab, () =>
-                        {
-                            if (Button(tab.TabLabel))
-                            {
-                                selectedTab = i;
-                                tab.ClickTab?.Invoke();
-                                onChangeTab?.Invoke(i);
-                            }
-                        });
-                    }
-                }
-            });
+            var labels = tabs.Select(t => t.TabLabel).ToArray();
+            var newTab = GUILayout.Toolbar(selectedTab, labels, GUILayout.Height(24));
 
-            for (var i = 0; i < tabs.Length; i++)
+            if (newTab != selectedTab)
             {
-                var tab = tabs[i];
-                Region(i != selectedTab, tab.Content);
+                tabs[newTab].ClickTab?.Invoke();
+                onChangeTab?.Invoke(newTab);
+                selectedTab = newTab;
             }
+
+            if (selectedTab >= 0 && selectedTab < tabs.Length)
+                Region(tabs[selectedTab].Content);
 
             return selectedTab;
         }
@@ -179,47 +153,38 @@ namespace xAPI4Unity.Editor
             }
         }
         
-        private static readonly GUIStyle TitleLabelStyle = new GUIStyle(EditorStyles.whiteLargeLabel)
+        // Colors that stay readable in the dark and the light editor skin.
+        private static Color SuccessColor => EditorGUIUtility.isProSkin ? new Color(0.45f, 0.85f, 0.45f) : new Color(0.1f, 0.5f, 0.1f);
+        private static Color FailureColor => EditorGUIUtility.isProSkin ? new Color(1f, 0.45f, 0.45f) : new Color(0.7f, 0.1f, 0.1f);
+        private static Color LinkColor => EditorGUIUtility.isProSkin ? new Color(0.45f, 0.65f, 1f) : new Color(0.1f, 0.3f, 0.8f);
+
+        private static readonly GUIStyle TitleLabelStyle = new GUIStyle(EditorStyles.largeLabel)
         {
             fontSize = 16,
+            fontStyle = FontStyle.Bold
         };
 
-        private static readonly GUIStyle SubtitleLabelStyle = new GUIStyle(EditorStyles.whiteLargeLabel)
+        private static readonly GUIStyle SubtitleLabelStyle = new GUIStyle(EditorStyles.boldLabel)
         {
-            fontSize = 14,
+            fontSize = 13,
         };
 
-        private static readonly GUIStyle StepLabelStyleGreen = new GUIStyle(EditorStyles.whiteLargeLabel)
+        private static readonly GUIStyle StepMarkStyle = new GUIStyle(EditorStyles.boldLabel);
+
+        private static readonly GUIStyle StepDetailStyle = new GUIStyle(EditorStyles.miniLabel)
         {
-            fontSize = 14,
-            normal = new GUIStyleState()
-            {
-                textColor = Color.green
-            },
-            hover = new GUIStyleState()
-            {
-                textColor = Color.green
-            }
+            alignment = TextAnchor.MiddleLeft
         };
-        
-        private static readonly GUIStyle StepLabelStyleRed = new GUIStyle(EditorStyles.whiteLargeLabel)
+
+        private static readonly GUIStyle SectionStyle = new GUIStyle(EditorStyles.helpBox)
         {
-            fontSize = 14,
-            normal = new GUIStyleState()
-            {
-                textColor = Color.red
-            },
-            hover = new GUIStyleState()
-            {
-                textColor = Color.red
-            }
+            padding = new RectOffset(10, 10, 6, 8)
         };
-        
+
         private static readonly GUIStyle ButtonStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 12,
-            padding = new RectOffset(10, 10, 5, 5),
-            margin = new RectOffset(5, 5, -5, 0)
+            padding = new RectOffset(10, 10, 2, 2)
         };
 
         private static readonly GUIStyle ListboxItemStyle = new GUIStyle(GUI.skin.button)
@@ -252,49 +217,9 @@ namespace xAPI4Unity.Editor
             richText = true
         };
         
-        private static readonly GUIStyle ErrorStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 11,
-            wordWrap = true,
-            richText = true,
-            normal = new GUIStyleState()
-            {
-                textColor = Color.red
-            },
-            hover = new GUIStyleState()
-            {
-                textColor = Color.red
-            }
-        };
-        
-        private static readonly GUIStyle WarningStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 11,
-            wordWrap = true,
-            richText = true,
-            normal = new GUIStyleState()
-            {
-                textColor = Color.yellow
-            },
-            hover = new GUIStyleState()
-            {
-                textColor = Color.yellow
-            }
-        };
-        
         private static readonly GUIStyle HyperlinkStyle = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 11,
-            wordWrap = true,
-            richText = true,
-            normal = new GUIStyleState()
-            {
-                textColor = new Color(0.8f, 0.8f, 0) 
-            },
-            hover = new GUIStyleState()
-            {
-                textColor = new Color(1f, 1f, 0) 
-            }
+            fontSize = 11
         };
 
         /// <summary>
@@ -377,34 +302,67 @@ namespace xAPI4Unity.Editor
         {
             var down = GUILayout.Button(textContent, ButtonStyle, (new[]
             {
-                GUILayout.Height(30),
+                GUILayout.Height(22),
                 GUILayout.ExpandWidth(false)
             }).Concat(options).ToArray());
-            
+
             return down;
         }
 
         /// <summary>
-        /// Renders a Yes/No popup that maps a boolean value to two labels.
+        /// Renders a toggle with an optional tooltip.
         /// </summary>
-        /// <param name="label">Label displayed next to the popup.</param>
+        /// <param name="label">Label displayed next to the toggle.</param>
         /// <param name="value">Current boolean value.</param>
         /// <param name="onChange">Callback when value changes.</param>
-        /// <param name="yesWord">Label for true value.</param>
-        /// <param name="noWord">Label for false value.</param>
+        /// <param name="tooltip">Optional tooltip of the label.</param>
         /// <returns>New boolean value after user interaction.</returns>
-        public static bool YesNoPopup(string label, bool value, Action<bool> onChange = null, string yesWord = "Yes", string noWord = "No")
+        public static bool Toggle(string label, bool value, Action<bool> onChange = null, string tooltip = null)
         {
-            var v = value ? yesWord : noWord;
-            Horizontal.Begin();
-            v = Popup(label, new[] { yesWord, noWord }, v);
-            Horizontal.End();
-            var newValue = v == yesWord;
-            
+            var newValue = EditorGUILayout.Toggle(new GUIContent(label, tooltip), value);
+
             if (newValue != value)
                 onChange?.Invoke(newValue);
-            
+
             return newValue;
+        }
+
+        /// <summary>
+        /// Renders a foldout whose open state is kept for the editor session.
+        /// </summary>
+        /// <param name="label">Label of the foldout.</param>
+        /// <param name="sessionKey">Unique key to remember the open state.</param>
+        /// <param name="content">The content to render when open.</param>
+        /// <param name="openByDefault">Whether the foldout starts open.</param>
+        public static void Foldout(string label, string sessionKey, Action content, bool openByDefault = false)
+        {
+            var key = "xAPI4Unity.Foldout." + sessionKey;
+            var isOpen = SessionState.GetBool(key, openByDefault);
+            var newIsOpen = EditorGUILayout.Foldout(isOpen, label, true);
+
+            if (newIsOpen != isOpen)
+                SessionState.SetBool(key, newIsOpen);
+
+            if (!newIsOpen)
+                return;
+
+            EditorGUI.indentLevel++;
+            content();
+            EditorGUI.indentLevel--;
+        }
+
+        /// <summary>
+        /// Renders a titled section inside a box.
+        /// </summary>
+        /// <param name="title">Title of the section.</param>
+        /// <param name="content">The content to render.</param>
+        public static void Section(string title, Action content)
+        {
+            Space();
+            EditorGUILayout.BeginVertical(SectionStyle);
+            Subtitle(title);
+            content();
+            EditorGUILayout.EndVertical();
         }
 
         /// <summary>
@@ -446,8 +404,18 @@ namespace xAPI4Unity.Editor
         /// </summary>
         /// <param name="text">Step label.</param>
         /// <param name="checkedCondition">Determines if the step is valid.</param>
-        public static void Step(string text, bool checkedCondition)
-            => GUILayout.Label(text + " " + (checkedCondition ? CorrectMark : WrongMark), checkedCondition ? StepLabelStyleGreen : StepLabelStyleRed);
+        /// <param name="detail">Optional detail shown next to the label.</param>
+        public static void Step(string text, bool checkedCondition, string detail = null)
+        {
+            StepMarkStyle.normal.textColor = checkedCondition ? SuccessColor : FailureColor;
+            Horizontal.Wrap(() =>
+            {
+                GUILayout.Label(checkedCondition ? CorrectMark : WrongMark, StepMarkStyle, GUILayout.Width(16));
+                GUILayout.Label(text, EditorStyles.boldLabel, GUILayout.Width(160));
+                if (!string.IsNullOrEmpty(detail))
+                    GUILayout.Label(detail, StepDetailStyle);
+            });
+        }
         /// <summary>
         /// Renders a plain label with default style.
         /// </summary>
@@ -486,10 +454,11 @@ namespace xAPI4Unity.Editor
         /// <param name="url">The URL to open.</param>
         public static void Hyperlink(string text, string url)
         {
-            var content = new GUIContent(text);
-            var rect = GUILayoutUtility.GetRect(content, HyperlinkStyle);
-            
-            // Verändere den Cursor zum Hand-Symbol wenn die Maus über dem Link ist
+            var content = new GUIContent(text, url);
+            HyperlinkStyle.normal.textColor = HyperlinkStyle.hover.textColor = LinkColor;
+            var rect = GUILayoutUtility.GetRect(content, HyperlinkStyle, GUILayout.ExpandWidth(false));
+
+            // Show the hand cursor while hovering the link
             EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
 
             if (GUI.Button(rect, content, HyperlinkStyle))
@@ -499,17 +468,23 @@ namespace xAPI4Unity.Editor
         }
         
         /// <summary>
-        /// Renders an error message in red text.
+        /// Renders an error message box.
         /// </summary>
         /// <param name="text">Error message text.</param>
         public static void Error(string text)
-            => GUILayout.Label(text, ErrorStyle, GUILayout.ExpandWidth(true));
+            => EditorGUILayout.HelpBox(text, MessageType.Error);
         /// <summary>
-        /// Renders a warning message in yellow text.
+        /// Renders a warning message box.
         /// </summary>
         /// <param name="text">Warning message text.</param>
         public static void Warning(string text)
-            => GUILayout.Label(text, WarningStyle, GUILayout.ExpandWidth(true));
+            => EditorGUILayout.HelpBox(text, MessageType.Warning);
+        /// <summary>
+        /// Renders an info message box.
+        /// </summary>
+        /// <param name="text">Info message text.</param>
+        public static void Info(string text)
+            => EditorGUILayout.HelpBox(text, MessageType.Info);
 
         /// <summary>
         /// Inserts vertical space in the layout.

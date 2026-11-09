@@ -24,7 +24,7 @@ namespace xAPI4Unity.Editor
         /// </summary>
         /// <param name="define">The scripting define symbol to search for.</param>
         /// <returns>True if the define exists; otherwise, false.</returns>
-        private static bool DefineExist(string define)
+        internal static bool DefineExist(string define)
         {
 #if UNITY_2021_2_OR_NEWER
             // For Unity 2021.2 or newer, use NamedBuildTarget to get the defines
