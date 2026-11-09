@@ -30,7 +30,14 @@ namespace xAPI4Unity.Editor.Settings
         /// <summary>
         /// Constructs the full download URL for the repository zip file.
         /// </summary>
-        public string GetDownloadUrl() => $"{repoDownloadUrl}/-/archive/{repoBranch}/{DownloadFilename}.zip";
+        public string GetDownloadUrl()
+        {
+            var url = repoDownloadUrl.TrimEnd('/');
+            // GitHub and GitLab use different archive URL schemes
+            return url.Contains("github.com")
+                ? $"{url}/archive/refs/heads/{repoBranch}.zip"
+                : $"{url}/-/archive/{repoBranch}/{DownloadFilename}.zip";
+        }
         
         /// <inheritdoc />
         public T Clone<T>()

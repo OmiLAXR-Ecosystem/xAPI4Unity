@@ -2,7 +2,11 @@
 
 ## [2.2.4] - 2026-11-09
 
+### Changed
+- The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Projects that already saved their source settings keep the GitLab URL and `master` until they change them in the settings.
+
 ### Fixed
+- Downloading definitions from a GitHub repository uses GitHub's archive URL (`/archive/refs/heads/<branch>.zip`). Before, `LocalSourceSettings.GetDownloadUrl()` always built a GitLab URL. A trailing `/` in the download URL is ignored.
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
 
 ---

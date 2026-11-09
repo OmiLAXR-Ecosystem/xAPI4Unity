@@ -74,7 +74,7 @@ xAPI4Unity is a Unity package designed to bridge xAPI functionalities into Unity
 
 ### JSON Definitions Location
 You need a source for xAPI Registry definitions for transformation:
-- **Git Repository**: Fetch definitions directly from a published GitLab repository (requires git CLI installed).
+- **Git Repository**: Fetch definitions directly from a published Git repository (default: [OmiLAXR-Ecosystem/xapi](https://github.com/OmiLAXR-Ecosystem/xapi)) (requires git CLI installed).
 - **Local Source**: Select a local directory with the `definitions` folder at its root.
 
 ### Fetcher Configuration
