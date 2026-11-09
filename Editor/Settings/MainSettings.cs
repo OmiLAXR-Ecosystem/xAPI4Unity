@@ -144,7 +144,7 @@ namespace xAPI4Unity.Editor.Settings
             if (Instance.localSource == null) Instance.localSource = new LocalSourceSettings();
 #endif
 
-            // Projects set up before 2.2.4 saved the old GitLab repository
+            // Projects set up before 2.3.0 saved the old GitLab repository
             if (Instance.localSource.MigrateLegacyRepository())
                 Instance.Save();
         }

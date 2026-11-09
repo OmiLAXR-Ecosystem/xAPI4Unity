@@ -33,7 +33,7 @@ xAPI4Unity is a Unity package designed to bridge xAPI functionalities into Unity
    - Clone the Git repository (as a submodule if your project uses git).
 3. **Edit and transform JSON files**: Use the `Assets/xapi` folder for your xAPI JSON files. Changes are automatically transformed into C# if "Regenerate on changes" is on. Alternatively, use `Update xAPI.Registry` in the wizard's "Generate" step for manual transformation.
 4. **Manual Transformation**: Use the Unity menu `xAPI4Unity > Update xAPI.Registry (JSON => C#)` to trigger transformation manually if required.
-5. **View Documentation**: Open `https://omilaxr-ecosystem.github.io` via `xAPI4Unity > Open registry page` in the Unity menu for more information.
+5. **View Documentation**: Open `https://omilaxr-ecosystem.github.io/xapi` via `xAPI4Unity > Open registry page` in the Unity menu for more information.
 
 ---
 
@@ -94,4 +94,4 @@ Feel free to create pull requests or raise issues to help improve xAPI4Unity. Co
 This project is licensed under the AGPL-3.0-or-later. See the `LICENSE` file for details.
 
 ### Support
-For further assistance, please visit [xAPI Registry Documentation](https://omilaxr-ecosystem.github.io) or raise an issue in the repository.
+For further assistance, please visit [xAPI Registry Documentation](https://omilaxr-ecosystem.github.io/xapi) or raise an issue in the repository.
