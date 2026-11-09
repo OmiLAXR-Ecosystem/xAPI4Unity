@@ -24,7 +24,7 @@ namespace xAPI4Unity.Editor
     public class FetcherWindow : EditorWindow
     {
         private static MainSettings mainSettings => MainSettings.Instance;
-        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/";
+        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
         private bool _isDownloading;
 
         private LocalSourceView _localSourceView;

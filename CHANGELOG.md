@@ -20,7 +20,7 @@
 - Removed nullable reference annotations outside a `#nullable` context in `TypeSchema` and the `xAPI_Extensions` template, which caused warning CS8632 in the editor and in every generated registry.
 - `xAPI4Unity / Download newest 'xapi' patch into mine` runs `git pull` in the local copy when the "Clone" option is selected. Before, it only logged "Invalid Option 3".
 - `CustomGUI.Popup` with an index selection returned the wrong index.
-- "Open website" in the wizard and `xAPI4Unity / Open registry page` open the registry website `https://omilaxr-ecosystem.github.io` instead of `https://xapi.elearn.rwth-aachen.de`.
+- "Open website" in the wizard and `xAPI4Unity / Open registry page` open the registry website `https://omilaxr-ecosystem.github.io/xapi` instead of `https://xapi.elearn.rwth-aachen.de`.
 - `xAPI4Unity / Create 'xapi.config.json' file` refreshes the AssetDatabase, so the new file shows up in the Project window right away.
 
 ---

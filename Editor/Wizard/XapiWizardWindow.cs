@@ -27,7 +27,7 @@ namespace xAPI4Unity.Editor.Wizard
         // Shown only if the OmiLAXR core package is installed, xAPI4Unity does not depend on it
         private const string LogoPath = "Packages/com.rwth.unity.omilaxr/Editor/Wizard/Images/OmiLAXR_Logo.png";
         private const string StepKey = "xAPI4Unity.Wizard.Step";
-        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/";
+        private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
         private const string RegistryDefine = "XAPI_REGISTRY_EXISTS";
 
         private enum Step
