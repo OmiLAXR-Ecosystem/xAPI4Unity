@@ -3,7 +3,7 @@
 ## [2.2.4] - 2026-11-09
 
 ### Added
-- xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard. It guides through five steps: Welcome, Source (local path and how to get the definitions: patch into `Assets`, download a zip, or git clone/submodule with "Pull latest changes"), Generate (status checks, "Create" for a missing types config `<definitions folder>.config.json`, "Regenerate on changes", generate and validate), Use (definitions editor, merge conflicts, `.unitypackage` export, registry website) and Done (summary and links). It shows the OmiLAXR logo if the core package is installed.
+- xAPI4Unity Wizard (`xAPI4Unity / Open Wizard`, `XapiWizardWindow`) in the style of the OmiLAXR Wizard. It guides through five steps: Welcome, Source (local path and how to get the definitions: patch into `Assets`, download a zip, or git clone/submodule with "Pull latest changes"), Generate (status checks, "Create" for a missing types config `<definitions folder>.config.json`, "Regenerate on changes", and generate and validate with the outcome, errors and warnings shown in the wizard), Use (definitions editor, merge conflicts, `.unitypackage` export, registry website) and Done (summary and links). It shows the OmiLAXR logo if the core package is installed.
 
 ### Changed
 - The default definitions source is now the GitHub repository `https://github.com/OmiLAXR-Ecosystem/xapi` (branch `main`) instead of `gitlab.com/learntech-rwth/xapi` (branch `master`). Saved settings that still point to the GitLab repository or its `master` branch are switched to the new defaults when the settings load (`LocalSourceSettings.MigrateLegacyRepository`). Other URLs, such as forks, are kept.

@@ -5,7 +5,9 @@
 */
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -64,10 +66,23 @@ namespace xAPI4Unity.Editor.Wizard
             public bool Optional;
         }
 
+        /// <summary>
+        /// Outcome of an action run from the wizard, shown below its buttons.
+        /// </summary>
+        private sealed class ActionResult
+        {
+            public string Title;
+            public string Summary;
+            public LogCollector Log;
+            public DateTime Time;
+        }
+
         private static MainSettings Settings => MainSettings.Instance;
         private readonly LocalSourceView _source = new LocalSourceView();
         private string _signature;
         private string _message;
+        private ActionResult _generateResult;
+        private ActionResult _validateResult;
 
         private VisualElement _stepper;
         private ScrollView _content;
@@ -236,6 +251,8 @@ namespace xAPI4Unity.Editor.Wizard
                 return;
             CurrentStep = step;
             _message = null;
+            _generateResult = null;
+            _validateResult = null;
             Rebuild();
             _content.scrollOffset = Vector2.zero;
         }
@@ -366,7 +383,7 @@ namespace xAPI4Unity.Editor.Wizard
                     Passed = HasRegistry,
                     Hint = HasDefinitions ? "Not generated yet." : "Needs the JSON definitions.",
                     FixLabel = "Generate",
-                    Fix = HasDefinitions ? (Action)FetcherWindow.QuickFetch : null
+                    Fix = HasDefinitions ? (Action)RunGenerate : null
                 },
                 new Check
                 {
@@ -399,9 +416,54 @@ namespace xAPI4Unity.Editor.Wizard
             page.Add(options);
 
             var actions = Css(new VisualElement(), "card-row", "actions");
-            actions.Add(Enabled(Css(new Button(Deferred(FetcherWindow.QuickFetch)) { text = "Update xAPI.Registry (JSON => C#)" }, "btn", "btn--primary"), HasDefinitions));
-            actions.Add(Enabled(Css(new Button(FetcherWindow.DebugTypes) { text = "Validate config" }, "btn"), HasConfig));
+            actions.Add(Enabled(Css(new Button(Deferred(RunGenerate)) { text = "Update xAPI.Registry (JSON => C#)" }, "btn", "btn--primary"), HasDefinitions));
+            actions.Add(Enabled(Css(new Button(RunValidate) { text = "Validate config" }, "btn"), HasConfig));
             page.Add(actions);
+
+            if (_generateResult != null)
+                page.Add(ResultCard(_generateResult));
+            if (_validateResult != null)
+                page.Add(ResultCard(_validateResult));
+        }
+
+        /// <summary>
+        /// Generates the registry and keeps the logged errors and warnings for the result card.
+        /// </summary>
+        private void RunGenerate()
+        {
+            var log = LogCollector.Run(FetcherWindow.QuickFetch);
+            var files = HasRegistry ? Directory.GetFiles(RegistryPath, "*.cs", SearchOption.AllDirectories).Length : 0;
+            _generateResult = new ActionResult
+            {
+                Title = "Update xAPI.Registry",
+                Summary = log.Errors.Count == 0
+                    ? $"Generated {files} C# files in '{ToDisplayPath(RegistryPath)}'. Compile errors in them would show up in the Console."
+                    : $"{log.Errors.Count} error(s) while generating. The registry may be incomplete.",
+                Log = log,
+                Time = DateTime.Now
+            };
+            // Force a rebuild, the project state may look the same as before
+            _signature = null;
+            Evaluate();
+        }
+
+        /// <summary>
+        /// Validates the types config and keeps the logged errors and warnings for the result card.
+        /// </summary>
+        private void RunValidate()
+        {
+            var typeCount = 0;
+            var log = LogCollector.Run(() => typeCount = ConfigFile.Validate(ConfigPath));
+            _validateResult = new ActionResult
+            {
+                Title = "Validate config",
+                Summary = log.Errors.Count == 0
+                    ? $"'{ToDisplayPath(ConfigPath)}' is valid. All {typeCount} typed extension(s) resolve to C# types."
+                    : $"{log.Errors.Count} problem(s) in '{ToDisplayPath(ConfigPath)}'.",
+                Log = log,
+                Time = DateTime.Now
+            };
+            Rebuild();
         }
 
         private static void BuildUse(VisualElement page)
@@ -632,6 +694,38 @@ namespace xAPI4Unity.Editor.Wizard
                     check.Fix();
                     Evaluate();
                 })) { text = check.FixLabel ?? "Fix" }, "btn", "btn--primary"));
+            return row;
+        }
+
+        private static VisualElement ResultCard(ActionResult result)
+        {
+            const int maxMessages = 8;
+            var card = Css(new VisualElement(), "card", "field");
+            var ok = result.Log.Errors.Count == 0;
+            card.Add(MessageRow(ok ? "TestPassed" : "console.erroricon.sml", $"{result.Title} · {result.Time:HH:mm:ss}", result.Summary));
+
+            var messages = new List<(string Icon, string Text)>();
+            foreach (var error in result.Log.Errors)
+                messages.Add(("console.erroricon.sml", error));
+            foreach (var warning in result.Log.Warnings)
+                messages.Add(("console.warnicon.sml", warning));
+
+            foreach (var (icon, text) in messages.Take(maxMessages))
+                card.Add(MessageRow(icon, null, text));
+            if (messages.Count > maxMessages)
+                card.Add(Muted($"... and {messages.Count - maxMessages} more. See the Console."));
+            return card;
+        }
+
+        private static VisualElement MessageRow(string icon, string title, string text)
+        {
+            var row = Css(new VisualElement(), "check");
+            row.Add(Css(new Image { image = EditorGUIUtility.IconContent(icon).image, scaleMode = ScaleMode.ScaleToFit }, "check-icon"));
+            var body = Css(new VisualElement(), "card-body");
+            if (title != null)
+                body.Add(Css(new Label(title), "card-title"));
+            body.Add(title != null ? Muted(text) : Css(new Label(text), "text"));
+            row.Add(body);
             return row;
         }
 
