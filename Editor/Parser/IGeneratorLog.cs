@@ -22,6 +22,11 @@ namespace xAPI4Unity.Editor.Parser
         /// Reports a problem that the generator skipped over.
         /// </summary>
         void Warning(string message);
+
+        /// <summary>
+        /// Reports a problem that stopped the run.
+        /// </summary>
+        void Error(string message);
     }
 }
 #endif

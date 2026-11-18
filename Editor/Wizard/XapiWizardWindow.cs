@@ -106,18 +106,18 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region State
 
+        // Paths and checks live in RegistryPaths and ProjectStatus, shared with the menu items and Startup
+        private static ProjectStatus Status => new ProjectStatus(RegistryPaths.FromSettings(Settings));
         private static string SourcePath => Settings.localSource.path;
-        private static string DefinitionsPath => string.IsNullOrEmpty(SourcePath) ? null : Path.Combine(SourcePath, "definitions");
-        private static string RegistryPath => Path.Combine(Application.dataPath, Settings.@namespace);
-        // FetcherWindow reads the types config from '<folder>.config.json' next to the source folder
-        private static string ConfigPath => string.IsNullOrEmpty(SourcePath) ? null : SourcePath.TrimEnd('/', '\\') + ".config.json";
+        private static string DefinitionsPath => Status.Paths.DefinitionsFolder;
+        private static string RegistryPath => Status.Paths.RegistryFolder;
+        private static string ConfigPath => Status.Paths.ConfigFile;
 
-        private static bool HasDefinitions => DefinitionsPath != null && Directory.Exists(DefinitionsPath);
-        private static bool HasRegistry => Directory.Exists(RegistryPath);
+        private static bool HasDefinitions => Status.HasDefinitions;
+        private static bool HasRegistry => Status.HasRegistry;
         private static bool HasDefine => Startup.DefineExist(RegistryDefine);
-        private static bool HasConfig => ConfigPath != null && File.Exists(ConfigPath);
-        private static bool HasMergeReports => Directory.Exists(SourcePath) &&
-                                               Directory.GetFiles(SourcePath, "*-xapi-report.json", SearchOption.TopDirectoryOnly).Length > 0;
+        private static bool HasConfig => Status.HasConfig;
+        private static bool HasMergeReports => Status.HasMergeReports;
 
         private static SourceOption SelectedOption
         {
@@ -432,7 +432,7 @@ namespace xAPI4Unity.Editor.Wizard
         private void RunGenerate()
         {
             var log = LogCollector.Run(FetcherWindow.QuickFetch);
-            var files = HasRegistry ? Directory.GetFiles(RegistryPath, "*.cs", SearchOption.AllDirectories).Length : 0;
+            var files = Status.RegistryFileCount;
             _generateResult = new ActionResult
             {
                 Title = "Update xAPI.Registry",

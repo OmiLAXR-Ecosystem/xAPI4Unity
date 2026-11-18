@@ -41,6 +41,22 @@ namespace xAPI4Unity.Editor.Parser
                 new DirectoryDefinitionSource(definitionsPath),
                 new DirectoryRegistryWriter(Path.Combine(Application.dataPath, @namespace)));
         }
+
+        /// <summary>
+        /// Creates the editor's <see cref="RegistryUpdate"/>: package templates, Unity console, built-in aliases.
+        /// </summary>
+        internal static RegistryUpdate CreateUpdate(ITypeNameResolver resolver = null) =>
+            new RegistryUpdate(
+                new RegistryGenerator(DirectoryCoreTemplateSource.ForPackage(), UnityGeneratorLog.Instance),
+                resolver ?? new TypeNameResolver(new Aliases()),
+                UnityGeneratorLog.Instance);
+
+        /// <summary>
+        /// Generates <c>Assets/&lt;namespace&gt;</c> from the project's source folder and its types config.
+        /// </summary>
+        /// <returns>False if the source folder has no <c>definitions</c> folder.</returns>
+        internal static bool Update(RegistryPaths paths) =>
+            CreateUpdate().Run(paths, new DirectoryRegistryWriter(paths.RegistryFolder));
     }
 }
 #endif

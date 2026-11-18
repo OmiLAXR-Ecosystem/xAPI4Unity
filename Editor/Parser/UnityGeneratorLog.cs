@@ -25,6 +25,9 @@ namespace xAPI4Unity.Editor.Parser
 
         /// <inheritdoc/>
         public void Warning(string message) => Debug.LogWarning(message);
+
+        /// <inheritdoc/>
+        public void Error(string message) => Debug.LogError(message);
     }
 }
 #endif

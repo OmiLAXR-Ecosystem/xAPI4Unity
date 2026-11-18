@@ -12,7 +12,6 @@ using System.Text;
 using NUnit.Framework;
 using xAPI4Unity.Editor;
 using xAPI4Unity.Editor.Parser;
-using xAPI4Unity.Editor.Parser.IO;
 using xAPI4Unity.Editor.Types;
 
 namespace xAPI4Unity.Tests
@@ -47,18 +46,20 @@ namespace xAPI4Unity.Tests
 
         private static string ExpectedFolder => Path.Combine(FixtureFolder, "expected");
 
+        /// <summary>
+        /// Generates the fixture the way the editor does (<see cref="RegistryUpdate"/>): the types
+        /// config <c>xapi.config.json</c> is found next to the source folder <c>xapi</c>.
+        /// </summary>
         private static GeneratedRegistry Generate()
         {
-            var config = ConfigFile.Read(Path.Combine(FixtureFolder, "xapi.config.json"));
-            var options = new GenerationOptions(Namespace)
-            {
-                AsmDefReferences = config.references,
-                IgnoredContexts = config.ignoredContexts,
-                TypeSchema = TypeSchema.Parse(config.Types, true, new TypeNameResolver(new Aliases()), config.Variables)
-            };
-            var generator = new RegistryGenerator(new FakeTemplateSource(), new CollectingGeneratorLog());
-            var source = new DirectoryDefinitionSource(Path.Combine(FixtureFolder, "xapi", "definitions"));
-            return generator.Build(options, source.ReadDefinitions());
+            var log = new CollectingGeneratorLog();
+            var update = new RegistryUpdate(new RegistryGenerator(new FakeTemplateSource(), log),
+                new TypeNameResolver(new Aliases()), log);
+            var paths = new RegistryPaths(Path.Combine(FixtureFolder, "xapi"), Path.Combine(FixtureFolder, "unused"), Namespace);
+            var writer = new InMemoryRegistryWriter();
+
+            Assert.IsTrue(update.Run(paths, writer), string.Join("\n", log.Errors));
+            return writer.Written.Single();
         }
 
         private static Dictionary<string, string> Snapshot(GeneratedRegistry registry) =>
