@@ -1,0 +1,49 @@
+name: Checks
+
+# Required checks for pull requests into main. The ruleset on main requires
+# the jobs "PR title" and "Package" to pass before a merge.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      # The PR title becomes the squash commit on main, and release-please
+      # derives the next version from it: fix -> patch, feat -> minor,
+      # "!" or a "BREAKING CHANGE:" footer -> major.
+      - uses: amannn/action-semantic-pull-request@2252a14e810aa9b85c2d560bd7070c802206ecf6 # v6.1.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            revert
+            refactor
+            docs
+            test
+            build
+            ci
+            chore
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check package rules
+        run: python3 -I .github/scripts/check_package.py

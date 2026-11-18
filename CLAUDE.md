@@ -10,7 +10,10 @@ Working rules (versioning, CHANGELOG, `.meta` files, licenses, compatibility) ar
 
 ## Commands
 
-There is no command-line build or linter: the package compiles inside a Unity project. Paths below are relative to the workspace root (`..`).
+There is no command-line build: the package compiles inside a Unity project. Paths below are relative to the workspace root (`..`).
+
+- **Package check** (from this folder): `python3 .github/scripts/check_package.py` checks `.meta` files, guids, SPDX headers and versions. CI runs it on every PR (`.github/workflows/checks.yml`).
+- **Release:** automated with release-please, see AGENTS.md. Never tag or bump by hand.
 
 - **Develop:** open `OmiLAXR_Dev/` in Unity 6000.3.13f1. Its `Packages/manifest.json` links `com.rwth.unity.omilaxr.xapi4unity` from disk (`file:`), so edits recompile live.
 - **Tests** (`Tests/`, assembly `xAPI4Unity.Tests`): an editor-only asmdef. Run them in the Unity Test Runner (EditMode tab).
