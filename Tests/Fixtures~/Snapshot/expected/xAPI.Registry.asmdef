@@ -1,0 +1,16 @@
+{
+  "name": "xAPI.Registry",
+  "rootNamespace": "xAPI.Registry",
+  "references": [
+"OmiLAXR",
+"OmiLAXR.xAPI"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

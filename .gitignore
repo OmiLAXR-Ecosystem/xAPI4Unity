@@ -44,3 +44,7 @@ Tools/
 Logs/
 Assets/xapi/
 Assets/xAPI.Registry/
+
+# Test fixtures live in a folder ending in "~" so Unity skips them.
+# Keep them even if a global gitignore drops editor backups ("*~").
+!/Tests/Fixtures~/

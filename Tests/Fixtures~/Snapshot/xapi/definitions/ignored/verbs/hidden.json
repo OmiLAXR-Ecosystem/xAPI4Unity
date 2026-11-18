@@ -1,0 +1,8 @@
+{
+    "name": {
+        "en-US": "hidden"
+    },
+    "description": {
+        "en-US": "Must not show up in the registry."
+    }
+}
