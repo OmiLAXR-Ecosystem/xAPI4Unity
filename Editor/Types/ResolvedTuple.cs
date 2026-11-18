@@ -36,12 +36,36 @@ namespace xAPI4Unity.Editor.Types
         /// <param name="elements">The list of resolved types that make up the tuple.</param>
         /// <param name="definition">The string definition of the tuple.</param>
         /// <exception cref="ArgumentException">Thrown if the elements list is null or empty.</exception>
-        public ResolvedTuple(IReadOnlyList<ResolvedType> elements, string definition) 
-            : base(typeof(ResolvedTuple), definition)
+        public ResolvedTuple(IReadOnlyList<ResolvedType> elements, string definition)
+            : base(MakeValueTupleType(elements), definition)
         {
-            if (elements == null || elements.Count == 0)
-                throw new ArgumentException("Tuple needs at least one element.");
             Elements = elements;
+        }
+
+        private static readonly Type[] ValueTupleDefinitions =
+        {
+            typeof(ValueTuple<>), typeof(ValueTuple<,>), typeof(ValueTuple<,,>), typeof(ValueTuple<,,,>),
+            typeof(ValueTuple<,,,,>), typeof(ValueTuple<,,,,,>), typeof(ValueTuple<,,,,,,>), typeof(ValueTuple<,,,,,,,>)
+        };
+
+        /// <summary>
+        /// Builds the <see cref="ValueTuple"/> type of the elements, as the C# compiler does for
+        /// <c>(T1, T2, …)</c>. More than seven elements nest the rest into the eighth argument.
+        /// </summary>
+        private static Type MakeValueTupleType(IReadOnlyList<ResolvedType> elements)
+        {
+            if (elements == null || elements.Count == 0 || elements.Any(e => e == null))
+                throw new ArgumentException("Tuple needs at least one element.");
+            return MakeValueTupleType(elements.Select(e => e.Type).ToArray());
+        }
+
+        private static Type MakeValueTupleType(Type[] types)
+        {
+            if (types.Length <= 7)
+                return ValueTupleDefinitions[types.Length - 1].MakeGenericType(types);
+
+            var rest = MakeValueTupleType(types.Skip(7).ToArray());
+            return ValueTupleDefinitions[7].MakeGenericType(types.Take(7).Concat(new[] { rest }).ToArray());
         }
 
         /// <summary>

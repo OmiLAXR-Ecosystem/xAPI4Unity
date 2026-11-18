@@ -8,11 +8,18 @@ namespace xAPI4Unity.Editor.Types
     public class ResolvedNullable : ResolvedType
     {
         public override bool IsNullable => true;
-        public ResolvedNullable(ResolvedType type) : base(type.Type, type.Definition)
+
+        /// <summary>
+        /// The type that is made nullable.
+        /// </summary>
+        public ResolvedType Inner { get; }
+
+        public ResolvedNullable(ResolvedType type)
+            : base((type ?? throw new System.ArgumentNullException(nameof(type))).Type, type.Definition)
         {
-            
+            Inner = type;
         }
 
-        public override string GetTypeSyntax() => base.GetTypeSyntax() + "?";
+        public override string GetTypeSyntax() => Inner.GetTypeSyntax() + "?";
     }
 }

@@ -25,7 +25,7 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public TypeSchema(ITypeNameResolver resolver) : base(StringComparer.Ordinal)
         {
-            _resolver = resolver;
+            _resolver = resolver ?? CreateDefaultResolver();
         }
 
         /// <summary>
@@ -43,6 +43,11 @@ namespace xAPI4Unity.Editor.Types
         }
 
         
+        /// <summary>
+        /// The resolver used when none is passed: the built-in aliases plus loaded assemblies.
+        /// </summary>
+        private static ITypeNameResolver CreateDefaultResolver() => new TypeNameResolver(new Aliases());
+
         private static readonly Regex PlaceholderRegex = new Regex(
             @"(?<!\\)\$\{\s*(?<id>[A-Za-z_][A-Za-z0-9_.-]*)\s*\}",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -66,6 +71,7 @@ namespace xAPI4Unity.Editor.Types
             if (input == null) 
                 throw new ArgumentNullException("input");
 
+            resolver = resolver ?? CreateDefaultResolver();
             var result = new TypeSchema(resolver);
             
             foreach (var kv in input)
@@ -175,6 +181,7 @@ namespace xAPI4Unity.Editor.Types
             bool validateResolution = true,
             ITypeNameResolver resolver = null)
         {
+            resolver = resolver ?? CreateDefaultResolver();
             schema = new TypeSchema(resolver);
             errors = new List<string>();
             if (input == null)

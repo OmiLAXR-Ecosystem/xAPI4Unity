@@ -92,7 +92,9 @@ namespace xAPI4Unity.Editor.Types
             if (IsRangeSyntax(CoreName))
             {
                 ResolvedRange.TryParseRange(CoreName, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
-                elementType = new ResolvedRange(typeNameResolver.ResolveType(type), min, max, minInclusive, maxInclusive, CoreName);
+                var rangeType = typeNameResolver.ResolveType(type);
+                if (rangeType == null) return null;
+                elementType = new ResolvedRange(rangeType, min, max, minInclusive, maxInclusive, CoreName);
             }
             // Handle tuple syntax (e.g., "(int, string)")
             else if (IsTupleSyntax(CoreName))
@@ -132,12 +134,8 @@ namespace xAPI4Unity.Editor.Types
             // Apply array parts
             foreach (var part in ArrayParts)
             {
-                var arrayType = part.IsJagged
-                    ? currentType.Type.MakeArrayType()
-                    : currentType.Type.MakeArrayType(part.Rank);
-
-                var brackets = part.IsJagged ? "[]" : $"[{new string(',', part.Rank - 1)}]";
-                currentType = new ResolvedType(arrayType, $"{currentType.Definition}{brackets}");
+                currentType = new ResolvedArray(currentType, part.IsJagged, part.Rank,
+                    $"{currentType.Definition}{part}");
             }
 
             return currentType;

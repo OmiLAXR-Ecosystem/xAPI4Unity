@@ -34,21 +34,23 @@ namespace xAPI4Unity.Editor.Types
 
             if (name.EndsWith("?"))
             {
-                return new ResolvedNullable(ResolveType(name.TrimEnd('?')));
+                var inner = ResolveType(name.TrimEnd('?'));
+                return inner == null ? null : new ResolvedNullable(inner);
             }
 
             // Handle range definitions such as "int[1,10]" or "double(0.1,1.0)"
-            if (!name.StartsWith("(") && !name.StartsWith("[") && name.EndsWith(")") || name.EndsWith("]"))
+            if (!name.StartsWith("(") && !name.StartsWith("[") && (name.EndsWith(")") || name.EndsWith("]"))
+                && ResolvedRange.TryParseRange(name, out var type, out var min, out var max, out var minInclusive, out var maxInclusive))
             {
-                ResolvedRange.TryParseRange(name, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
-                return new ResolvedRange(ResolveType(type), min, max, minInclusive, maxInclusive, name);
+                var element = ResolveType(type);
+                return element == null ? null : new ResolvedRange(element, min, max, minInclusive, maxInclusive, name);
             }
 
             // Handle tuple definitions such as "(int, float, string)"
             if (name.StartsWith("(") && name.EndsWith(")"))
             {
                 var elements = name.Substring(1, name.Length - 2).Split(',').Select(e => ResolveType(e.Trim())).ToList();
-                return new ResolvedTuple(elements, name);
+                return elements.Any(e => e == null) ? null : new ResolvedTuple(elements, name);
             }
 
             // Handle regex definitions such as "/pattern/"

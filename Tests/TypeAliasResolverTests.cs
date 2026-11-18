@@ -124,8 +124,12 @@ namespace xAPI4Unity.Tests
         [Test]
         public void Expression_Parses_Nullable_Value()
         {
-            var expected = typeof(Nullable<>).MakeGenericType(typeof(int));
-            AssertOkExpr("int?", expected);
+            // ResolvedNullable keeps the inner type and marks it nullable; the syntax carries the "?"
+            var resolved = ResolveExpr("int?");
+            Assert.That(resolved, Is.InstanceOf<ResolvedNullable>());
+            Assert.That(resolved.IsNullable, Is.True);
+            Assert.That(resolved.Type, Is.EqualTo(typeof(int)));
+            Assert.That(resolved.GetTypeSyntax(), Is.EqualTo("System.Int32?"));
         }
 
         [Test]
@@ -198,11 +202,12 @@ namespace xAPI4Unity.Tests
             var expectedArray = ExpectedTuple(typeof(int), typeof(float)).MakeArrayType();
             AssertOkExpr("(int, float)[]", expectedArray);
 
-            // (int,(float,float))? → Nullable<ValueTuple<int,ValueTuple<float,float>>>
+            // (int,(float,float))? → nullable ValueTuple<int,ValueTuple<float,float>>
             var inner = ExpectedTuple(typeof(float), typeof(float));
             var outer = ExpectedTuple(typeof(int), inner);
-            var expectedNullable = typeof(Nullable<>).MakeGenericType(outer);
-            AssertOkExpr("(int,(float,float))?", expectedNullable);
+            var nullable = ResolveExpr("(int,(float,float))?");
+            Assert.That(nullable.IsNullable, Is.True);
+            Assert.That(nullable.Type, Is.EqualTo(outer));
         }
 
         [Test]
