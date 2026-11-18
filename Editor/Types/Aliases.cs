@@ -17,7 +17,7 @@ namespace xAPI4Unity.Editor.Types
         /// <summary>
         /// Initializes a new instance of the <see cref="Aliases"/> class with default mappings.
         /// </summary>
-        public Aliases() : base()
+        public Aliases() : base(StringComparer.OrdinalIgnoreCase)
         {
             // Primitive types
             Add("string", typeof(string)); Add("str", typeof(string)); Add("char", typeof(char));
