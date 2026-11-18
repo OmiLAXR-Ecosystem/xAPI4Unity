@@ -30,16 +30,37 @@ namespace xAPI4Unity.Tests
                 Directory.Delete(_directory, true);
         }
 
+        private sealed class CountingRefresher : IAssetRefresher
+        {
+            public int Count;
+            public void Refresh() => Count++;
+        }
+
+        private sealed class FixedAnswerDialogs : IEditorDialogs
+        {
+            private readonly bool _answer;
+            public int Asked;
+            public FixedAnswerDialogs(bool answer) => _answer = answer;
+
+            public bool Confirm(string title, string message, string ok, string cancel)
+            {
+                Asked++;
+                return _answer;
+            }
+        }
+
         [Test]
         public void Create_Writes_A_Readable_Default_Config()
         {
             // Arrange
             var path = Path.Combine(_directory, "xapi.config.json");
+            var refresher = new CountingRefresher();
 
             // Act
-            ConfigFile.Create(path);
+            ConfigFile.Create(path, refresher);
 
             // Assert
+            Assert.AreEqual(1, refresher.Count);
             var config = ConfigFile.Read(path);
             Assert.IsNotNull(config);
             CollectionAssert.Contains(config.ignoredContexts, "lms");
@@ -54,10 +75,46 @@ namespace xAPI4Unity.Tests
             File.WriteAllText(path, "{ \"ignoredContexts\": [] }");
 
             // Act
-            ConfigFile.Create(path);
+            ConfigFile.Create(path, new CountingRefresher());
 
             // Assert
             CollectionAssert.IsNotEmpty(ConfigFile.Read(path).ignoredContexts);
+        }
+
+        [Test]
+        public void CreateAsking_Writes_A_New_File_Without_Asking()
+        {
+            // Arrange
+            var path = Path.Combine(_directory, "xapi.config.json");
+            var dialogs = new FixedAnswerDialogs(false);
+
+            // Act
+            var written = ConfigFile.CreateAsking(path, dialogs, new CountingRefresher());
+
+            // Assert
+            Assert.IsTrue(written);
+            Assert.AreEqual(0, dialogs.Asked);
+            Assert.IsTrue(File.Exists(path));
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void CreateAsking_Overwrites_An_Existing_File_Only_If_Confirmed(bool confirm)
+        {
+            // Arrange
+            var path = Path.Combine(_directory, "xapi.config.json");
+            File.WriteAllText(path, "{ \"ignoredContexts\": [] }");
+            var dialogs = new FixedAnswerDialogs(confirm);
+            var refresher = new CountingRefresher();
+
+            // Act
+            var written = ConfigFile.CreateAsking(path, dialogs, refresher);
+
+            // Assert
+            Assert.AreEqual(1, dialogs.Asked);
+            Assert.AreEqual(confirm, written);
+            Assert.AreEqual(confirm ? 1 : 0, refresher.Count);
+            Assert.AreEqual(confirm, ConfigFile.Read(path).ignoredContexts.Length > 0);
         }
 
         [Test]
