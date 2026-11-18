@@ -81,6 +81,16 @@ namespace xAPI4Unity.Tests
         }
 
         [Test]
+        public void DefinitionFile_Names_The_File_It_Cannot_Turn_Into_A_Name()
+        {
+            // Act
+            var e = Assert.Throws<System.ArgumentException>(() => new DefinitionFile("generic/verbs/().json", Json));
+
+            // Assert
+            StringAssert.Contains("'generic/verbs/().json'", e.Message);
+        }
+
+        [Test]
         public void DefinitionFile_Marks_Other_Folders_As_Unknown()
         {
             // Act

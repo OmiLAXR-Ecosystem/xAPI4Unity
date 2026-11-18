@@ -11,7 +11,7 @@ namespace xAPI.Registry {
         public readonly xAPI_Verbs_Demo verbs = new xAPI_Verbs_Demo();
 
         /// <summary>
-        /// 1 activities of 'demo'.
+        /// 2 activities of 'demo'.
         /// URI: https://omilaxr-ecosystem.github.io/xapi/definitions/demo/activities
         /// </summary>
         public readonly xAPI_Activities_Demo activities = new xAPI_Activities_Demo();

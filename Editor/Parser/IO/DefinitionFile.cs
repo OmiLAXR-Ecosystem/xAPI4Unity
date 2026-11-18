@@ -123,7 +123,14 @@ namespace xAPI4Unity.Editor.Parser.IO
             JsonContent = content;
 
             // Derive the definition name from the file name (without extension).
-            Name = System.IO.Path.GetFileNameWithoutExtension(path).ClearName();
+            try
+            {
+                Name = System.IO.Path.GetFileNameWithoutExtension(path).ClearName();
+            }
+            catch (System.ArgumentException e)
+            {
+                throw new System.ArgumentException($"Cannot make a C# name from the file name of '{Path}'. {e.Message}", nameof(path), e);
+            }
 
             // Split path segments to extract context, definition type, and other metadata.
             var s = Path.Split('/');

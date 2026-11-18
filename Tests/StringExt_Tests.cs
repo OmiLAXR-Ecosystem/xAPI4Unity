@@ -40,11 +40,26 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(expected, value.ClearName());
         }
 
-        [Test]
-        public void ClearString_Escapes_Quotes()
+        [TestCase("")]
+        [TestCase("()")]
+        [TestCase(".,")]
+        public void ClearName_Rejects_A_Name_Without_Usable_Characters(string value)
         {
             // Act / Assert
-            Assert.AreEqual("say \\\"hi\\\"", "say \"hi\"".ClearString());
+            var e = Assert.Throws<ArgumentException>(() => value.ClearName());
+            StringAssert.Contains("no characters that can be used in a C# name", e.Message);
+        }
+
+        [TestCase("say \"hi\"", "say \\\"hi\\\"")]
+        [TestCase("C:\\temp", "C:\\\\temp")]
+        [TestCase("one\ntwo", "one\\ntwo")]
+        [TestCase("one\r\ntwo", "one\\r\\ntwo")]
+        [TestCase("a\tb", "a\\tb")]
+        [TestCase("gedrückt", "gedrückt")]
+        public void ClearString_Escapes_For_A_CSharp_String_Literal(string value, string expected)
+        {
+            // Act / Assert
+            Assert.AreEqual(expected, value.ClearString());
         }
     }
 }
