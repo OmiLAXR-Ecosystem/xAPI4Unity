@@ -6,7 +6,9 @@ How to work in `com.rwth.unity.omilaxr.xapi4unity`. Architecture and commands ar
 
 - This folder is its own git repo inside the `omilaxr-ecosystem` workspace. Run git commands here.
 - `main` is protected. Every change goes through a pull request from a branch named `<type>/<topic>`, such as `feat/wizard-search` or `fix/download-url`. Do not name branches like versions (`vX.Y.Z`): tags have those names.
-- PRs are squash-merged, so the PR title and description become the single commit on `main`.
+- Merge method:
+  - **Squash** by default. The PR title and description become the single commit on `main`, so the PR title is what release-please reads.
+  - **Rebase and merge** when the branch is a series of clean Conventional Commits that should each land on `main` and show up in the CHANGELOG. Then every commit message counts, not the PR title.
 - PR titles and commit messages follow Conventional Commits: `type(scope): summary`, where type is `feat`, `fix`, `perf`, `revert`, `refactor`, `docs`, `test`, `build`, `ci` or `chore`. Do not commit unrelated working-tree changes that you did not make.
 - The `Checks` workflow must pass before a merge: the PR title format, and `.github/scripts/check_package.py` (`.meta` files, guids, SPDX headers, versions). Run the script locally before opening a PR: `python3 .github/scripts/check_package.py`.
 
