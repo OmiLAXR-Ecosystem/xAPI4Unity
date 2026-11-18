@@ -61,13 +61,6 @@ namespace xAPI4Unity.Editor.Parser.IO {
             DirContent = files;
         }
 
-        public void AppendToDirContent(FileMeta fileMeta)
-        {
-            if (DirContent == null)
-                DirContent = new List<FileMeta>();
-            DirContent.Add(fileMeta);
-        }
-
         /// <summary>
         /// [File: Name={Name}, Path={Path}, Content={Content}]
         /// </summary>
