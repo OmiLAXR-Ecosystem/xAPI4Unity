@@ -8,12 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using xAPI4Unity.Editor.Parser.Code.CSharp;
 using xAPI4Unity.Editor.Parser.Definitions;
+using xAPI4Unity.Editor.Parser.IO;
 using xAPI4Unity.Editor.Types;
 
 namespace xAPI4Unity.Editor.Parser
 {
     /// <summary>
-    /// Responsible for managing and updating definition-related files in the xAPI4Unity project.
+    /// Builds the C# files generated from the definitions (verbs, activities, extensions, contexts).
     /// </summary>
     internal static class DefinitionsFiles
     {
@@ -23,68 +24,46 @@ namespace xAPI4Unity.Editor.Parser
         private static readonly string[] ExtensionTypes = { "activity", "context", "result" };
 
         /// <summary>
-        /// Updates the definition-related files by generating new classes and context files from the provided definitions.
+        /// Generates the definition classes in memory.
         /// </summary>
         /// <param name="namespace">The target namespace for the generated files.</param>
-        /// <param name="definitions">A collection of DefinitionFile objects to process.</param>
-        /// <param name="destPath">The directory path where the generated files should be saved.</param>
+        /// <param name="definitions">The definitions to generate from.</param>
         /// <param name="typeSchema">Optional schema for resolving types within the definitions.</param>
-        public static void UpdateFiles(string @namespace,
-            IEnumerable<xAPI4Unity.Editor.Parser.IO.DefinitionFile> definitions, string destPath, TypeSchema typeSchema = null)
+        /// <param name="log">Receives warnings and details. Defaults to the Unity console.</param>
+        /// <returns>The files, each with its file name and C# content.</returns>
+        public static IReadOnlyList<FileMeta> Create(string @namespace,
+            IEnumerable<IO.DefinitionFile> definitions, TypeSchema typeSchema = null, IGeneratorLog log = null)
         {
+            log = log ?? UnityGeneratorLog.Instance;
+
             // Parse the provided definitions into xAPIDefinitions
-            var xAPIDefinitions = new xAPI_Definitions(definitions);
+            var xAPIDefinitions = new xAPI_Definitions(definitions, log);
 
             // Initialize the C# generator with the specified namespace
-            var generator = new CSharpGenerator(@namespace);
+            var generator = new CSharpGenerator(@namespace, log);
+            var files = new List<FileMeta>();
 
-            // Generate and save extension type files for each defined extension type
-            foreach (var extensionType in ExtensionTypes)
-            {
-                var extensionTypeFile = generator.GenerateExtensionTypeFile(extensionType);
-                extensionTypeFile.Save(destPath);
-            }
+            // Extension type base classes (xAPI_Extensions_Activity, …)
+            files.AddRange(ExtensionTypes.Select(generator.GenerateExtensionTypeFile));
 
-            // Iterate through all contexts parsed from the definitions
             foreach (var ctx in xAPIDefinitions.Contexts.Values)
             {
-                // Generate and save the context extensions file
-                var contextExtensions = generator.GenerateContextExtensionsFile(ctx);
-                contextExtensions.Save(destPath);
+                files.Add(generator.GenerateContextExtensionsFile(ctx));
 
-                // Generate and save extension files for each extension type
                 foreach (var extensionType in ExtensionTypes)
-                {
-                    var extFiles = generator.GenerateExtensionsFiles(ctx, extensionType, typeSchema).ToList();
-                    extFiles.ForEach(e => e.Save(destPath));
-                }
+                    files.AddRange(generator.GenerateExtensionsFiles(ctx, extensionType, typeSchema));
 
-                // Generate and save verbs files
-                var verbs = generator.GenerateVerbsFiles(ctx).ToList();
-                verbs.ForEach(fm => fm.Save(destPath));
-
-                // Generate and save activities files
-                var activities = generator.GenerateActivitiesFiles(ctx).ToList();
-                activities.ForEach(fm => fm.Save(destPath));
-
-                // Generate and save generic extensions files
-                var extensions = generator.GenerateExtensions(ctx, typeSchema).ToList();
-                extensions.ForEach(fm => fm.Save(destPath));
-
-                // Generate and save the main context file
-                var ctxFile = generator.GenerateContextFile(ctx);
-                ctxFile.Save(destPath);
+                files.AddRange(generator.GenerateVerbsFiles(ctx));
+                files.AddRange(generator.GenerateActivitiesFiles(ctx));
+                files.Add(generator.GenerateContextFile(ctx));
             }
 
-            // Generate and save the xAPI_Definitions.cs file containing all contexts
-            var definitionsFile =
-                generator.GenerateDefinitionsFile(xAPIDefinitions.Contexts.Values.Select(c => new xAPIContext(c.Name)));
-            definitionsFile.Save(destPath);
+            // xAPI_Definitions.cs (static) and xAPI_Contexts.cs list all contexts
+            var contexts = xAPIDefinitions.Contexts.Values.Select(c => new xAPIContext(c.Name)).ToList();
+            files.Add(generator.GenerateDefinitionsFile(contexts));
+            files.Add(generator.GenerateContextsFile(contexts));
 
-            // Generate and save the xAPI_Contexts.cs file for managing contexts
-            var contextsFile =
-                generator.GenerateContextsFile(xAPIDefinitions.Contexts.Values.Select(c => new xAPIContext(c.Name)));
-            contextsFile.Save(destPath);
+            return files;
         }
     }
 }

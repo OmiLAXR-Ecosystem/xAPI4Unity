@@ -26,8 +26,8 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
         /// Creates a CSharpGenerator
         /// </summary>
         /// <param name="namespace">Namespace</param>
-        public CSharpGenerator(string @namespace)
-            : base(new CSharpSerializer())
+        public CSharpGenerator(string @namespace, IGeneratorLog log = null)
+            : base(new CSharpSerializer(), log)
         {
             Namespace = @namespace;
         }

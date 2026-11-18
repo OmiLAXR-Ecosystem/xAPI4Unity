@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
 using xAPI4Unity.Editor.Parser.Definitions;
 using xAPI4Unity.Editor.Parser.IO;
@@ -90,12 +89,19 @@ namespace xAPI4Unity.Editor.Parser.Code
         protected void Log(string message) => OnLog?.Invoke(message);
 
         /// <summary>
+        /// Receives details that are shown to the user, such as recognized extension types.
+        /// </summary>
+        protected readonly IGeneratorLog GeneratorLog;
+
+        /// <summary>
         /// Creates a CodeGenerator
         /// </summary>
         /// <param name="serializer">Serializer to use in the generator</param>
-        protected CodeGenerator(SyntaxTreeSerializer serializer)
+        /// <param name="log">Receives details shown to the user. Defaults to the Unity console.</param>
+        protected CodeGenerator(SyntaxTreeSerializer serializer, IGeneratorLog log = null)
         {
             Serializer = serializer;
+            GeneratorLog = log ?? UnityGeneratorLog.Instance;
         }
 
         /// <summary>
@@ -501,7 +507,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                var types = typeSchema?.GetTypesFromKey(path);
                if (types != null && (types.Length > 1 || types.Length == 1 && types[0].Type != defaultType))
                {
-                   Debug.Log($"[xAPI4Unity]: Recognized types for '{path}': " +
+                   GeneratorLog.Info($"[xAPI4Unity]: Recognized types for '{path}': " +
                              string.Join(",", types.Select(t => t.GetTypeSyntax())));
                }
                else

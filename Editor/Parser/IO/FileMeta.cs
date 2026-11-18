@@ -5,7 +5,6 @@
 */
 #if UNITY_EDITOR
 using System.Collections.Generic;
-using System.IO;
 
 namespace xAPI4Unity.Editor.Parser.IO {
     /// <summary>
@@ -67,26 +66,6 @@ namespace xAPI4Unity.Editor.Parser.IO {
             if (DirContent == null)
                 DirContent = new List<FileMeta>();
             DirContent.Add(fileMeta);
-        }
-        
-        public void Save(string destination)
-        {
-            if (!Directory.Exists(destination))
-                Directory.CreateDirectory(destination);
-            
-            Path = destination;
-            
-            if (IsDirectory)
-            {
-                DirContent.ForEach(d => d.Save(destination));
-                return;
-            }
-            
-            var filePath = System.IO.Path.Combine(destination, Name);
-            using (var fs = new StreamWriter(filePath))
-            {
-                fs.Write(FileContent);
-            }
         }
 
         /// <summary>
