@@ -1,0 +1,39 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
+using System.Linq;
+using NUnit.Framework;
+using xAPI4Unity.Editor;
+
+namespace xAPI4Unity.Tests
+{
+    [TestFixture]
+    public class MergeReport_Tests
+    {
+        [Test]
+        public void MergeReport_Counts_And_Groups_The_Results()
+        {
+            // Arrange
+            var report = new MergeReport("upstream");
+
+            // Act
+            report.AddCopy("a.json");
+            report.AddCopy("b.json");
+            report.AddSkip("c.json");
+            report.AddConflict("d.json");
+
+            // Assert
+            Assert.AreEqual("upstream", report.source);
+            Assert.AreEqual(2, report.copied);
+            Assert.AreEqual(1, report.skipped);
+            Assert.AreEqual(1, report.conflicts);
+            CollectionAssert.AreEqual(new[] { "a.json", "b.json" }, report.CopyResults.Select(r => r.path));
+            CollectionAssert.AreEqual(new[] { "c.json" }, report.SkipResults.Select(r => r.path));
+            CollectionAssert.AreEqual(new[] { "d.json" }, report.ConflictResults.Select(r => r.path));
+        }
+    }
+}
+#endif

@@ -1,0 +1,186 @@
+/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+using xAPI4Unity.Editor.Parser;
+using xAPI4Unity.Editor.Types;
+using static xAPI4Unity.Tests.GeneratorFakes;
+
+namespace xAPI4Unity.Tests
+{
+    [TestFixture]
+    public class RegistryGenerator_Tests
+    {
+        private FakeTemplateSource _templates;
+        private CollectingGeneratorLog _log;
+        private RegistryGenerator _generator;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _templates = new FakeTemplateSource();
+            _log = new CollectingGeneratorLog();
+            _generator = new RegistryGenerator(_templates, _log);
+        }
+
+        private GeneratedRegistry Build(GenerationOptions options, params Editor.Parser.IO.DefinitionFile[] definitions) =>
+            _generator.Build(options, definitions);
+
+        [Test]
+        public void Build_Creates_Core_Definitions_And_AsmDef()
+        {
+            // Arrange
+            var options = new GenerationOptions("My.Registry");
+
+            // Act
+            var registry = Build(options, Definition("generic/verbs/accepted.json"));
+
+            // Assert
+            foreach (var core in CoreFiles.Names)
+                Assert.IsTrue(registry.Contains("Core/" + core), core);
+            Assert.IsTrue(registry.Contains("Definitions/xAPI_Verbs_Generic.cs"));
+            Assert.IsTrue(registry.Contains("Definitions/xAPI_Context_Generic.cs"));
+            Assert.IsTrue(registry.Contains("Definitions/xAPI_Definitions.cs"));
+            Assert.IsTrue(registry.Contains("Definitions/xAPI_Contexts.cs"));
+            Assert.IsTrue(registry.Contains("My.Registry.asmdef"));
+            Assert.AreEqual(CoreFiles.AsmDefMeta, registry.GetContent("My.Registry.asmdef.meta"));
+        }
+
+        [Test]
+        public void Build_Replaces_The_Template_Namespace()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"));
+
+            // Assert
+            Assert.AreEqual("namespace My.Registry { // xAPI_Verb.cs }", registry.GetContent("Core/xAPI_Verb.cs"));
+            CollectionAssert.AreEquivalent(CoreFiles.Names, _templates.Requested);
+        }
+
+        [Test]
+        public void Build_Puts_Each_Verb_With_Its_Uri_Into_The_Context_Class()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"),
+                Definition("generic/verbs/accepted.json", "accepted", "Accepted something."));
+            var verbs = registry.GetContent("Definitions/xAPI_Verbs_Generic.cs");
+
+            // Assert
+            StringAssert.Contains("namespace My.Registry", verbs);
+            StringAssert.Contains("public sealed class xAPI_Verbs_Generic : xAPI_Verbs", verbs);
+            StringAssert.Contains("public readonly xAPI_Verb accepted = new xAPI_Verb(", verbs);
+            StringAssert.Contains("/// Accepted something.", verbs);
+            StringAssert.Contains("URI: https://omilaxr-ecosystem.github.io/xapi/definitions/generic/verbs/accepted", verbs);
+        }
+
+        [Test]
+        public void Build_Creates_A_Class_Per_Category()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"),
+                Definition("generic/verbs/navigation/jumped.json"));
+
+            // Assert
+            Assert.IsTrue(registry.Contains("Definitions/xAPI_Verbs_Generic_Navigation.cs"));
+            StringAssert.Contains("jumped", registry.GetContent("Definitions/xAPI_Verbs_Generic_Navigation.cs"));
+        }
+
+        [Test]
+        public void Build_Leaves_Out_Ignored_Contexts()
+        {
+            // Arrange
+            var options = new GenerationOptions("My.Registry") { IgnoredContexts = new[] { "media" } };
+
+            // Act
+            var registry = Build(options,
+                Definition("generic/verbs/accepted.json"),
+                Definition("media/verbs/played.json"));
+
+            // Assert
+            Assert.AreEqual(1, registry.DefinitionCount);
+            Assert.IsFalse(registry.Paths.Any(p => p.Contains("Media")));
+            CollectionAssert.Contains(_log.Infos, "[xAPI4Unity]: Found 1 xAPI definitions");
+        }
+
+        [Test]
+        public void Build_Writes_The_References_Into_The_AsmDef()
+        {
+            // Arrange
+            var options = new GenerationOptions("My.Registry") { AsmDefReferences = new[] { "OmiLAXR", "OmiLAXR.xAPI" } };
+
+            // Act
+            var asmDef = Build(options).GetContent("My.Registry.asmdef");
+
+            // Assert
+            StringAssert.Contains("\"name\": \"My.Registry\"", asmDef);
+            StringAssert.Contains("\"OmiLAXR\",\n\"OmiLAXR.xAPI\"", asmDef);
+        }
+
+        [Test]
+        public void Build_Types_Extension_Methods_From_The_Schema()
+        {
+            // Arrange
+            var schema = TypeSchema.Parse(new Dictionary<string, string>
+            {
+                { "generic/extensions/result/score", "float | (int,int)[]" }
+            });
+            var options = new GenerationOptions("My.Registry") { TypeSchema = schema };
+
+            // Act
+            var registry = Build(options,
+                Definition("generic/extensions/result/score.json"),
+                Definition("generic/extensions/result/comment.json"));
+            var extensions = registry.GetContent("Definitions/xAPI_Extensions_Result_Generic.cs");
+
+            // Assert
+            StringAssert.Contains("public xAPI_Extensions_Result_Generic score(System.Single value)", extensions);
+            StringAssert.Contains("public xAPI_Extensions_Result_Generic score((System.Int32,System.Int32)[] value)", extensions);
+            StringAssert.Contains("public xAPI_Extensions_Result_Generic comment(System.Object value)", extensions);
+            Assert.IsTrue(_log.Infos.Any(m => m.Contains("Recognized types for 'generic/extensions/result/score'")));
+        }
+
+        [Test]
+        public void Build_Skips_Extensions_Of_An_Unknown_Type_With_A_Warning()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"),
+                Definition("generic/extensions/statement/odd.json"));
+
+            // Assert
+            Assert.AreEqual(1, _log.Warnings.Count);
+            StringAssert.Contains("Unknown extension type 'unknown' for extension 'odd'", _log.Warnings[0]);
+            Assert.IsFalse(registry.Files.Any(f => f.Content.Contains(" odd(")));
+        }
+
+        [Test]
+        public void Generate_Writes_The_Built_Registry_Once()
+        {
+            // Arrange
+            var source = new InMemoryDefinitionSource(Definition("generic/verbs/accepted.json"));
+            var writer = new InMemoryRegistryWriter();
+
+            // Act
+            var registry = _generator.Generate(new GenerationOptions("My.Registry"), source, writer);
+
+            // Assert
+            Assert.AreEqual(1, writer.Written.Count);
+            Assert.AreSame(registry, writer.Written[0]);
+            Assert.AreEqual("[xAPI4Unity]: Created xAPI Registry with namespace My.Registry", _log.Infos.Last());
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("  ")]
+        public void GenerationOptions_Rejects_An_Empty_Namespace(string @namespace)
+        {
+            // Act / Assert
+            Assert.Throws<System.ArgumentException>(() => new GenerationOptions(@namespace));
+        }
+    }
+}
+#endif
