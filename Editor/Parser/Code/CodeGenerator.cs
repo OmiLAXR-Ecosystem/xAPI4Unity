@@ -115,6 +115,24 @@ namespace xAPI4Unity.Editor.Parser.Code
         }
 
         /// <summary>
+        /// Line break of the generated code. It is fixed to LF instead of <see cref="Environment.NewLine"/>,
+        /// so Windows, macOS and Linux generate the same registry.
+        /// </summary>
+        public const string NewLine = "\n";
+
+        /// <summary>
+        /// Turns CRLF and CR line breaks into <see cref="NewLine"/>.
+        /// </summary>
+        public static string NormalizeLineEndings(string text) =>
+            text?.Replace("\r\n", NewLine).Replace("\r", NewLine);
+
+        /// <summary>
+        /// Splits text at any line break (LF, CRLF or CR).
+        /// </summary>
+        public static string[] SplitLines(string text) =>
+            NormalizeLineEndings(text).Split(new[] { NewLine }, StringSplitOptions.None);
+
+        /// <summary>
         /// Generates files from contexts
         /// </summary>
         /// <param name="contexts">List of contexts to generate from</param>

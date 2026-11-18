@@ -173,6 +173,50 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("[xAPI4Unity]: Created xAPI Registry with namespace My.Registry", _log.Infos.Last());
         }
 
+        private sealed class CrlfTemplateSource : Editor.Parser.IO.ICoreTemplateSource
+        {
+            public string Read(string fileName) => "namespace xAPI.Registry\r\n{\r\n}\r\n";
+        }
+
+        [Test]
+        public void Build_Uses_LF_Even_For_CRLF_Templates()
+        {
+            // Arrange
+            var generator = new RegistryGenerator(new CrlfTemplateSource(), _log);
+
+            // Act
+            var core = generator.Build(new GenerationOptions("My.Registry"), new Editor.Parser.IO.DefinitionFile[0])
+                .GetContent("Core/xAPI_Verb.cs");
+
+            // Assert
+            Assert.AreEqual("namespace My.Registry\n{\n}\n", core);
+        }
+
+        [Test]
+        public void Build_Writes_Generated_Code_With_LF_Only()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"),
+                Definition("generic/verbs/accepted.json"),
+                Definition("generic/extensions/result/score.json"));
+
+            // Assert
+            var withCr = registry.Files.Where(f => f.Content.Contains("\r")).Select(f => f.RelativePath).ToArray();
+            CollectionAssert.IsEmpty(withCr);
+        }
+
+        [Test]
+        public void Build_Splits_A_CRLF_Description_Into_Comment_Lines()
+        {
+            // Act
+            var registry = Build(new GenerationOptions("My.Registry"),
+                Definition("generic/verbs/accepted.json", "accepted", "Line one\\r\\nLine two"));
+            var verbs = registry.GetContent("Definitions/xAPI_Verbs_Generic.cs");
+
+            // Assert
+            StringAssert.Contains("/// Line one\n        /// Line two\n", verbs);
+        }
+
         [TestCase(null)]
         [TestCase("")]
         [TestCase("  ")]

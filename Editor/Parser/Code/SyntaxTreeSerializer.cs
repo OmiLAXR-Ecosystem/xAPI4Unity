@@ -51,9 +51,9 @@ namespace xAPI4Unity.Editor.Parser.Code
             var getablePropsStr = GetablePropertiesToString(cls.GetableProperties, indentDepth);
             var methodsStr = MethodsToString(cls.Methods, indentDepth);
 
-            return $"{propsStr}{(constStr == "" ? "" : Environment.NewLine)}{constStr}" +
-                   $"{(getablePropsStr == "" ? "" : Environment.NewLine)}{getablePropsStr}" +
-                   $"{(methodsStr == "" ? "" : Environment.NewLine)}{methodsStr}";
+            return $"{propsStr}{(constStr == "" ? "" : CodeGenerator.NewLine)}{constStr}" +
+                   $"{(getablePropsStr == "" ? "" : CodeGenerator.NewLine)}{getablePropsStr}" +
+                   $"{(methodsStr == "" ? "" : CodeGenerator.NewLine)}{methodsStr}";
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                 if (i < properties.Count - 1)
                 {
                     // Add a newline between properties, but not after the last one
-                    propsStr += Environment.NewLine;
+                    propsStr += CodeGenerator.NewLine;
                 }
             }
 
@@ -97,7 +97,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                 if (i < constructors.Count - 1)
                 {
                     // Separate constructors with newline
-                    constStr += Environment.NewLine;
+                    constStr += CodeGenerator.NewLine;
                 }
             }
 
@@ -121,7 +121,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                 if (i < properties.Count - 1)
                 {
                     // Add a newline between entries
-                    getablePropsStr += Environment.NewLine;
+                    getablePropsStr += CodeGenerator.NewLine;
                 }
             }
 
@@ -145,7 +145,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                 if (i < methods.Count - 1)
                 {
                     // Separate methods with newline
-                    methodsStr += Environment.NewLine;
+                    methodsStr += CodeGenerator.NewLine;
                 }
             }
 
@@ -272,10 +272,10 @@ namespace xAPI4Unity.Editor.Parser.Code
             // For each non-null statement value, split by lines and indent each non-empty line
             return body.Statements.Where(statement => statement.Value != null)
                 .Aggregate(str, (current1, statement) 
-                    => statement.Value.Split(Environment.NewLine.ToCharArray())
+                    => CodeGenerator.SplitLines(statement.Value)
                     .Where(line => !string.IsNullOrEmpty(line))
                     .Aggregate(current1, (current, line)
-                        => current + $"{indentBodyStr}{line}{Environment.NewLine}"));
+                        => current + $"{indentBodyStr}{line}{CodeGenerator.NewLine}"));
         }
     }
 }

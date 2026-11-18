@@ -33,7 +33,8 @@ namespace xAPI4Unity.Editor.Parser
         internal const string TemplateNamespace = "xAPI.Registry";
 
         /// <summary>
-        /// Creates the core files with the target namespace.
+        /// Creates the core files with the target namespace and LF line breaks, even if the
+        /// templates were checked out with CRLF.
         /// </summary>
         /// <param name="namespace">The namespace that replaces <see cref="TemplateNamespace"/>.</param>
         /// <param name="templates">Source of the template texts.</param>
@@ -41,7 +42,7 @@ namespace xAPI4Unity.Editor.Parser
         {
             if (templates == null) throw new ArgumentNullException(nameof(templates));
             return Names
-                .Select(name => new FileMeta(name, null, templates.Read(name).Replace(TemplateNamespace, @namespace)))
+                .Select(name => new FileMeta(name, null, Code.CodeGenerator.NormalizeLineEndings(templates.Read(name)).Replace(TemplateNamespace, @namespace)))
                 .ToList();
         }
 

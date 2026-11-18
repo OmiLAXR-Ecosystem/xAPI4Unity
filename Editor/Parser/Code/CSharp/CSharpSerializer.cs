@@ -27,7 +27,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
 
         // Formats a string->string dictionary as a C# Dictionary<string, string> initializer with proper indentation.
         public override string DictionaryToString(IDictionary<string, string> dict, int indentDepth) {
-            var str = $"new Dictionary<string, string> {{{Environment.NewLine}";
+            var str = $"new Dictionary<string, string> {{{CodeGenerator.NewLine}";
             var count = 0;
             if (dict != null) {
                 foreach (var pair in dict) {
@@ -37,7 +37,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                         CodeGenerator.Indent(indentDepth + 1),
                         pair.Key,
                         pair.Value.ClearString(),
-                        count == dict.Count ? string.Empty : $",{Environment.NewLine}");
+                        count == dict.Count ? string.Empty : $",{CodeGenerator.NewLine}");
                 }
             }
             str += " }";
@@ -59,7 +59,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                     .Aggregate(importStr, (current, import) 
                         => current + ImportToString(import, indent));
             }
-            importStr += Environment.NewLine;
+            importStr += CodeGenerator.NewLine;
             
             if (!string.IsNullOrEmpty(root?.Namespace)) {
                 // If a namespace is provided, adjust format string and indentation for nested content
@@ -74,12 +74,12 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
 
         // Builds a namespace wrapper with a slot ({0}) for inner content.
         private static string NamespaceToString(string @namespace) {
-            return $"namespace {@namespace} {{{{{Environment.NewLine}{{0}}{Environment.NewLine}}}}}";
+            return $"namespace {@namespace} {{{{{CodeGenerator.NewLine}{{0}}{CodeGenerator.NewLine}}}}}";
         }
 
         // Renders a single using directive with the requested indentation depth.
         protected override string ImportToString(Import import, int indentDepth) {
-            return $"{CodeGenerator.Indent(indentDepth)}using {import?.Target};{Environment.NewLine}";
+            return $"{CodeGenerator.Indent(indentDepth)}using {import?.Target};{CodeGenerator.NewLine}";
         }
 
         // Emits a C# class declaration, including modifiers, optional base class, XML comment if present,
@@ -87,7 +87,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
         protected override string ClassToString(Class cls, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var baseStr = string.IsNullOrEmpty(cls?.BaseClass) ? "" : $" : {cls.BaseClass}";
-            var classStr = $"{indentStr}{ModifiersToString(cls?.Modifiers)}class {cls?.Name}{baseStr} {{{Environment.NewLine}" +
+            var classStr = $"{indentStr}{ModifiersToString(cls?.Modifiers)}class {cls?.Name}{baseStr} {{{CodeGenerator.NewLine}" +
                 ClassContentsToString(cls, indentDepth + 1) +
                 $"{indentStr}}}";
             if (!string.IsNullOrEmpty(cls?.Comment)) {
@@ -101,11 +101,11 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
         protected override string GetablePropertyToString(GetableProperty property, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var indentStr2 = CodeGenerator.Indent(indentDepth + 1);
-            var getableStr = $"{indentStr}{ModifiersToString(property?.Modifiers)}{property?.Type} {property?.Name} {{{Environment.NewLine}" +
-                $"{indentStr2}get {{{Environment.NewLine}" +
+            var getableStr = $"{indentStr}{ModifiersToString(property?.Modifiers)}{property?.Type} {property?.Name} {{{CodeGenerator.NewLine}" +
+                $"{indentStr2}get {{{CodeGenerator.NewLine}" +
                 MethodBodyToString(property?.Getter?.Body, indentDepth + 2) +
-                $"{indentStr2}}}{Environment.NewLine}" +
-                $"{indentStr}}}{Environment.NewLine}";
+                $"{indentStr2}}}{CodeGenerator.NewLine}" +
+                $"{indentStr}}}{CodeGenerator.NewLine}";
             
             if (!string.IsNullOrEmpty(property?.Comment)) {
                 // Prepend XML doc comment when provided
@@ -129,7 +129,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             
             if (!string.IsNullOrWhiteSpace(property?.Initializer))
             {
-                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {propName} = {property.Initializer};{Environment.NewLine}";
+                propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {propName} = {property.Initializer};{CodeGenerator.NewLine}";
             }
             else
             {
@@ -137,11 +137,11 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                 if (argsStr != "")
                 {
                     // Place arguments on the next indented line when present
-                    argsStr = $"{Environment.NewLine}{CodeGenerator.Indent(indentDepth + 1)}{argsStr}";
+                    argsStr = $"{CodeGenerator.NewLine}{CodeGenerator.Indent(indentDepth + 1)}{argsStr}";
                 }
 
                 propStr = $"{CodeGenerator.Indent(indentDepth)}{ModifiersToString(property.Modifiers)}{property.Type} {propName} = " +
-                          $"new {property?.Type}({argsStr});{Environment.NewLine}";
+                          $"new {property?.Type}({argsStr});{CodeGenerator.NewLine}";
             }
 
             if (!string.IsNullOrEmpty(property?.Comment))
@@ -158,17 +158,17 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var baseStr = constructor?.BaseArguments == null || constructor.BaseArguments.Count == 0 ?
                 "" :
-                $"{Environment.NewLine}{CodeGenerator.Indent(indentDepth + 1)}: base({ArgumentsToString(constructor.BaseArguments, indentDepth + 1)}) ";
+                $"{CodeGenerator.NewLine}{CodeGenerator.Indent(indentDepth + 1)}: base({ArgumentsToString(constructor.BaseArguments, indentDepth + 1)}) ";
             return $"{indentStr}{ModifiersToString(constructor?.Modifiers)}{constructor?.Type}({ParametersToString(constructor?.Parameters)}) " +
                 $"{baseStr}" +
-                $"{{{Environment.NewLine}{indentStr}}}{Environment.NewLine}";
+                $"{{{CodeGenerator.NewLine}{indentStr}}}{CodeGenerator.NewLine}";
         }
 
         // Serializes a method with modifiers, signature, XML doc comment (if any), and formatted body.
         protected override string MethodToString(Method method, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
-            var mthStr = $"{indentStr}{ModifiersToString(method?.Modifiers)}{method?.Type} {method?.Name}({ParametersToString(method?.Parameters)}) {{{Environment.NewLine}" +
-                $"{MethodBodyToString(method?.Body, indentDepth + 1)}{indentStr}}}{Environment.NewLine}";
+            var mthStr = $"{indentStr}{ModifiersToString(method?.Modifiers)}{method?.Type} {method?.Name}({ParametersToString(method?.Parameters)}) {{{CodeGenerator.NewLine}" +
+                $"{MethodBodyToString(method?.Body, indentDepth + 1)}{indentStr}}}{CodeGenerator.NewLine}";
             
             if (!string.IsNullOrEmpty(method?.Comment)) {
                 // Prepend XML doc comment when present
@@ -193,7 +193,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                     : (args[i].Value is Null n ? NullToString(n) : args[i].Value);
                 if (i < args.Count - 1) {
                     // Add comma + either space or newline+indent based on 'newLines'
-                    str += $",{(newLines ? Environment.NewLine + CodeGenerator.Indent(indentDepth) : " ")}";
+                    str += $",{(newLines ? CodeGenerator.NewLine + CodeGenerator.Indent(indentDepth) : " ")}";
                 }
             }
             return str;
@@ -218,26 +218,26 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
         // Builds an XML summary comment for a property, preserving line breaks and indentation.
         protected override string PropertyCommentToString(Property property, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
-            var str = $"{indentStr}/// <summary>{Environment.NewLine}";
-            var commentLines = property?.Comment.Split(Environment.NewLine.ToCharArray());
+            var str = $"{indentStr}/// <summary>{CodeGenerator.NewLine}";
+            var commentLines = property?.Comment == null ? null : CodeGenerator.SplitLines(property.Comment);
             if (commentLines != null)
             {
-                str = commentLines.Aggregate(str, (current, line) => current + $"{indentStr}/// {line}{Environment.NewLine}");
+                str = commentLines.Aggregate(str, (current, line) => current + $"{indentStr}/// {line}{CodeGenerator.NewLine}");
             }
-            str += $"{indentStr}/// </summary>{Environment.NewLine}";
+            str += $"{indentStr}/// </summary>{CodeGenerator.NewLine}";
             return str;
         }
 
         // Builds an XML summary comment block, preserving line breaks and indentation.
         protected override string CommentToString(string comment, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
-            var str = $"{indentStr}/// <summary>{Environment.NewLine}";
-            var commentLines = comment?.Split(Environment.NewLine.ToCharArray());
+            var str = $"{indentStr}/// <summary>{CodeGenerator.NewLine}";
+            var commentLines = comment == null ? null : CodeGenerator.SplitLines(comment);
             if (commentLines != null)
             {
-                str = commentLines.Aggregate(str, (current, line) => current + $"{indentStr}/// {line}{Environment.NewLine}");
+                str = commentLines.Aggregate(str, (current, line) => current + $"{indentStr}/// {line}{CodeGenerator.NewLine}");
             }
-            str += $"{indentStr}/// </summary>{Environment.NewLine}";
+            str += $"{indentStr}/// </summary>{CodeGenerator.NewLine}";
             return str;
         }
     }
