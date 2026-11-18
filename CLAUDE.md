@@ -17,7 +17,7 @@ There is no command-line build: the package compiles inside a Unity project. Pat
 
 - **Develop:** open `OmiLAXR_Dev/` in Unity 6000.3.13f1. Its `Packages/manifest.json` links `com.rwth.unity.omilaxr.xapi4unity` from disk (`file:`), so edits recompile live.
 - **Tests** (`Tests/`, assembly `xAPI4Unity.Tests`): an editor-only asmdef. Run them in the Unity Test Runner (EditMode tab).
-  The tests only show up if `com.rwth.unity.omilaxr.xapi4unity` is listed under `"testables"` in `OmiLAXR_Dev/Packages/manifest.json`. It currently is not.
+  The tests only show up if `com.rwth.unity.omilaxr.xapi4unity` is listed under `"testables"` in `OmiLAXR_Dev/Packages/manifest.json`. It is, next to the `file:` link to this folder.
 - **CLI test run.** Batch mode fails while the editor has the project open. In that case, run against an APFS copy (`cp -c -R OmiLAXR_Dev <scratch>/Dev`).
 
   ```bash
