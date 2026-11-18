@@ -17,13 +17,13 @@ namespace xAPI4Unity.Editor.Types
     /// </summary>
     public class TypeSchema : Dictionary<string, TypeExpressionSet>
     {
-        private TypeNameResolver _resolver;
+        private readonly ITypeNameResolver _resolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TypeSchema"/> class.
         /// Uses <see cref="StringComparer.Ordinal"/> for case-sensitive keys.
         /// </summary>
-        public TypeSchema(TypeNameResolver resolver) : base(StringComparer.Ordinal)
+        public TypeSchema(ITypeNameResolver resolver) : base(StringComparer.Ordinal)
         {
             _resolver = resolver;
         }
@@ -59,7 +59,7 @@ namespace xAPI4Unity.Editor.Types
         public static TypeSchema Parse(
             IDictionary<string, string> input,
             bool validateResolution = true,
-            TypeNameResolver resolver = null,
+            ITypeNameResolver resolver = null,
             IReadOnlyDictionary<string, string> variables = null,
             bool strictVariables = true)
         {
@@ -173,7 +173,7 @@ namespace xAPI4Unity.Editor.Types
             out Dictionary<string, TypeExpressionSet> schema,
             out List<string> errors,
             bool validateResolution = true,
-            TypeNameResolver resolver = null)
+            ITypeNameResolver resolver = null)
         {
             schema = new TypeSchema(resolver);
             errors = new List<string>();

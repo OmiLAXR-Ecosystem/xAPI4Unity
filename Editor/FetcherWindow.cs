@@ -186,7 +186,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Parses the type schema from a configuration file.
         /// </summary>
-        private static TypeSchema ReadTypesSchema(ConfigFile configFile, TypeNameResolver resolver)
+        private static TypeSchema ReadTypesSchema(ConfigFile configFile, ITypeNameResolver resolver)
             => configFile == null ? null : TypeSchema.Parse(configFile?.Types, validateResolution: true, resolver, configFile?.Variables, true);
 
         private static string SafePath(string path) => $"\"{path}\"";

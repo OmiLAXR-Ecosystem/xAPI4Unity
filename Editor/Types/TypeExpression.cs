@@ -82,7 +82,7 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         /// <param name="typeNameResolver">A resolver function to map type names to <see cref="ResolvedType"/> instances.</param>
         /// <returns>A <see cref="ResolvedType"/> corresponding to the type expression.</returns>
-        public ResolvedType Resolve(TypeNameResolver typeNameResolver)
+        public ResolvedType Resolve(ITypeNameResolver typeNameResolver)
         {
             if (typeNameResolver == null) throw new ArgumentNullException(nameof(typeNameResolver));
 
@@ -285,7 +285,7 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         /// <param name="resolver">A function to resolve each type name.</param>
         /// <returns>A list of resolved types.</returns>
-        public IReadOnlyList<ResolvedType> ResolveAll(TypeNameResolver resolver)
+        public IReadOnlyList<ResolvedType> ResolveAll(ITypeNameResolver resolver)
         {
             var list = new List<ResolvedType>(Options.Count);
             foreach (var p in Options)
@@ -303,7 +303,7 @@ namespace xAPI4Unity.Editor.Types
         /// <summary>
         /// Resolves the preferred type using a custom preference function.
         /// </summary>
-        public ResolvedType ResolvePrefer(Func<ResolvedType, bool> prefer, TypeNameResolver resolver)
+        public ResolvedType ResolvePrefer(Func<ResolvedType, bool> prefer, ITypeNameResolver resolver)
         {
             var all = ResolveAll(resolver);
             if (all.Count == 0) return null;
@@ -314,7 +314,7 @@ namespace xAPI4Unity.Editor.Types
         /// <summary>
         /// Checks if the value matches any type in the set.
         /// </summary>
-        public bool MatchesValue(object value, TypeNameResolver resolver)
+        public bool MatchesValue(object value, ITypeNameResolver resolver)
         {
             if (value == null) return true;
             var vt = value.GetType();

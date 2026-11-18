@@ -13,7 +13,7 @@ namespace xAPI4Unity.Editor.Types
     /// Resolves alias or fully qualified type names into <see cref="System.Type"/>.
     /// This class supports primitive types, Unity-specific types, and custom ranges or regex patterns.
     /// </summary>
-    public class TypeNameResolver
+    public class TypeNameResolver : ITypeNameResolver
     {
         public readonly Aliases Aliases;
 
