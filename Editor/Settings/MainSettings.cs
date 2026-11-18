@@ -5,7 +5,6 @@
 */
 #if UNITY_EDITOR
 using System;
-using UnityEditor;
 using UnityEngine;
 
 namespace xAPI4Unity.Editor.Settings
@@ -36,9 +35,14 @@ namespace xAPI4Unity.Editor.Settings
     public class MainSettings : ISettings
     {
         /// <summary>
+        /// Where <see cref="Load()"/>, <see cref="Save()"/> and <see cref="Reset"/> keep the settings.
+        /// </summary>
+        internal static ISettingsStore DefaultStore => EditorPrefsSettingsStore.Instance;
+
+        /// <summary>
         /// A unique key used for saving and retrieving settings in EditorPrefs.
         /// </summary>
-        private static string SettingsKey
+        internal static string SettingsKey
         {
             get
             {
@@ -87,7 +91,7 @@ namespace xAPI4Unity.Editor.Settings
         /// </summary>
         public void Reset()
         {
-            EditorPrefs.DeleteKey(SettingsKey);
+            DefaultStore.DeleteKey(SettingsKey);
             _instance = new MainSettings();
         }
 
@@ -120,42 +124,52 @@ namespace xAPI4Unity.Editor.Settings
         /// <summary>
         /// Loads the settings from Unity EditorPrefs or initializes default values if unavailable.
         /// </summary>
-        public void Load()
+        public void Load() => Load(DefaultStore);
+
+        /// <summary>
+        /// Loads the settings from a store into this instance. Keeps the current values
+        /// if the store has none, and falls back to defaults if the stored JSON is broken.
+        /// </summary>
+        internal void Load(ISettingsStore store)
         {
-            var defaultJson = JsonUtility.ToJson(Instance, false); // Default settings as JSON
-            var data = EditorPrefs.GetString(SettingsKey, defaultJson); // Retrieve settings from EditorPrefs
+            var defaultJson = JsonUtility.ToJson(this, false); // Current values as JSON
+            var data = store.GetString(SettingsKey, defaultJson);
 
             try
             {
-                // Try applying the JSON data to the current instance
-                JsonUtility.FromJsonOverwrite(data, Instance);
+                JsonUtility.FromJsonOverwrite(data, this);
             }
             catch
             {
-                _instance = new MainSettings(); // Reinitialize on failure
+                // Broken JSON: start over with defaults
+                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(new MainSettings(), false), this);
             }
 
             // Ensure nested settings objects are not null
 #if UNITY_2020_1_OR_NEWER
-            Instance.fetcher ??= new FetcherSettings();
-            Instance.localSource ??= new LocalSourceSettings();
+            fetcher ??= new FetcherSettings();
+            localSource ??= new LocalSourceSettings();
 #else
-            if (Instance.fetcher == null) Instance.fetcher = new FetcherSettings();
-            if (Instance.localSource == null) Instance.localSource = new LocalSourceSettings();
+            if (fetcher == null) fetcher = new FetcherSettings();
+            if (localSource == null) localSource = new LocalSourceSettings();
 #endif
 
             // Projects set up before 2.3.0 saved the old GitLab repository
-            if (Instance.localSource.MigrateLegacyRepository())
-                Instance.Save();
+            if (localSource.MigrateLegacyRepository())
+                Save(store);
         }
 
         /// <summary>
         /// Saves the current settings to Unity EditorPrefs.
         /// </summary>
-        public void Save()
+        public void Save() => Save(DefaultStore);
+
+        /// <summary>
+        /// Saves this instance to a store.
+        /// </summary>
+        internal void Save(ISettingsStore store)
         {
-            var json = JsonUtility.ToJson(Instance, false); // Serialize settings to JSON
-            EditorPrefs.SetString(SettingsKey, json); // Save to EditorPrefs
+            store.SetString(SettingsKey, JsonUtility.ToJson(this, false));
         }
     }
 }
