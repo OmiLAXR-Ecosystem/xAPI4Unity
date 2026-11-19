@@ -13,9 +13,15 @@ using xAPI4Unity.Editor.Types;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests that the type syntax written into generated code compiles, and that the type system works with an injected resolver.
+    /// </summary>
     [TestFixture]
     public class TypeSyntax_Tests
     {
+        /// <summary>
+        /// Resolver with the built-in aliases.
+        /// </summary>
         private static readonly TypeNameResolver Resolver = new TypeNameResolver(new Aliases());
 
         /// <summary>
@@ -23,11 +29,23 @@ namespace xAPI4Unity.Tests
         /// </summary>
         private sealed class StubResolver : ITypeNameResolver
         {
+            /// <summary>
+            /// Types by name.
+            /// </summary>
             private readonly Dictionary<string, Type> _types;
+            /// <summary>
+            /// Every name the resolver was asked for, in order.
+            /// </summary>
             public readonly List<string> Requested = new List<string>();
 
+            /// <summary>
+            /// Creates a resolver for the given names.
+            /// </summary>
             public StubResolver(Dictionary<string, Type> types) => _types = types;
 
+            /// <summary>
+            /// Records the name and returns its type, or null if it is unknown.
+            /// </summary>
             public ResolvedType ResolveType(string name)
             {
                 Requested.Add(name);
@@ -35,9 +53,15 @@ namespace xAPI4Unity.Tests
             }
         }
 
+        /// <summary>
+        /// Parses, resolves and returns the C# syntax of an expression.
+        /// </summary>
         private static string Syntax(string expression) =>
             TypeExpression.Parse(expression).Resolve(Resolver).GetTypeSyntax();
 
+        /// <summary>
+        /// Arrays of tuples, nullable tuples, nullable arrays, multidimensional and nested arrays get syntax that compiles.
+        /// </summary>
         [TestCase("(int,float)[]", "(System.Int32,System.Single)[]")]
         [TestCase("(int,(float,float))?", "(System.Int32,(System.Single,System.Single))?")]
         [TestCase("int?[]", "System.Int32?[]")]
@@ -53,6 +77,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(expected, syntax);
         }
 
+        /// <summary>
+        /// An array of tuples has a ValueTuple array type.
+        /// </summary>
         [Test]
         public void TypeExpression_Array_Of_Tuples_Has_A_ValueTuple_Array_Type()
         {
@@ -64,6 +91,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(typeof(ValueTuple<int, float>[]), resolved.Type);
         }
 
+        /// <summary>
+        /// A union of two different tuples keeps both.
+        /// </summary>
         [Test]
         public void TypeExpressionSet_Keeps_Two_Different_Tuples()
         {
@@ -78,6 +108,9 @@ namespace xAPI4Unity.Tests
                 new[] { "(System.Int32,System.Int32)", "(System.String,System.String)" }, syntaxes);
         }
 
+        /// <summary>
+        /// Unknown types inside ?, a range or a tuple give null.
+        /// </summary>
         [TestCase("nope?")]
         [TestCase("nope[1,2]")]
         [TestCase("(int,nope)")]
@@ -90,6 +123,9 @@ namespace xAPI4Unity.Tests
             Assert.IsNull(resolved);
         }
 
+        /// <summary>
+        /// A range of an unknown type gives null.
+        /// </summary>
         [Test]
         public void TypeExpression_Returns_Null_For_A_Range_Of_An_Unknown_Type()
         {
@@ -100,6 +136,9 @@ namespace xAPI4Unity.Tests
             Assert.IsNull(resolved);
         }
 
+        /// <summary>
+        /// Aliases resolve in any case.
+        /// </summary>
         [TestCase("Vector3", typeof(Vector3))]
         [TestCase("STRING", typeof(string))]
         [TestCase("Int", typeof(int))]
@@ -113,6 +152,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(expected, resolved.Type);
         }
 
+        /// <summary>
+        /// TypeExpression asks the injected resolver once per tuple element.
+        /// </summary>
         [Test]
         public void TypeExpression_Asks_The_Injected_Resolver_For_Each_Tuple_Element()
         {
@@ -127,6 +169,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("(System.Guid,System.Int32)", resolved.GetTypeSyntax());
         }
 
+        /// <summary>
+        /// TypeSchema uses the built-in aliases without a resolver.
+        /// </summary>
         [Test]
         public void TypeSchema_Uses_The_Builtin_Aliases_Without_A_Resolver()
         {

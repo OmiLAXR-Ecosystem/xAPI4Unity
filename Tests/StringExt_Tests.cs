@@ -10,9 +10,15 @@ using xAPI4Unity.Editor.Parser;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="StringExt"/>.
+    /// </summary>
     [TestFixture]
     public class StringExt_Tests
     {
+        /// <summary>
+        /// Capitalize uppercases the first letter.
+        /// </summary>
         [TestCase("generic", "Generic")]
         [TestCase("seriousGames", "SeriousGames")]
         [TestCase("X", "X")]
@@ -22,6 +28,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(expected, value.Capitalize());
         }
 
+        /// <summary>
+        /// Capitalize rejects an empty string.
+        /// </summary>
         [Test]
         public void Capitalize_Rejects_An_Empty_String()
         {
@@ -29,6 +38,9 @@ namespace xAPI4Unity.Tests
             Assert.Throws<ArgumentException>(() => "".Capitalize());
         }
 
+        /// <summary>
+        /// ClearName makes a C# name: spaces to underscores, special characters removed, umlauts replaced, first letter lowercase, a leading digit prefixed with an underscore.
+        /// </summary>
         [TestCase("Pressed Button", "pressed_Button")]
         [TestCase("Größe (cm)", "groesse_cm")]
         [TestCase("Ärger", "aerger")]
@@ -40,6 +52,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(expected, value.ClearName());
         }
 
+        /// <summary>
+        /// ClearName rejects a name with no usable characters.
+        /// </summary>
         [TestCase("")]
         [TestCase("()")]
         [TestCase(".,")]
@@ -50,6 +65,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("no characters that can be used in a C# name", e.Message);
         }
 
+        /// <summary>
+        /// ClearString escapes backslashes, quotes, line breaks and tabs for a C# string literal.
+        /// </summary>
         [TestCase("say \"hi\"", "say \\\"hi\\\"")]
         [TestCase("C:\\temp", "C:\\\\temp")]
         [TestCase("one\ntwo", "one\\ntwo")]

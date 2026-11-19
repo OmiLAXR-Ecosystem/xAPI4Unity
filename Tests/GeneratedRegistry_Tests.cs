@@ -10,9 +10,15 @@ using xAPI4Unity.Editor.Parser;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="GeneratedRegistry"/>.
+    /// </summary>
     [TestFixture]
     public class GeneratedRegistry_Tests
     {
+        /// <summary>
+        /// Adding a path again replaces its content and keeps its position.
+        /// </summary>
         [Test]
         public void Add_Replaces_A_File_And_Keeps_Its_Position()
         {
@@ -29,6 +35,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("3", registry.GetContent("a.cs"));
         }
 
+        /// <summary>
+        /// Backslashes in paths become forward slashes.
+        /// </summary>
         [Test]
         public void Add_Uses_Forward_Slashes()
         {
@@ -42,6 +51,9 @@ namespace xAPI4Unity.Tests
             Assert.IsTrue(registry.Contains("Core/xAPI_Verb.cs"));
         }
 
+        /// <summary>
+        /// Reading an unknown path throws KeyNotFoundException.
+        /// </summary>
         [Test]
         public void GetContent_Throws_For_An_Unknown_Path()
         {

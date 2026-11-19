@@ -15,8 +15,14 @@ namespace xAPI4Unity.Tests
     [TestFixture]
     public class DefinitionFile_Tests
     {
+        /// <summary>
+        /// A definition with two names, a description and an exactMatch IRI.
+        /// </summary>
         private const string Json = "{\"name\":{\"en-US\":\"Accepted\",\"de-DE\":\"Akzeptiert\"},\"description\":{\"en-US\":\"d\"},\"exactMatch\":[\"https://example.org/a\"]}";
 
+        /// <summary>
+        /// A verb file gives its context, kind, cleaned name and content.
+        /// </summary>
         [Test]
         public void DefinitionFile_Reads_Context_Kind_And_Content()
         {
@@ -32,6 +38,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEqual(new[] { "https://example.org/a" }, file.Content.ExactMatch);
         }
 
+        /// <summary>
+        /// Backslashes in the path become forward slashes.
+        /// </summary>
         [Test]
         public void DefinitionFile_Uses_Forward_Slashes()
         {
@@ -43,6 +52,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(DefinitionType.Activity, file.DefinitionType);
         }
 
+        /// <summary>
+        /// Extension files give the extension type and, five folders deep, the category.
+        /// </summary>
         [TestCase("generic/extensions/result/score.json", "Result", null)]
         [TestCase("generic/extensions/context/place.json", "Context", null)]
         [TestCase("generic/extensions/activity/size.json", "Activity", null)]
@@ -59,6 +71,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(category, file.Category);
         }
 
+        /// <summary>
+        /// A verb four folders deep has a category.
+        /// </summary>
         [Test]
         public void DefinitionFile_Reads_The_Category_Of_A_Verb()
         {
@@ -70,6 +85,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("navigation", file.Category);
         }
 
+        /// <summary>
+        /// The name is cleaned for C#: spaces to underscores, umlauts and ß replaced, first letter lowercase.
+        /// </summary>
         [Test]
         public void DefinitionFile_Cleans_The_Name_For_Code()
         {
@@ -80,6 +98,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("grosse_Schere", file.Name);
         }
 
+        /// <summary>
+        /// A file name without usable characters throws, and the message names the file.
+        /// </summary>
         [Test]
         public void DefinitionFile_Names_The_File_It_Cannot_Turn_Into_A_Name()
         {
@@ -90,6 +111,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("'generic/verbs/().json'", e.Message);
         }
 
+        /// <summary>
+        /// A folder other than verbs, activities or extensions gives an unknown kind.
+        /// </summary>
         [Test]
         public void DefinitionFile_Marks_Other_Folders_As_Unknown()
         {

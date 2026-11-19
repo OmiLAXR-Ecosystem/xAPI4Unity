@@ -10,6 +10,9 @@ using xAPI4Unity.Editor.Settings;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for loading and saving <see cref="MainSettings"/> through an <see cref="ISettingsStore"/>.
+    /// </summary>
     [TestFixture]
     public class MainSettings_Tests
     {
@@ -18,21 +21,39 @@ namespace xAPI4Unity.Tests
         /// </summary>
         private sealed class InMemorySettingsStore : ISettingsStore
         {
+            /// <summary>
+            /// Stored values by key.
+            /// </summary>
             public readonly Dictionary<string, string> Values = new Dictionary<string, string>();
+            /// <summary>
+            /// Number of writes.
+            /// </summary>
             public int Writes;
 
+            /// <summary>
+            /// Returns the stored value or the default.
+            /// </summary>
             public string GetString(string key, string defaultValue) =>
                 Values.TryGetValue(key, out var value) ? value : defaultValue;
 
+            /// <summary>
+            /// Stores a value and counts the write.
+            /// </summary>
             public void SetString(string key, string value)
             {
                 Writes++;
                 Values[key] = value;
             }
 
+            /// <summary>
+            /// Removes a key.
+            /// </summary>
             public void DeleteKey(string key) => Values.Remove(key);
         }
 
+        /// <summary>
+        /// Saved values come back when loading into a new instance.
+        /// </summary>
         [Test]
         public void Save_And_Load_Keep_The_Values()
         {
@@ -55,6 +76,9 @@ namespace xAPI4Unity.Tests
             Assert.IsTrue(store.Values.ContainsKey(MainSettings.SettingsKey));
         }
 
+        /// <summary>
+        /// Loading from an empty store keeps the current values.
+        /// </summary>
         [Test]
         public void Load_Keeps_The_Current_Values_When_Nothing_Is_Stored()
         {
@@ -68,6 +92,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("Kept", settings.@namespace);
         }
 
+        /// <summary>
+        /// Broken JSON resets the settings to their defaults.
+        /// </summary>
         [Test]
         public void Load_Falls_Back_To_Defaults_For_Broken_Json()
         {
@@ -85,6 +112,9 @@ namespace xAPI4Unity.Tests
             Assert.IsNotNull(settings.fetcher);
         }
 
+        /// <summary>
+        /// Loading migrates the GitLab repository and saves the migrated settings once.
+        /// </summary>
         [Test]
         public void Load_Migrates_The_GitLab_Repository_And_Saves_It()
         {
@@ -107,6 +137,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("OmiLAXR-Ecosystem", store.Values[MainSettings.SettingsKey]);
         }
 
+        /// <summary>
+        /// Loading current settings does not write anything.
+        /// </summary>
         [Test]
         public void Load_Does_Not_Save_Current_Settings()
         {

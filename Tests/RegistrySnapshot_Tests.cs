@@ -31,9 +31,18 @@ namespace xAPI4Unity.Tests
     [TestFixture]
     public class RegistrySnapshot_Tests
     {
+        /// <summary>
+        /// Set to 1 to rewrite the snapshot.
+        /// </summary>
         private const string UpdateVariable = "XAPI4UNITY_UPDATE_SNAPSHOTS";
+        /// <summary>
+        /// Namespace of the snapshot registry.
+        /// </summary>
         private const string Namespace = "xAPI.Registry";
 
+        /// <summary>
+        /// <c>Tests/Fixtures~/Snapshot</c> in the package folder on disk.
+        /// </summary>
         private static string FixtureFolder
         {
             get
@@ -44,6 +53,9 @@ namespace xAPI4Unity.Tests
             }
         }
 
+        /// <summary>
+        /// Folder of the expected files.
+        /// </summary>
         private static string ExpectedFolder => Path.Combine(FixtureFolder, "expected");
 
         /// <summary>
@@ -62,11 +74,17 @@ namespace xAPI4Unity.Tests
             return writer.Written.Single();
         }
 
+        /// <summary>
+        /// The generated files without the core templates, by path.
+        /// </summary>
         private static Dictionary<string, string> Snapshot(GeneratedRegistry registry) =>
             registry.Files
                 .Where(f => !f.RelativePath.StartsWith(RegistryGenerator.CoreFolder + "/", StringComparison.Ordinal))
                 .ToDictionary(f => f.RelativePath, f => f.Content, StringComparer.Ordinal);
 
+        /// <summary>
+        /// Reads the expected files, by path.
+        /// </summary>
         private static Dictionary<string, string> ReadExpected()
         {
             var root = ExpectedFolder;
@@ -79,6 +97,9 @@ namespace xAPI4Unity.Tests
                     StringComparer.Ordinal);
         }
 
+        /// <summary>
+        /// Replaces the expected files with the generated ones.
+        /// </summary>
         private static void WriteExpected(Dictionary<string, string> files)
         {
             if (Directory.Exists(ExpectedFolder))
@@ -108,6 +129,9 @@ namespace xAPI4Unity.Tests
             return "no difference";
         }
 
+        /// <summary>
+        /// Every generated file matches the snapshot. With XAPI4UNITY_UPDATE_SNAPSHOTS=1 the snapshot is rewritten instead.
+        /// </summary>
         [Test]
         public void Registry_Matches_The_Snapshot()
         {
@@ -137,6 +161,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.IsEmpty(changed, "Files that differ from the snapshot. " + hint);
         }
 
+        /// <summary>
+        /// The ignored context of the fixture is left out and the other two are generated.
+        /// </summary>
         [Test]
         public void Registry_Leaves_Out_Ignored_Contexts_And_Keeps_The_Others()
         {

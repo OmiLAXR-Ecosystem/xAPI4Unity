@@ -13,13 +13,28 @@ using static xAPI4Unity.Tests.GeneratorFakes;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="RegistryGenerator"/> with in-memory fakes, so nothing is written to <c>Assets</c>.
+    /// </summary>
     [TestFixture]
     public class RegistryGenerator_Tests
     {
+        /// <summary>
+        /// Template source of the generator.
+        /// </summary>
         private FakeTemplateSource _templates;
+        /// <summary>
+        /// Log of the generator.
+        /// </summary>
         private CollectingGeneratorLog _log;
+        /// <summary>
+        /// The generator under test.
+        /// </summary>
         private RegistryGenerator _generator;
 
+        /// <summary>
+        /// Creates the generator with fake templates and a collecting log.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
@@ -28,9 +43,15 @@ namespace xAPI4Unity.Tests
             _generator = new RegistryGenerator(_templates, _log);
         }
 
+        /// <summary>
+        /// Builds a registry from the given definitions.
+        /// </summary>
         private GeneratedRegistry Build(GenerationOptions options, params Editor.Parser.IO.DefinitionFile[] definitions) =>
             _generator.Build(options, definitions);
 
+        /// <summary>
+        /// A registry has every core file, the definition classes, the context lists and the .asmdef with its .meta.
+        /// </summary>
         [Test]
         public void Build_Creates_Core_Definitions_And_AsmDef()
         {
@@ -51,6 +72,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(CoreFiles.AsmDefMeta, registry.GetContent("My.Registry.asmdef.meta"));
         }
 
+        /// <summary>
+        /// The template namespace is replaced in the core files, and every template is read.
+        /// </summary>
         [Test]
         public void Build_Replaces_The_Template_Namespace()
         {
@@ -62,6 +86,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEquivalent(CoreFiles.Names, _templates.Requested);
         }
 
+        /// <summary>
+        /// A verb becomes a property of its context's verbs class, with its description and URI as comment.
+        /// </summary>
         [Test]
         public void Build_Puts_Each_Verb_With_Its_Uri_Into_The_Context_Class()
         {
@@ -78,6 +105,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("URI: https://omilaxr-ecosystem.github.io/xapi/definitions/generic/verbs/accepted", verbs);
         }
 
+        /// <summary>
+        /// A category gets its own class.
+        /// </summary>
         [Test]
         public void Build_Creates_A_Class_Per_Category()
         {
@@ -90,6 +120,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("jumped", registry.GetContent("Definitions/xAPI_Verbs_Generic_Navigation.cs"));
         }
 
+        /// <summary>
+        /// Ignored contexts are left out and not counted.
+        /// </summary>
         [Test]
         public void Build_Leaves_Out_Ignored_Contexts()
         {
@@ -107,6 +140,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.Contains(_log.Infos, "[xAPI4Unity]: Found 1 xAPI definitions");
         }
 
+        /// <summary>
+        /// The .asmdef has the namespace as name and lists the references.
+        /// </summary>
         [Test]
         public void Build_Writes_The_References_Into_The_AsmDef()
         {
@@ -121,6 +157,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("\"OmiLAXR\",\n\"OmiLAXR.xAPI\"", asmDef);
         }
 
+        /// <summary>
+        /// Typed extensions get one method per type in the schema; the others take an object.
+        /// </summary>
         [Test]
         public void Build_Types_Extension_Methods_From_The_Schema()
         {
@@ -144,6 +183,9 @@ namespace xAPI4Unity.Tests
             Assert.IsTrue(_log.Infos.Any(m => m.Contains("Recognized types for 'generic/extensions/result/score'")));
         }
 
+        /// <summary>
+        /// Extensions in an unknown type folder are skipped with a warning.
+        /// </summary>
         [Test]
         public void Build_Skips_Extensions_Of_An_Unknown_Type_With_A_Warning()
         {
@@ -157,6 +199,9 @@ namespace xAPI4Unity.Tests
             Assert.IsFalse(registry.Files.Any(f => f.Content.Contains(" odd(")));
         }
 
+        /// <summary>
+        /// Generate builds the registry, writes it once and logs the result.
+        /// </summary>
         [Test]
         public void Generate_Writes_The_Built_Registry_Once()
         {
@@ -173,11 +218,20 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("[xAPI4Unity]: Created xAPI Registry with namespace My.Registry", _log.Infos.Last());
         }
 
+        /// <summary>
+        /// Returns a template with CRLF line breaks.
+        /// </summary>
         private sealed class CrlfTemplateSource : Editor.Parser.IO.ICoreTemplateSource
         {
+            /// <summary>
+            /// Returns the same CRLF template for every file.
+            /// </summary>
             public string Read(string fileName) => "namespace xAPI.Registry\r\n{\r\n}\r\n";
         }
 
+        /// <summary>
+        /// Core files use LF even if the template has CRLF.
+        /// </summary>
         [Test]
         public void Build_Uses_LF_Even_For_CRLF_Templates()
         {
@@ -192,6 +246,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("namespace My.Registry\n{\n}\n", core);
         }
 
+        /// <summary>
+        /// No generated file contains a carriage return.
+        /// </summary>
         [Test]
         public void Build_Writes_Generated_Code_With_LF_Only()
         {
@@ -205,6 +262,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.IsEmpty(withCr);
         }
 
+        /// <summary>
+        /// A description with CRLF becomes one comment line per line.
+        /// </summary>
         [Test]
         public void Build_Splits_A_CRLF_Description_Into_Comment_Lines()
         {
@@ -217,6 +277,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("/// Line one\n        /// Line two\n", verbs);
         }
 
+        /// <summary>
+        /// Options reject an empty or blank namespace.
+        /// </summary>
         [TestCase(null)]
         [TestCase("")]
         [TestCase("  ")]

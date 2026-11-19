@@ -10,9 +10,15 @@ using xAPI4Unity.Editor;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="MergeReport"/>.
+    /// </summary>
     [TestFixture]
     public class MergeReport_Tests
     {
+        /// <summary>
+        /// The report counts copied, skipped and conflicting files and lists each group.
+        /// </summary>
         [Test]
         public void MergeReport_Counts_And_Groups_The_Results()
         {

@@ -29,8 +29,14 @@ namespace xAPI4Unity.Tests
     /// </summary>
     internal sealed class FakeTemplateSource : ICoreTemplateSource
     {
+        /// <summary>
+        /// Names of the templates that were read.
+        /// </summary>
         public readonly List<string> Requested = new List<string>();
 
+        /// <summary>
+        /// Records the name and returns a one-line template.
+        /// </summary>
         public string Read(string fileName)
         {
             Requested.Add(fileName);
@@ -38,31 +44,73 @@ namespace xAPI4Unity.Tests
         }
     }
 
+    /// <summary>
+    /// Collects the generator messages instead of writing them to the console.
+    /// </summary>
     internal sealed class CollectingGeneratorLog : IGeneratorLog
     {
+        /// <summary>
+        /// Info messages.
+        /// </summary>
         public readonly List<string> Infos = new List<string>();
+        /// <summary>
+        /// Warnings.
+        /// </summary>
         public readonly List<string> Warnings = new List<string>();
+        /// <summary>
+        /// Errors.
+        /// </summary>
         public readonly List<string> Errors = new List<string>();
 
+        /// <summary>
+        /// Collects an info message.
+        /// </summary>
         public void Info(string message) => Infos.Add(message);
+        /// <summary>
+        /// Collects a warning.
+        /// </summary>
         public void Warning(string message) => Warnings.Add(message);
+        /// <summary>
+        /// Collects an error.
+        /// </summary>
         public void Error(string message) => Errors.Add(message);
     }
 
+    /// <summary>
+    /// Returns a fixed list of definitions.
+    /// </summary>
     internal sealed class InMemoryDefinitionSource : IDefinitionSource
     {
+        /// <summary>
+        /// The definitions to return.
+        /// </summary>
         private readonly List<DefinitionFile> _definitions;
 
+        /// <summary>
+        /// Creates a source with the given definitions.
+        /// </summary>
         public InMemoryDefinitionSource(params DefinitionFile[] definitions) =>
             _definitions = new List<DefinitionFile>(definitions);
 
+        /// <summary>
+        /// Returns the definitions passed to the constructor.
+        /// </summary>
         public IReadOnlyList<DefinitionFile> ReadDefinitions() => _definitions;
     }
 
+    /// <summary>
+    /// Keeps written registries in memory.
+    /// </summary>
     internal sealed class InMemoryRegistryWriter : IRegistryWriter
     {
+        /// <summary>
+        /// Every registry that was written, in order.
+        /// </summary>
         public readonly List<GeneratedRegistry> Written = new List<GeneratedRegistry>();
 
+        /// <summary>
+        /// Keeps the registry.
+        /// </summary>
         public void Write(GeneratedRegistry registry) => Written.Add(registry);
     }
 }

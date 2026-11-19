@@ -13,14 +13,32 @@ using xAPI4Unity.Editor.Types;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="RegistryPaths"/>, <see cref="ProjectStatus"/> and <see cref="RegistryUpdate"/>, in a temporary folder.
+    /// </summary>
     [TestFixture]
     public class RegistryUpdate_Tests
     {
+        /// <summary>
+        /// A minimal valid definition.
+        /// </summary>
         private const string Json = "{\"name\":{\"en-US\":\"x\"},\"description\":{\"en-US\":\"y\"}}";
+        /// <summary>
+        /// Temporary folder of a test, deleted afterwards.
+        /// </summary>
         private string _directory;
+        /// <summary>
+        /// Log of the update.
+        /// </summary>
         private CollectingGeneratorLog _log;
+        /// <summary>
+        /// The update under test.
+        /// </summary>
         private RegistryUpdate _update;
 
+        /// <summary>
+        /// Creates the temporary folder and the update with fake templates.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
@@ -31,6 +49,9 @@ namespace xAPI4Unity.Tests
                 new TypeNameResolver(new Aliases()), _log);
         }
 
+        /// <summary>
+        /// Deletes the temporary folder.
+        /// </summary>
         [TearDown]
         public void TearDown()
         {
@@ -38,9 +59,15 @@ namespace xAPI4Unity.Tests
                 Directory.Delete(_directory, true);
         }
 
+        /// <summary>
+        /// Paths of a project in the temporary folder with the given source folder.
+        /// </summary>
         private RegistryPaths Paths(string source = "xapi") =>
             new RegistryPaths(Path.Combine(_directory, source), Path.Combine(_directory, "Assets"), "My.Registry");
 
+        /// <summary>
+        /// Writes a file below the temporary folder and creates its folders.
+        /// </summary>
         private void WriteFile(string relativePath, string content = Json)
         {
             var path = Path.Combine(_directory, relativePath);
@@ -48,6 +75,9 @@ namespace xAPI4Unity.Tests
             File.WriteAllText(path, content);
         }
 
+        /// <summary>
+        /// The config is <c>&lt;source&gt;.config.json</c> next to the source folder, also with a trailing slash.
+        /// </summary>
         [Test]
         public void RegistryPaths_Puts_The_Config_Next_To_The_Source_Folder()
         {
@@ -60,6 +90,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(Path.Combine("/project/Assets", "xAPI.Registry"), paths.RegistryFolder);
         }
 
+        /// <summary>
+        /// Without a source folder there are no definitions, config or merge reports.
+        /// </summary>
         [TestCase(null)]
         [TestCase("")]
         [TestCase("  ")]
@@ -77,6 +110,9 @@ namespace xAPI4Unity.Tests
             Assert.IsFalse(status.HasMergeReports);
         }
 
+        /// <summary>
+        /// The status finds the definitions, the config, a merge report and the registry files.
+        /// </summary>
         [Test]
         public void ProjectStatus_Reports_What_Exists()
         {
@@ -98,6 +134,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(2, status.RegistryFileCount);
         }
 
+        /// <summary>
+        /// A missing config gives null and a warning.
+        /// </summary>
         [Test]
         public void ReadConfig_Returns_Null_With_A_Warning_Without_A_Config()
         {
@@ -109,6 +148,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("Default types will be applied", _log.Warnings.Single());
         }
 
+        /// <summary>
+        /// Without a config the options use defaults.
+        /// </summary>
         [Test]
         public void CreateOptions_Without_A_Config_Uses_Defaults()
         {
@@ -122,6 +164,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.IsEmpty(options.IgnoredContexts);
         }
 
+        /// <summary>
+        /// Run applies the types, references and ignored contexts of the config next to the source folder.
+        /// </summary>
         [Test]
         public void Run_Applies_The_Config_Next_To_The_Source_Folder()
         {
@@ -144,6 +189,9 @@ namespace xAPI4Unity.Tests
             Assert.IsFalse(registry.Paths.Any(p => p.Contains("Skip")));
         }
 
+        /// <summary>
+        /// Run without a definitions folder logs an error and writes nothing.
+        /// </summary>
         [Test]
         public void Run_Stops_With_An_Error_Without_Definitions()
         {
