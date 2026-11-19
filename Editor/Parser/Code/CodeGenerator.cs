@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser.Code.SyntaxTree;
 using xAPI4Unity.Editor.Parser.Definitions;
 using xAPI4Unity.Editor.Parser.IO;
@@ -20,55 +19,133 @@ namespace xAPI4Unity.Editor.Parser.Code
     /// </summary>
     internal abstract class CodeGenerator
     {
+        /// <summary>
+        /// List of generated core files.
+        /// </summary>
         internal class CoreFiles : List<FileMeta>
         {
+            /// <summary>
+            /// Creates an empty list.
+            /// </summary>
             public CoreFiles()
             {
             }
 
+            /// <summary>
+            /// Creates a list with the given files.
+            /// </summary>
             public CoreFiles(IEnumerable<FileMeta> list) => AddRange(list);
+            /// <summary>
+            /// Creates a list with the given files.
+            /// </summary>
             public static CoreFiles From(IEnumerable<FileMeta> list) => new CoreFiles(list);
         }
 
+        /// <summary>
+        /// List of files generated for contexts.
+        /// </summary>
         internal class ContextFiles : List<FileMeta>
         {
+            /// <summary>
+            /// Creates an empty list.
+            /// </summary>
             public ContextFiles()
             {
             }
 
+            /// <summary>
+            /// Creates a list with the given files.
+            /// </summary>
             public ContextFiles(IEnumerable<FileMeta> list) => AddRange(list);
+            /// <summary>
+            /// Creates a list with the given files.
+            /// </summary>
             public static ContextFiles From(IEnumerable<FileMeta> list) => new ContextFiles(list);
         }
 
+        /// <summary>
+        /// Name of the folder for the static core classes.
+        /// </summary>
         public virtual string CoreDirName => "Core";
+        /// <summary>
+        /// Name of the folder for the classes generated from definitions.
+        /// </summary>
         public virtual string DefinitionsDirName => "Definitions";
 
+        /// <summary>
+        /// Name of the core class of one activity.
+        /// </summary>
         protected virtual string ActivityClassName => "xAPI_Activity";
+        /// <summary>
+        /// Name of the core base class of all activities classes.
+        /// </summary>
         protected virtual string ActivitiesClassName => "xAPI_Activities";
+        /// <summary>
+        /// Name of the core class of one verb.
+        /// </summary>
         protected virtual string VerbClassName => "xAPI_Verb";
+        /// <summary>
+        /// Name of the core base class of all verbs classes.
+        /// </summary>
         protected virtual string VerbsClassName => "xAPI_Verbs";
+        /// <summary>
+        /// Name of the core class of one extension.
+        /// </summary>
         protected virtual string ExtensionClassName => "xAPI_Extension";
+        /// <summary>
+        /// Name of the core base class of all extensions classes.
+        /// </summary>
         protected virtual string ExtensionsClassName => "xAPI_Extensions";
+        /// <summary>
+        /// Name of the static class that lists all contexts.
+        /// </summary>
         protected virtual string DefinitionsClassName => "xAPI_Definitions";
+        /// <summary>
+        /// Name of the class that lists all contexts as instance properties.
+        /// </summary>
         protected virtual string ContextsClassName => "xAPI_Contexts";
+        /// <summary>
+        /// Name of the core base class of all context classes.
+        /// </summary>
         protected virtual string ContextClassName => "xAPI_Context";
 
+        /// <summary>
+        /// Builds the name of an activities class: <c>xAPI_Activities_&lt;arg1&gt;_&lt;arg2&gt;…</c>.
+        /// </summary>
         protected virtual string BuildActivitiesClassName(params string[] args)
             => args.Aggregate(ActivitiesClassName, (current, arg) => current + ("_" + arg));
 
+        /// <summary>
+        /// Builds the name of a verbs class: <c>xAPI_Verbs_&lt;arg1&gt;_&lt;arg2&gt;…</c>.
+        /// </summary>
         protected virtual string BuildVerbsClassName(params string[] args)
             => args.Aggregate(VerbsClassName, (current, arg) => current + ("_" + arg));
 
+        /// <summary>
+        /// Appends each argument to a class name with <c>_</c>, such as the class of a category.
+        /// </summary>
         protected virtual string ExtendClassName(string baseName, params string[] args)
             => args.Aggregate(baseName, (current, arg) => current + ("_" + arg));
 
+        /// <summary>
+        /// Builds the base class name of an extension type: <c>xAPI_Extensions_&lt;type&gt;</c>.
+        /// </summary>
         protected virtual string BuildExtensionTypeClassName(string type) => ExtensionsClassName + "_" + type;
 
+        /// <summary>
+        /// Builds the name of an extensions class: <c>xAPI_Extensions_&lt;type&gt;_&lt;arg1&gt;…</c>.
+        /// </summary>
         protected virtual string BuildExtensionsClassName(string type, params string[] args)
             => args.Aggregate(BuildExtensionTypeClassName(type), (current, arg) => current + ("_" + arg));
 
+        /// <summary>
+        /// Builds the name of a context class: <c>xAPI_Context_&lt;context&gt;</c>.
+        /// </summary>
         protected virtual string BuildContextClassName(string context) => ContextClassName + "_" + context;
 
+        /// <summary>
+        /// Builds the name of a context's extensions class: <c>xAPI_Context_&lt;context&gt;_Extensions</c>.
+        /// </summary>
         protected virtual string BuildContextExtensionsClassName(string context) =>
             BuildContextClassName(context) + "_Extensions";
 
@@ -87,15 +164,25 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// </summary>
         public event Action<string> OnLog;
 
+        /// <summary>
+        /// Raises <see cref="OnLog"/> with a message.
+        /// </summary>
         protected void Log(string message) => OnLog?.Invoke(message);
+
+        /// <summary>
+        /// Receives details that are shown to the user, such as recognized extension types.
+        /// </summary>
+        protected readonly IGeneratorLog GeneratorLog;
 
         /// <summary>
         /// Creates a CodeGenerator
         /// </summary>
         /// <param name="serializer">Serializer to use in the generator</param>
-        protected CodeGenerator(SyntaxTreeSerializer serializer)
+        /// <param name="log">Receives details shown to the user. Defaults to the Unity console.</param>
+        protected CodeGenerator(SyntaxTreeSerializer serializer, IGeneratorLog log = null)
         {
             Serializer = serializer;
+            GeneratorLog = log ?? UnityGeneratorLog.Instance;
         }
 
         /// <summary>
@@ -107,6 +194,24 @@ namespace xAPI4Unity.Editor.Parser.Code
         {
             return new string(' ', 4 * depth);
         }
+
+        /// <summary>
+        /// Line break of the generated code. It is fixed to LF instead of <see cref="Environment.NewLine"/>,
+        /// so Windows, macOS and Linux generate the same registry.
+        /// </summary>
+        public const string NewLine = "\n";
+
+        /// <summary>
+        /// Turns CRLF and CR line breaks into <see cref="NewLine"/>.
+        /// </summary>
+        public static string NormalizeLineEndings(string text) =>
+            text?.Replace("\r\n", NewLine).Replace("\r", NewLine);
+
+        /// <summary>
+        /// Splits text at any line break (LF, CRLF or CR).
+        /// </summary>
+        public static string[] SplitLines(string text) =>
+            NormalizeLineEndings(text).Split(new[] { NewLine }, StringSplitOptions.None);
 
         /// <summary>
         /// Generates files from contexts
@@ -298,6 +403,9 @@ namespace xAPI4Unity.Editor.Parser.Code
         /// </summary>
         
         public const string XAPI_BASE_URI = "https://omilaxr-ecosystem.github.io/xapi/";
+        /// <summary>
+        /// Base of the definition URIs in the generated comments: <see cref="XAPI_BASE_URI"/> plus <c>definitions</c>.
+        /// </summary>
         public static Uri BaseUri => new Uri(new Uri(XAPI_BASE_URI), "definitions");
 
         /// <summary>
@@ -369,6 +477,9 @@ namespace xAPI4Unity.Editor.Parser.Code
             return GenerateVerbsFiles(context.Name, context.Verbs);
         }
 
+        /// <summary>
+        /// Generates the verbs class of a context or category, and one class per sub category.
+        /// </summary>
         protected virtual IEnumerable<FileMeta> GenerateVerbsFiles(string context, xAPIDefinitionsList<xAPIVerb> verbs,
             string name = default)
         {
@@ -417,6 +528,10 @@ namespace xAPI4Unity.Editor.Parser.Code
             return !context.Extensions.ContainsKey(type) ? Array.Empty<FileMeta>() : GenerateExtensionsFiles(context.Name, type, context.Extensions[type], typeSchema);
         }
 
+        /// <summary>
+        /// Generates the extensions class of one extension type for a context or category, and one class per sub category.
+        /// Extensions with types in the schema get one method per type; the others take an <c>object</c>.
+        /// </summary>
         private IEnumerable<FileMeta> GenerateExtensionsFiles(string context, string type,
             xAPIDefinitionsList<xAPIExtension> extensions, TypeSchema typeSchema = null, string name = null)
         {
@@ -501,7 +616,7 @@ namespace xAPI4Unity.Editor.Parser.Code
                var types = typeSchema?.GetTypesFromKey(path);
                if (types != null && (types.Length > 1 || types.Length == 1 && types[0].Type != defaultType))
                {
-                   Debug.Log($"[xAPI4Unity]: Recognized types for '{path}': " +
+                   GeneratorLog.Info($"[xAPI4Unity]: Recognized types for '{path}': " +
                              string.Join(",", types.Select(t => t.GetTypeSyntax())));
                }
                else

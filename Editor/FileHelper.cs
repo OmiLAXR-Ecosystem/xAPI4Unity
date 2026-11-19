@@ -103,6 +103,8 @@ namespace xAPI4Unity.Editor
         /// <param name="extractPath">The directory where the archive contents will be extracted.</param>
         public static void ExtractZip(string zipPath, string extractPath)
         {
+            var root = AppendDirectorySeparatorChar(Path.GetFullPath(extractPath));
+
             // Open the zip file and extract it
             using (var fs = new FileStream(zipPath, FileMode.Open))
             using (var zip = new ZipArchive(fs, ZipArchiveMode.Read))
@@ -110,7 +112,11 @@ namespace xAPI4Unity.Editor
                 foreach (var entry in zip.Entries)
                 {
                     // Define the complete path to extract each file
-                    var destinationPath = Path.Combine(extractPath, entry.FullName);
+                    var destinationPath = Path.GetFullPath(Path.Combine(extractPath, entry.FullName));
+
+                    // Skip entries that would end up outside the target folder, such as '../x'
+                    if (!destinationPath.StartsWith(root, StringComparison.Ordinal))
+                        continue;
 
                     // Create the directory for the entry if it's not already present
                     var directoryPath = Path.GetDirectoryName(destinationPath);

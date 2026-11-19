@@ -5,10 +5,12 @@
 */
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using xAPI4Unity.Editor.Releases;
 using xAPI4Unity.Editor.Settings;
 using Debug = UnityEngine.Debug;
 
@@ -24,7 +26,9 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private LocalSourceSettings _settings => MainSettings.Instance.localSource;
 
-        // Git helper instance for managing Git operations
+        /// <summary>
+        /// Runs git for the clone option.
+        /// </summary>
         private readonly GitHelper _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
 
         /// <summary>
@@ -97,46 +101,57 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Downloads and merges the xAPI repository into the "Assets/xapi" folder.
         /// </summary>
-        internal void DownloadToAssetsAndPatch()
+        internal void DownloadToAssetsAndPatch() => DownloadToAssetsAndPatch(null);
+
+        /// <summary>
+        /// Downloads the archive of the custom repository's branch, tag or commit and merges it into the "Assets/xapi" folder.
+        /// </summary>
+        /// <param name="done">Gets a summary and whether it worked. Optional.</param>
+        internal void DownloadToAssetsAndPatch(Action<string, bool> done)
         {
-            var filename = _settings.DownloadFilename;
-            var destPath = Path.Combine(Application.dataPath, "xapi");
-            var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
-            var extractPath = Path.Combine(Application.dataPath, filename);
-            var mergeReportPath = Path.Combine(destPath, DateTime.Now.ToString("yyyyMMddhhmmss") + "-xapi-report.json");
+            var destPath = DefaultValues.RepoPath;
+            var mergeReportPath = Path.Combine(destPath, NewReportName());
 
             _settings.path = destPath;
             MainSettings.Instance.Save();
 
             if (!Directory.Exists(destPath))
             {
-                DownloadToAssets();
+                DownloadToAssets(done);
                 return;
             }
+            if (!CheckGitRef(done))
+                return;
 
             var url = _settings.GetDownloadUrl();
-            
-            FileHelper.Download(url, zipPath, () =>
+            var temp = NewTempFolder();
+            var zipPath = Path.Combine(temp, "archive.zip");
+
+            WebRequests.DownloadFile(url, zipPath, error =>
             {
                 try
                 {
+                    if (error != null)
+                    {
+                        Report(done, $"Download failed: {error}", false);
+                        return;
+                    }
                     Debug.Log($"Downloaded '{url}' to '{zipPath}'.");
-                    FileHelper.ExtractZip(zipPath, Application.dataPath);
-                    File.Delete(zipPath); // Remove the downloaded zip
+                    var root = ExtractArchive(zipPath, Path.Combine(temp, "extracted"));
 
-                    if (!Directory.Exists(destPath))
-                        Directory.CreateDirectory(destPath);
-
-                    var mergeReport = MergeXapiFolder(extractPath, destPath);
+                    var mergeReport = MergeXapiFolder(root, destPath);
                     File.WriteAllText(mergeReportPath, JsonUtility.ToJson(mergeReport, true));
-                    
-                    Directory.Delete(extractPath, true); // Clean up extracted files
-                    Debug.Log($"Merge Copied: {mergeReport.copied}, Conflicts: {mergeReport.conflicts}, Skipped: {mergeReport.skipped}. Merge report at {mergeReportPath}.");
+
+                    Report(done, $"Patched '{_settings.GitRef}' into 'Assets/xapi'. Copied: {mergeReport.copied}, conflicts: {mergeReport.conflicts}, skipped: {mergeReport.skipped}. Merge report at {mergeReportPath}.", true);
                     EditorApplication.delayCall += AssetDatabase.Refresh;
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Download or merge failed: {ex.Message}");
+                    Report(done, $"Download or merge failed: {ex.Message}", false);
+                }
+                finally
+                {
+                    DeleteTempFolder(temp);
                 }
             });
         }
@@ -154,8 +169,8 @@ namespace xAPI4Unity.Editor
                 
                 if (!File.Exists(destFilePath))
                 {
-                    FileHelper.EnsurePath(destFilePath); // Ensure all directories exist before moving the file
-                    File.Move(sourceFilePath, destFilePath); // Move new file into place
+                    FileHelper.EnsurePath(destFilePath); // Ensure all directories exist before copying the file
+                    File.Copy(sourceFilePath, destFilePath); // Copy new file into place
                     mergeReport.AddCopy(relativePath);
                 }
                 else
@@ -167,7 +182,7 @@ namespace xAPI4Unity.Editor
                     if (!sourceBytes.SequenceEqual(destBytes))
                     {
                         mergeReport.AddConflict(relativePath);
-                        File.Move(sourceFilePath, destFilePath.Replace(".json", ".json-conflict")); // Rename conflicting files
+                        File.Copy(sourceFilePath, destFilePath + ReleaseInstaller.ConflictSuffix, true); // Keep the incoming file next to yours
                     }
                     else
                     {
@@ -181,31 +196,230 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// Downloads the xAPI repository directly into the "Assets/xapi" folder for a fresh import.
         /// </summary>
-        private void DownloadToAssets()
+        /// <param name="done">Gets a summary and whether it worked. Optional.</param>
+        private void DownloadToAssets(Action<string, bool> done)
         {
-            var destPath = Path.Combine(Application.dataPath, "xapi");
+            var destPath = DefaultValues.RepoPath;
 
             if (Directory.Exists(destPath))
             {
-                Debug.Log($"The folder '{destPath}' already exists. Delete it and retry.");
+                Report(done, $"The folder '{destPath}' already exists. Delete it and retry.", false);
                 return;
             }
+            if (!CheckGitRef(done))
+                return;
 
-            var zipPath = Path.Combine(Application.dataPath, "xapi.zip");
-            var extractPath = Path.Combine(Application.dataPath, "__ExtractedXAPI__");
+            var temp = NewTempFolder();
+            var zipPath = Path.Combine(temp, "archive.zip");
             _settings.path = destPath;
             MainSettings.Instance.Save();
 
-            FileHelper.Download(_settings.GetDownloadUrl(), zipPath,
-                () =>
+            WebRequests.DownloadFile(_settings.GetDownloadUrl(), zipPath, error =>
+            {
+                try
                 {
-                    FileHelper.ExtractZip(zipPath, extractPath);
-                    File.Delete(zipPath); // Cleanup zip file
-                    Directory.Move(Path.Combine(extractPath, _settings.DownloadFilename), destPath);
-                    Directory.Delete(extractPath, true); // Cleanup extracted folder
-                    Debug.Log($"Extraction complete to '{destPath}'!");
+                    if (error != null)
+                    {
+                        Report(done, $"Download failed: {error}", false);
+                        return;
+                    }
+                    var root = ExtractArchive(zipPath, Path.Combine(temp, "extracted"));
+                    Directory.Move(root, destPath);
+                    Report(done, $"Downloaded '{_settings.GitRef}' to 'Assets/xapi'.", true);
                     AssetDatabase.Refresh();
+                }
+                catch (Exception ex)
+                {
+                    Report(done, $"Download failed: {ex.Message}", false);
+                }
+                finally
+                {
+                    DeleteTempFolder(temp);
+                }
+            });
+        }
+
+        /// <summary>
+        /// True while an official release is downloading or installing.
+        /// </summary>
+        internal bool IsInstalling { get; private set; }
+
+        /// <summary>
+        /// Most earlier releases downloaded as baselines when the installed release is unknown.
+        /// </summary>
+        private const int MaxBaselines = 5;
+
+        /// <summary>
+        /// Downloads an official release and installs it into 'Assets/xapi'. Earlier releases are downloaded too as
+        /// baselines, so files you did not change are updated or removed and only files you changed become conflicts:
+        /// the installed release if it is known, otherwise (or when reinstalling) up to <see cref="MaxBaselines"/> earlier ones.
+        /// </summary>
+        /// <param name="release">The release to install.</param>
+        /// <param name="done">Gets a summary and whether it worked. Optional.</param>
+        internal void InstallOfficialRelease(ReleaseInfo release, Action<string, bool> done)
+        {
+            if (IsInstalling || release == null)
+                return;
+            IsInstalling = true;
+
+            var destination = DefaultValues.RepoPath;
+            var baselines = BaselinesFor(release, destination);
+            var temp = NewTempFolder();
+            var releaseZip = Path.Combine(temp, "release.zip");
+
+            void Finish(string message, bool ok)
+            {
+                DeleteTempFolder(temp);
+                IsInstalling = false;
+                Report(done, message, ok);
+            }
+
+            void Apply(List<string> baselineZips)
+            {
+                try
+                {
+                    var releaseRoot = ExtractArchive(releaseZip, Path.Combine(temp, "release"));
+                    var baselineRoots = baselineZips
+                        .Select((zip, i) => ExtractArchive(zip, Path.Combine(temp, "baseline" + i)))
+                        .ToList();
+                    var report = ReleaseInstaller.Install(releaseRoot, baselineRoots, destination, release.tag_name);
+                    report.source = $"{DefaultValues.OfficialRepository} {release.tag_name}";
+                    if (report.conflicts > 0)
+                        File.WriteAllText(Path.Combine(destination, NewReportName()), JsonUtility.ToJson(report, true));
+
+                    _settings.path = destination;
+                    MainSettings.Instance.Save();
+                    AssetDatabase.Refresh();
+
+                    var summary = $"Installed {release.tag_name} into 'Assets/xapi': {report.copied} added, {report.updated} updated, " +
+                                  $"{report.removed} removed, {report.skipped} unchanged.";
+                    if (report.conflicts > 0)
+                        summary += $" {report.conflicts} file(s) you changed differ from the release. Yours are kept, the release's " +
+                                   "versions are next to them as '*.json-conflict'. Resolve them in the 'Use' step.";
+                    Finish(summary, true);
+                }
+                catch (Exception ex)
+                {
+                    Finish($"Installing {release.tag_name} failed: {ex.Message}", false);
+                }
+            }
+
+            // Download the baselines one after the other, skipping those that fail
+            var baselineZips = new List<string>();
+            void DownloadBaseline(int index)
+            {
+                if (index >= baselines.Count)
+                {
+                    Apply(baselineZips);
+                    return;
+                }
+                var zip = Path.Combine(temp, $"baseline{index}.zip");
+                WebRequests.DownloadFile(DefaultValues.OfficialArchiveUrl(baselines[index].tag_name), zip, error =>
+                {
+                    if (error == null)
+                        baselineZips.Add(zip);
+                    else
+                        Debug.LogWarning($"[xAPI4Unity] Could not download the earlier release {baselines[index].tag_name}: {error}");
+                    DownloadBaseline(index + 1);
                 });
+            }
+
+            WebRequests.DownloadFile(DefaultValues.OfficialArchiveUrl(release.tag_name), releaseZip, error =>
+            {
+                if (error != null)
+                {
+                    Finish($"Download of {release.tag_name} failed: {error}", false);
+                    return;
+                }
+                DownloadBaseline(0);
+            });
+        }
+
+        /// <summary>
+        /// The earlier releases to compare the source folder with: none for a fresh install, the installed release for an
+        /// update, and up to <see cref="MaxBaselines"/> releases when the installed one is unknown or is installed again.
+        /// </summary>
+        private static List<ReleaseInfo> BaselinesFor(ReleaseInfo release, string destination)
+        {
+            var result = new List<ReleaseInfo>();
+            var releases = OfficialReleases.Releases;
+            if (releases == null || !Directory.Exists(Path.Combine(destination, ReleaseInstaller.DefinitionsFolder)))
+                return result;
+
+            var installed = releases.Find(ReleaseInstaller.ReadVersion(destination));
+            if (installed != null && installed != release)
+            {
+                result.Add(installed);
+                return result;
+            }
+            result.AddRange(releases.All.Where(r => r != release && !r.IsPreRelease).Take(MaxBaselines));
+            return result;
+        }
+
+        /// <summary>
+        /// Logs the outcome of an action and passes it on.
+        /// </summary>
+        private static void Report(Action<string, bool> done, string message, bool ok)
+        {
+            if (ok)
+                Debug.Log($"[xAPI4Unity] {message}");
+            else
+                Debug.LogError($"[xAPI4Unity] {message}");
+            done?.Invoke(message, ok);
+        }
+
+        /// <summary>
+        /// Reports an error if the branch, tag or commit of the custom repository has characters git does not allow.
+        /// </summary>
+        /// <returns>True if it is valid.</returns>
+        private bool CheckGitRef(Action<string, bool> done)
+        {
+            if (_settings.IsValidGitRef)
+                return true;
+            Report(done, $"'{_settings.GitRef}' is not a valid branch, tag or commit.", false);
+            return false;
+        }
+
+        /// <summary>
+        /// File name of a new merge report, such as <c>20261119143000-xapi-report.json</c>.
+        /// </summary>
+        private static string NewReportName() => DateTime.Now.ToString("yyyyMMddHHmmss") + "-xapi-report.json";
+
+        /// <summary>
+        /// Creates an empty folder in the project's 'Temp' folder. Unity does not import it, and it is on the same drive as 'Assets', so folders can be moved.
+        /// </summary>
+        private static string NewTempFolder()
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
+            var folder = Path.Combine(projectRoot, "Temp", "xAPI4Unity", Path.GetRandomFileName());
+            Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        /// <summary>
+        /// Deletes a folder from <see cref="NewTempFolder"/>, ignoring errors.
+        /// </summary>
+        private static void DeleteTempFolder(string folder)
+        {
+            try
+            {
+                if (Directory.Exists(folder))
+                    Directory.Delete(folder, true);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[xAPI4Unity] Could not delete '{folder}': {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts an archive and returns its root, the folder that GitHub and GitLab put everything into.
+        /// </summary>
+        private static string ExtractArchive(string zipPath, string extractPath)
+        {
+            Directory.CreateDirectory(extractPath);
+            FileHelper.ExtractZip(zipPath, extractPath);
+            return ReleaseInstaller.FindArchiveRoot(extractPath);
         }
 
         /// <summary>
@@ -248,6 +462,20 @@ namespace xAPI4Unity.Editor
         /// </summary>
         public void UpdateXApiFolder()
         {
+            if (_settings.IsOfficial)
+            {
+                // Install the latest release, after asking GitHub for it
+                OfficialReleases.Refresh(true, () =>
+                {
+                    var latest = OfficialReleases.Releases?.Latest();
+                    if (latest == null)
+                        Debug.LogError($"[xAPI4Unity] Could not find an official release: {OfficialReleases.Error ?? "the list is empty."}");
+                    else
+                        InstallOfficialRelease(latest, null);
+                });
+                return;
+            }
+
             if (_settings.selectedOptionIndex == 0)
             {
                 DownloadToAssetsAndPatch();
@@ -312,15 +540,16 @@ namespace xAPI4Unity.Editor
 
         /// <summary>
         /// Clones the repository next to the local path, as a submodule if the project is a git repository,
-        /// and points the local path to the clone.
+        /// checks out a new local branch at the branch, tag or commit of the settings, and points the local path to the clone.
         /// </summary>
         internal void CloneRepository()
         {
             SyncGit();
+            var gitRef = _settings.IsHead ? null : _settings.GitRef;
             if (ProjectHasGit)
-                _git.SubmoduleClone(_settings.GetNewBranchName());
+                _git.SubmoduleClone(_settings.GetNewBranchName(), gitRef);
             else
-                _git.Clone(_settings.GetNewBranchName());
+                _git.Clone(_settings.GetNewBranchName(), gitRef);
             _settings.path = _git.RepoDirectory;
             MainSettings.Instance.Save();
         }
@@ -352,7 +581,7 @@ namespace xAPI4Unity.Editor
                 {
                     _settings.repoDownloadUrl = CustomGUI.TextField("Repository URL", _settings.repoDownloadUrl, DefaultValues.RepoDownloadUrl);
                     _settings.repoBranch =
-                        CustomGUI.TextField("Branch", _settings.repoBranch, DefaultValues.RepoBranch);
+                        CustomGUI.TextField("Branch, tag or commit", _settings.repoBranch, DefaultValues.RepoBranch);
                 }
                 CustomGUI.Description("Change this only if you work with a fork of the repository.");
             });

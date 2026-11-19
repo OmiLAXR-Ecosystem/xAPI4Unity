@@ -9,7 +9,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A property in the syntax tree with a getter
     /// </summary>
     internal sealed class GetableProperty : TypedNode<GetableProperty> {
-        // Backing field holding the getter node for this property.
+        /// <summary>
+        /// Backing field holding the getter node for this property.
+        /// </summary>
         private Getter _getter;
         
         /// <summary>

@@ -42,6 +42,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public bool IsArray => ArrayParts.Count > 0;
 
+        /// <summary>
+        /// Creates an expression from its parts. Use <see cref="Parse"/>.
+        /// </summary>
         private TypeExpression(string original, string coreName, bool isNullable, List<ArrayPart> parts)
         {
             Original = original;
@@ -82,7 +85,7 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         /// <param name="typeNameResolver">A resolver function to map type names to <see cref="ResolvedType"/> instances.</param>
         /// <returns>A <see cref="ResolvedType"/> corresponding to the type expression.</returns>
-        public ResolvedType Resolve(TypeNameResolver typeNameResolver)
+        public ResolvedType Resolve(ITypeNameResolver typeNameResolver)
         {
             if (typeNameResolver == null) throw new ArgumentNullException(nameof(typeNameResolver));
 
@@ -92,7 +95,9 @@ namespace xAPI4Unity.Editor.Types
             if (IsRangeSyntax(CoreName))
             {
                 ResolvedRange.TryParseRange(CoreName, out var type, out var min, out var max, out var minInclusive, out var maxInclusive);
-                elementType = new ResolvedRange(typeNameResolver.ResolveType(type), min, max, minInclusive, maxInclusive, CoreName);
+                var rangeType = typeNameResolver.ResolveType(type);
+                if (rangeType == null) return null;
+                elementType = new ResolvedRange(rangeType, min, max, minInclusive, maxInclusive, CoreName);
             }
             // Handle tuple syntax (e.g., "(int, string)")
             else if (IsTupleSyntax(CoreName))
@@ -132,12 +137,8 @@ namespace xAPI4Unity.Editor.Types
             // Apply array parts
             foreach (var part in ArrayParts)
             {
-                var arrayType = part.IsJagged
-                    ? currentType.Type.MakeArrayType()
-                    : currentType.Type.MakeArrayType(part.Rank);
-
-                var brackets = part.IsJagged ? "[]" : $"[{new string(',', part.Rank - 1)}]";
-                currentType = new ResolvedType(arrayType, $"{currentType.Definition}{brackets}");
+                currentType = new ResolvedArray(currentType, part.IsJagged, part.Rank,
+                    $"{currentType.Definition}{part}");
             }
 
             return currentType;
@@ -222,17 +223,32 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public readonly struct ArrayPart
         {
+            /// <summary>
+            /// True for <c>[]</c>, false for multidimensional arrays such as <c>[,]</c>.
+            /// </summary>
             public bool IsJagged { get; }
+            /// <summary>
+            /// Number of dimensions: 1 for <c>[]</c>, 2 for <c>[,]</c>, …
+            /// </summary>
             public int Rank { get; } // 2 => [,], 3 => [,,]
 
+            /// <summary>
+            /// Creates an array part.
+            /// </summary>
             private ArrayPart(bool isJagged, int rank)
             {
                 IsJagged = isJagged;
                 Rank = rank;
             }
 
+            /// <summary>
+            /// Creates a one-dimensional array part (<c>[]</c>).
+            /// </summary>
             public static ArrayPart Jagged() => new ArrayPart(true, 1);
 
+            /// <summary>
+            /// Creates a multidimensional array part with the given rank (at least 2).
+            /// </summary>
             public static ArrayPart Multi(int rank)
             {
                 if (rank < 2)
@@ -240,6 +256,9 @@ namespace xAPI4Unity.Editor.Types
                 return new ArrayPart(false, rank);
             }
 
+            /// <summary>
+            /// Returns the brackets, such as <c>[]</c> or <c>[,]</c>.
+            /// </summary>
             public override string ToString() => IsJagged ? "[]" : $"[{new string(',', Rank - 1)}]";
         }
     }
@@ -254,6 +273,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public IReadOnlyList<TypeExpression> Options { get; }
 
+        /// <summary>
+        /// Creates a set of options. Use <see cref="Parse"/>.
+        /// </summary>
         private TypeExpressionSet(IReadOnlyList<TypeExpression> options)
         {
             if (options == null || options.Count == 0)
@@ -285,7 +307,7 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         /// <param name="resolver">A function to resolve each type name.</param>
         /// <returns>A list of resolved types.</returns>
-        public IReadOnlyList<ResolvedType> ResolveAll(TypeNameResolver resolver)
+        public IReadOnlyList<ResolvedType> ResolveAll(ITypeNameResolver resolver)
         {
             var list = new List<ResolvedType>(Options.Count);
             foreach (var p in Options)
@@ -303,7 +325,7 @@ namespace xAPI4Unity.Editor.Types
         /// <summary>
         /// Resolves the preferred type using a custom preference function.
         /// </summary>
-        public ResolvedType ResolvePrefer(Func<ResolvedType, bool> prefer, TypeNameResolver resolver)
+        public ResolvedType ResolvePrefer(Func<ResolvedType, bool> prefer, ITypeNameResolver resolver)
         {
             var all = ResolveAll(resolver);
             if (all.Count == 0) return null;
@@ -314,7 +336,7 @@ namespace xAPI4Unity.Editor.Types
         /// <summary>
         /// Checks if the value matches any type in the set.
         /// </summary>
-        public bool MatchesValue(object value, TypeNameResolver resolver)
+        public bool MatchesValue(object value, ITypeNameResolver resolver)
         {
             if (value == null) return true;
             var vt = value.GetType();
@@ -326,6 +348,9 @@ namespace xAPI4Unity.Editor.Types
             return false;
         }
 
+        /// <summary>
+        /// Returns the options joined with <c> | </c>.
+        /// </summary>
         public override string ToString() => string.Join(" | ", Options.Select(o => o.Original));
     }
 }

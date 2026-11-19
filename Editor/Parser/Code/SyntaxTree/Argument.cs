@@ -9,7 +9,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// An argument in the syntax tree
     /// </summary>
     internal class Argument {
-        // Backing storage for the argument's value. Kept as 'object' to support heterogeneous argument types.
+        /// <summary>
+        /// Backing storage for the argument's value. Kept as 'object' to support heterogeneous argument types.
+        /// </summary>
         private object _value;
 
         /// <summary>

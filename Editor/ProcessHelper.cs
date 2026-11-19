@@ -60,6 +60,39 @@ namespace xAPI4Unity.Editor
             
             return process;
         }
+
+        /// <summary>
+        /// Runs a command-line process without a window, waits for it and returns its exit code and output.
+        /// </summary>
+        /// <param name="app">The name or path of the executable to run.</param>
+        /// <param name="arguments">The command-line arguments to pass to the executable.</param>
+        /// <param name="workingDirectory">The working directory to execute the process in.</param>
+        /// <param name="output">Standard output and standard error, trimmed.</param>
+        /// <returns>The exit code, 0 on success.</returns>
+        internal static int Run(string app, string arguments, string workingDirectory, out string output)
+        {
+            Debug.Log($"[xAPI4Unity] Executed `> {app} {arguments}` in directory '{workingDirectory}'");
+            var startInfo = new ProcessStartInfo(app)
+            {
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory
+            };
+
+            using (var process = new Process { StartInfo = startInfo })
+            {
+                process.Start();
+                // Read stderr asynchronously, so a full pipe cannot block the process
+                var error = process.StandardError.ReadToEndAsync();
+                var stdout = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                output = (stdout + error.Result).Trim();
+                return process.ExitCode;
+            }
+        }
     }
 }
 #endif

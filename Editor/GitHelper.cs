@@ -15,10 +15,22 @@ namespace xAPI4Unity.Editor
     /// </summary>
     public class GitHelper
     {
-        private Process _processHandle; // Maintains the process handle for ongoing Git operations.
-        public string Url; // The repository URL.
-        public string Directory; // The local directory where the repository is cloned.
-        public bool IsBusy { get; private set; } // Indicates if a Git operation is in progress.
+        /// <summary>
+        /// The git process that is running, if any.
+        /// </summary>
+        private Process _processHandle;
+        /// <summary>
+        /// The repository URL.
+        /// </summary>
+        public string Url;
+        /// <summary>
+        /// The local folder of the clone.
+        /// </summary>
+        public string Directory;
+        /// <summary>
+        /// True while a git command runs.
+        /// </summary>
+        public bool IsBusy { get; private set; }
         
         /// <summary>
         /// Gets the path to the "xapi" directory in the repository.
@@ -61,50 +73,102 @@ namespace xAPI4Unity.Editor
         /// Optionally checks out a specific branch.
         /// </summary>
         /// <param name="branch">The branch to checkout after cloning. Optional.</param>
-        public void SubmoduleClone(string branch = default)
-        {
-            TerminateOngoingProcess();
+        public void SubmoduleClone(string branch = default) => SubmoduleClone(branch, null);
 
-            IsBusy = true;
-
-            // Run the "submodule add" command
-            var gitCloneProcess = ProcessHelper.Cmd("git", $"submodule add {Url}", false, Directory);
-            gitCloneProcess.WaitForExit();
-
-            // Optionally checkout the branch
-            if (!string.IsNullOrEmpty(branch))
-            {
-                var gitCheckoutProcess = ProcessHelper.Cmd("git", $"checkout -b {branch}", false, RepoDirectory);
-                gitCheckoutProcess.WaitForExit();
-            }
-
-            IsBusy = false;
-        }
+        /// <summary>
+        /// Clones the repository as a submodule into the specified directory and checks out a new local
+        /// branch at a branch, tag or commit of the repository.
+        /// </summary>
+        /// <param name="branch">Name of the new local branch. Optional.</param>
+        /// <param name="gitRef">Branch, tag or commit to start from. Null, empty or <c>HEAD</c> for the default branch.</param>
+        public void SubmoduleClone(string branch, string gitRef)
+            => CloneAndCheckout($"submodule add {Quote(Url)} xapi", branch, gitRef);
 
         /// <summary>
         /// Clones the repository into the specified directory.
         /// Optionally checks out a specific branch.
         /// </summary>
         /// <param name="branch">The branch to checkout after cloning. Optional.</param>
-        public void Clone(string branch = default)
+        public void Clone(string branch = default) => Clone(branch, null);
+
+        /// <summary>
+        /// Clones the repository into the specified directory and checks out a new local branch at a branch,
+        /// tag or commit of the repository.
+        /// </summary>
+        /// <param name="branch">Name of the new local branch. Optional.</param>
+        /// <param name="gitRef">Branch, tag or commit to start from. Null, empty or <c>HEAD</c> for the default branch.</param>
+        public void Clone(string branch, string gitRef)
+            => CloneAndCheckout($"clone {Quote(Url)} xapi", branch, gitRef);
+
+        /// <summary>
+        /// Runs a clone command in <see cref="Directory"/>, then checks out the local branch in <see cref="RepoDirectory"/>.
+        /// </summary>
+        private void CloneAndCheckout(string cloneArguments, string branch, string gitRef)
         {
-            TerminateOngoingProcess();
-
-            IsBusy = true;
-
-            // Run the "clone" command
-            var gitCloneProcess = ProcessHelper.Cmd("git", $"clone {Url}", false, Directory);
-            gitCloneProcess.WaitForExit();
-
-            // Optionally checkout the branch
-            if (!string.IsNullOrEmpty(branch))
+            if (!string.IsNullOrEmpty(gitRef) && !Settings.LocalSourceSettings.IsValidRef(gitRef))
             {
-                var gitCheckoutProcess = ProcessHelper.Cmd("git", $"checkout -b {branch}", false, RepoDirectory);
-                gitCheckoutProcess.WaitForExit();
+                UnityEngine.Debug.LogError($"[xAPI4Unity] '{gitRef}' is not a valid branch, tag or commit.");
+                return;
             }
 
-            IsBusy = false;
+            TerminateOngoingProcess();
+            IsBusy = true;
+            try
+            {
+                if (ProcessHelper.Run("git", cloneArguments, Directory, out var output) != 0)
+                {
+                    UnityEngine.Debug.LogError($"[xAPI4Unity] git {cloneArguments} failed:\n{output}");
+                    return;
+                }
+                CheckoutLocalBranch(branch, gitRef);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
+
+        /// <summary>
+        /// Checks out a new local branch at the start point of <paramref name="gitRef"/>. Without a branch name,
+        /// checks out the start point itself.
+        /// </summary>
+        private void CheckoutLocalBranch(string branch, string gitRef)
+        {
+            var startPoint = ResolveStartPoint(gitRef);
+            string arguments;
+            if (!string.IsNullOrEmpty(branch))
+                arguments = startPoint != null ? $"checkout -b {branch} {startPoint}" : $"checkout -b {branch}";
+            else if (startPoint != null)
+                arguments = $"checkout {startPoint}";
+            else
+                return;
+
+            if (ProcessHelper.Run("git", arguments, RepoDirectory, out var output) != 0)
+                UnityEngine.Debug.LogError($"[xAPI4Unity] git {arguments} failed:\n{output}");
+        }
+
+        /// <summary>
+        /// Where the local branch starts. A branch of the remote becomes <c>origin/&lt;branch&gt;</c>, so the local
+        /// branch tracks it and <see cref="Pull"/> works. HEAD becomes the remote's default branch. Tags and commits stay as they are.
+        /// </summary>
+        /// <returns>The start point, or null for the commit the clone checked out.</returns>
+        private string ResolveStartPoint(string gitRef)
+        {
+            if (string.IsNullOrEmpty(gitRef) || string.Equals(gitRef, "HEAD", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return ProcessHelper.Run("git", "symbolic-ref --quiet --short refs/remotes/origin/HEAD", RepoDirectory, out var head) == 0 && head.Length > 0
+                    ? head
+                    : null;
+            }
+            return ProcessHelper.Run("git", $"rev-parse --verify --quiet refs/remotes/origin/{gitRef}", RepoDirectory, out _) == 0
+                ? "origin/" + gitRef
+                : gitRef;
+        }
+
+        /// <summary>
+        /// Quotes a command-line argument such as a URL.
+        /// </summary>
+        private static string Quote(string argument) => "\"" + (argument ?? "").Replace("\"", "") + "\"";
 
         /// <summary>
         /// Pulls the latest changes into an existing clone.

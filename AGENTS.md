@@ -2,30 +2,39 @@
 
 How to work in `com.rwth.unity.omilaxr.xapi4unity`. Architecture and commands are in `CLAUDE.md`. Workspace-wide context is in `../CLAUDE.md`.
 
-## Repository and releases
+## Repository and pull requests
 
 - This folder is its own git repo inside the `omilaxr-ecosystem` workspace. Run git commands here.
-- Work for a release goes on a branch `vX.Y.Z`, which is merged into `main` when done.
-- Commit messages: `type(scope): summary`, where type is `feat`, `fix`, `refactor`, `test` or `docs`. Do not commit unrelated working-tree changes that you did not make.
-- Pushing a tag `vX.Y.Z` runs `.github/workflows/publish.yml`, which does `npm publish` to npmjs. Only tag when the version files below agree.
+- `main` is protected. Every change goes through a pull request from a branch named `<type>/<topic>`, such as `feat/wizard-search` or `fix/download-url`. Do not name branches like versions (`vX.Y.Z`): tags have those names.
+- Merge method:
+  - **Squash** by default. The PR title and description become the single commit on `main`, so the PR title is what release-please reads.
+  - **Rebase and merge** when the branch is a series of clean Conventional Commits that should each land on `main` and show up in the CHANGELOG. Then every commit message counts, not the PR title.
+- PR titles and commit messages follow Conventional Commits: `type(scope): summary`, where type is `feat`, `fix`, `perf`, `revert`, `refactor`, `docs`, `test`, `build`, `ci` or `chore`. Do not commit unrelated working-tree changes that you did not make.
+- The `Checks` workflow must pass before a merge: the PR title format, and `.github/scripts/check_package.py` (`.meta` files, guids, SPDX headers, versions). Run the script locally before opening a PR: `python3 .github/scripts/check_package.py`.
+
+## Releases
+
+- Releases are automated with release-please (`.github/workflows/publish.yml`). Every push to `main` updates an open release PR with the next version, the CHANGELOG and `CITATION.cff`.
+- Merging the release PR creates the tag `vX.Y.Z` and the GitHub release, signs the package with Unity (`upm pack`), publishes the signed tarball to npm and attaches it to the GitHub release.
+- Never tag, bump versions or write version headings by hand.
+
+## Version
+
+- release-please derives the version from the PR titles since the last release:
+  - `fix:`, `perf:`, `revert:` give a patch.
+  - `feat:` gives a minor.
+  - `!` after the type or scope (`feat(api)!: …`) or a `BREAKING CHANGE: <what users must change>` footer in the PR description gives a major.
+  - Other types give no release.
+- To force a version, add the footer `Release-As: X.Y.Z` to the PR description.
+- Breaking in this package: removing or renaming public types, members, menu items or settings; renaming serialized fields without `[FormerlySerializedAs]`; changing `.meta` guids; changing generated registry code in a way that breaks `OmiLAXR.xAPI`; raising the minimum Unity version. Deprecate with `[Obsolete]` in a minor, remove in the next major.
+- release-please updates `package.json`, `.github/.release-please-manifest.json` and the `CITATION.cff` lines marked `# x-release-please-version`. The workflow sets `date-released`. A new line that holds the version needs the same marker.
 
 ## CHANGELOG
 
-- Every user-visible change gets a line in `CHANGELOG.md` in the same change or commit. Do not leave it for later.
-- Newest version on top. Heading format in this file: `## [X.Y.Z] - YYYY-MM-DD`. Versions are separated by a `---` line. Keep the file's existing style.
-- Add entries under the topmost version if it is not released yet (no `vX.Y.Z` tag). Otherwise start a new version and do the version bump below.
-- Group entries under `### Added`, `### Changed`, `### Fixed` (and `### Removed`/`### Deprecated` when needed). Write one line per change, in English, and name types and members in backticks.
-- Mark breaking changes explicitly with **Breaking:** and say what users must change.
-- Changes that only touch tests or CI need no entry. Refactors need one if they add public API, such as new interfaces or overloads.
-
-## Version bump
-
-- SemVer: patch for fixes, minor for new backward-compatible API, major for breaking changes.
-- Update every place that holds the version, in one commit:
-  - `package.json`
-  - `CITATION.cff` (`version`, `date-released`, both blocks)
-  - `CHANGELOG.md`
-- The release date in `CITATION.cff` and the CHANGELOG heading is the day of the release. Update it when tagging.
+- release-please writes `CHANGELOG.md` from the PR titles: `feat` goes under `Added`, `fix` under `Fixed`, `perf` and `revert` under `Changed`, breaking changes under `⚠ BREAKING CHANGES`. Other types are hidden. Do not edit `CHANGELOG.md` in feature PRs.
+- So the PR title is the changelog line. Write it for users, in English, and name types and members in backticks.
+- To add detail, edit the release PR right before merging it. release-please rebuilds it on every push to `main`.
+- Entries up to 2.3.0 were written by hand and keep their format.
 
 ## Unity package rules
 

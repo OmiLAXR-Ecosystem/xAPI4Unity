@@ -37,6 +37,9 @@ namespace xAPI4Unity.Editor
         /// </summary>
         public string[] ignoredContexts = Array.Empty<string>();
 
+        /// <summary>
+        /// Variables for the type expressions: <c>${name}</c> in <see cref="Types"/> is replaced by the value of <c>name</c>.
+        /// </summary>
         public Dictionary<string, string> Variables = new Dictionary<string, string>();
 
         /// <summary>
@@ -55,22 +58,23 @@ namespace xAPI4Unity.Editor
         /// Prompts the user with a Yes/No dialog if the file already exists.
         /// </summary>
         [MenuItem("xAPI4Unity / Create 'xapi.config.json' file", false, 200)]
-        private static void CreateAsset()
+        private static void CreateAsset() =>
+            CreateAsking(Path.Combine(Application.dataPath, "xapi.config.json"),
+                UnityEditorDialogs.Instance, UnityAssetRefresher.Instance);
+
+        /// <summary>
+        /// Writes a default config file. If one exists, it is only overwritten when the user agrees.
+        /// </summary>
+        /// <returns>True if the file was written.</returns>
+        internal static bool CreateAsking(string filePath, IEditorDialogs dialogs, IAssetRefresher refresher)
         {
-            var filePath = Path.Combine(Application.dataPath, "xapi.config.json");
+            if (File.Exists(filePath) &&
+                !dialogs.Confirm("File Exists",
+                    $"'{Path.GetFileName(filePath)}' already exists. Do you want to overwrite it?", "Yes", "No"))
+                return false;
 
-            // Check if the file already exists
-            if (File.Exists(filePath))
-            {
-                // Prompt the user with a Yes/No dialog
-                if (!EditorUtility.DisplayDialog("File Exists",
-                        "'xapi.config.json' already exists. Do you want to overwrite it?", "Yes", "No"))
-                {
-                    return; // Exit if the user selects "No"
-                }
-            }
-
-            Create(filePath);
+            Create(filePath, refresher);
+            return true;
         }
 
         /// <summary>
@@ -90,30 +94,28 @@ namespace xAPI4Unity.Editor
         }
 
         /// <summary>
+        /// The config a new project starts with: no types, and the contexts that are not about XR ignored.
+        /// </summary>
+        internal static ConfigFile CreateDefault() => new ConfigFile
+        {
+            ignoredContexts = new[]
+            {
+                "360tours", "assistanceSystem", "exerciseGenerator", "gitanalysis",
+                "ide", "lms", "media", "multitouch", "observation", "projectJupyter",
+                "rightsEngine", "studybuddy", "tagformance", "uhfReader", "vrRfidChamber"
+            }
+        };
+
+        /// <summary>
         /// Writes a default config file to the given path, overwriting an existing one.
         /// </summary>
         /// <param name="filePath">Path of the config file, '{def_folder}.config.json' next to the definitions folder.</param>
-        internal static void Create(string filePath)
+        /// <param name="refresher">Makes the new file show up in Unity. Defaults to <see cref="AssetDatabase.Refresh()"/>.</param>
+        internal static void Create(string filePath, IAssetRefresher refresher = null)
         {
-            // Create a new default ConfigFile instance
-            var file = new ConfigFile
-            {
-                ignoredContexts = new[]
-                {
-                    "360tours", "assistanceSystem", "exerciseGenerator", "gitanalysis",
-                    "ide", "lms", "media", "multitouch", "observation", "projectJupyter",
-                    "rightsEngine", "studybuddy", "tagformance", "uhfReader", "vrRfidChamber"
-                }
-            };
-
-            // Serialize it to JSON format
-            var json = JsonConvert.SerializeObject(file, Formatting.Indented);
-
-            // Write the JSON file to the Assets directory
-            File.WriteAllText(filePath, json);
-
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(CreateDefault(), Formatting.Indented));
             Debug.Log($"'{Path.GetFileName(filePath)}' has been created at {filePath}");
-            AssetDatabase.Refresh();
+            (refresher ?? UnityAssetRefresher.Instance).Refresh();
         }
     }
 }

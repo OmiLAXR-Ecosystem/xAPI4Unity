@@ -6,7 +6,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using xAPI4Unity.Editor.Parser.IO;
 
 namespace xAPI4Unity.Editor.Parser.Definitions
@@ -23,11 +22,18 @@ namespace xAPI4Unity.Editor.Parser.Definitions
         public readonly IDictionary<string, xAPIContext> Contexts;
 
         /// <summary>
+        /// Receives warnings about definitions that are skipped.
+        /// </summary>
+        private readonly IGeneratorLog _log;
+
+        /// <summary>
         /// Initializes a new instance of the xAPI_Definitions class based on a collection of definition files.
         /// </summary>
         /// <param name="definitionFiles">A collection of definition files to process.</param>
-        public xAPI_Definitions(IEnumerable<xAPI4Unity.Editor.Parser.IO.DefinitionFile> definitionFiles)
+        /// <param name="log">Receives warnings about skipped definitions. Defaults to the Unity console.</param>
+        public xAPI_Definitions(IEnumerable<xAPI4Unity.Editor.Parser.IO.DefinitionFile> definitionFiles, IGeneratorLog log = null)
         {
+            _log = log ?? UnityGeneratorLog.Instance;
             var defs = definitionFiles as IO.DefinitionFile[] ?? definitionFiles.ToArray();
 
             // Extract unique contexts from the definition files and create an xAPIContext for each.
@@ -78,7 +84,7 @@ namespace xAPI4Unity.Editor.Parser.Definitions
                         // Validate the extension type before adding it to the context.
                         if (extType != "activity" && extType != "context" && extType != "result")
                         {
-                            Debug.LogWarning($"[xAPI4Unity]: Unknown extension type '{extType}' for extension '{name}' in context '{context}'. Skipping extension.");
+                            _log.Warning($"[xAPI4Unity]: Unknown extension type '{extType}' for extension '{name}' in context '{context}'. Skipping extension.");
                             continue;
                         }
 

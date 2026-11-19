@@ -7,6 +7,7 @@ using System.IO;
 using UnityEditor;
 using System.Linq;
 using UnityEngine;
+using xAPI4Unity.Editor.Releases;
 using xAPI4Unity.Editor.Settings;
 using xAPI4Unity.Editor.Wizard;
 
@@ -58,6 +59,9 @@ namespace xAPI4Unity.Editor
             // Load main settings
             var settings = MainSettings.Instance;
 
+            // Once per editor session: log a newer official release of the definitions
+            EditorApplication.delayCall += OfficialReleases.CheckOnStartup;
+
             // Exit if auto-open on startup is disabled
             if (!settings.isOpeningOnStartup)
                 return;
@@ -66,8 +70,8 @@ namespace xAPI4Unity.Editor
             EditorApplication.delayCall += () =>
             {
                 // XAPI_REGISTRY_EXISTS is not checked here: OmiLAXR.xAPI sets it once the registry exists
-                var hasRegistry = Directory.Exists(Path.Combine(Application.dataPath, settings.@namespace));
-                if (!hasRegistry || !GitHelper.HasDefinitionsFolder(settings.localSource.path))
+                var status = new ProjectStatus(RegistryPaths.FromSettings(settings));
+                if (!status.HasRegistry || !status.HasDefinitions)
                 {
                     // Open the wizard to guide the user
                     XapiWizardWindow.Open();

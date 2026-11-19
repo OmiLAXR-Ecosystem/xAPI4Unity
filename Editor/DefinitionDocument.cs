@@ -20,9 +20,21 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal enum DefinitionKind
     {
+        /// <summary>
+        /// The folder is none of <c>verbs</c>, <c>activities</c> or <c>extensions/&lt;type&gt;</c>.
+        /// </summary>
         Unknown,
+        /// <summary>
+        /// Verb (<c>verbs</c> folder).
+        /// </summary>
         Verb,
+        /// <summary>
+        /// Activity (<c>activities</c> folder).
+        /// </summary>
         Activity,
+        /// <summary>
+        /// Extension (<c>extensions/&lt;type&gt;</c> folder).
+        /// </summary>
         Extension
     }
 
@@ -32,8 +44,17 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal static class DefinitionDocument
     {
+        /// <summary>
+        /// JSON field of the language map of names.
+        /// </summary>
         public const string NameField = "name";
+        /// <summary>
+        /// JSON field of the language map of descriptions.
+        /// </summary>
         public const string DescriptionField = "description";
+        /// <summary>
+        /// JSON field of the list of IRIs that mean exactly the same.
+        /// </summary>
         public const string ExactMatchField = "exactMatch";
 
         /// <summary>

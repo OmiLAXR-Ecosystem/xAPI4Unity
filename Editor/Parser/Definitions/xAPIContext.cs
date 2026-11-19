@@ -16,6 +16,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// Name of the context
         /// </summary>
         public readonly string Name;
+        /// <summary>
+        /// Description of the context, written as the comment of its property in <c>xAPI_Definitions</c> and <c>xAPI_Contexts</c>. Empty unless passed to the constructor.
+        /// </summary>
         public readonly string Description;
         /// <summary>
         /// Activities in the context

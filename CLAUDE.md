@@ -10,11 +10,14 @@ Working rules (versioning, CHANGELOG, `.meta` files, licenses, compatibility) ar
 
 ## Commands
 
-There is no command-line build or linter: the package compiles inside a Unity project. Paths below are relative to the workspace root (`..`).
+There is no command-line build: the package compiles inside a Unity project. Paths below are relative to the workspace root (`..`).
+
+- **Package check** (from this folder): `python3 .github/scripts/check_package.py` checks `.meta` files, guids, SPDX headers and versions. CI runs it on every PR (`.github/workflows/checks.yml`).
+- **Release:** automated with release-please, see AGENTS.md. Never tag or bump by hand.
 
 - **Develop:** open `OmiLAXR_Dev/` in Unity 6000.3.13f1. Its `Packages/manifest.json` links `com.rwth.unity.omilaxr.xapi4unity` from disk (`file:`), so edits recompile live.
 - **Tests** (`Tests/`, assembly `xAPI4Unity.Tests`): an editor-only asmdef. Run them in the Unity Test Runner (EditMode tab).
-  The tests only show up if `com.rwth.unity.omilaxr.xapi4unity` is listed under `"testables"` in `OmiLAXR_Dev/Packages/manifest.json`. It currently is not.
+  The tests only show up if `com.rwth.unity.omilaxr.xapi4unity` is listed under `"testables"` in `OmiLAXR_Dev/Packages/manifest.json`. It is, next to the `file:` link to this folder.
 - **CLI test run.** Batch mode fails while the editor has the project open. In that case, run against an APFS copy (`cp -c -R OmiLAXR_Dev <scratch>/Dev`).
 
   ```bash
@@ -24,14 +27,16 @@ There is no command-line build or linter: the package compiles inside a Unity pr
   # single test: replace -assemblyNames … with -testFilter xAPI4Unity.Tests.<Class>.<Method>
   ```
 
+- **Snapshot test.** `RegistrySnapshot_Tests` generates a registry from `Tests/Fixtures~/Snapshot/xapi` (with `xapi.config.json`) and compares it with `Tests/Fixtures~/Snapshot/expected`. After an intended change to the generated code, run the tests once with `XAPI4UNITY_UPDATE_SNAPSHOTS=1` in the environment, review the diff of `expected` and commit it. Unity ignores folders ending in `~`, so the expected `.cs` files are not compiled. `.gitignore` re-includes `Tests/Fixtures~/` because global gitignores often drop `*~`; check `git status` after adding fixtures.
+
 ## Architecture
 
 The whole package is the editor assembly `xAPI4Unity` (`includePlatforms: Editor`). Flow:
 
-1. **Source.** The wizard (`Editor/Wizard/XapiWizardWindow`, `xAPI4Unity / Open Wizard`) is the setup UI. It uses UI Toolkit and copies the style of the OmiLAXR Wizard (`XapiWizardWindow.uss`), without depending on the core. Its actions live in `LocalSourceView` (download, patch, clone, pull) and `FetcherWindow` (static generate and validate helpers and menu items; the window itself only links to the wizard). It clones the `xapi` registry with the git CLI (`GitHelper`, `ProcessHelper`) or points to a local folder with a `definitions/` root. Settings are in `Editor/Settings`: `MainSettings`, `FetcherSettings` and `LocalSourceSettings`, with defaults in `DefaultValues`.
+1. **Source.** The wizard (`Editor/Wizard/XapiWizardWindow`, `xAPI4Unity / Open Wizard`) is the setup UI. It uses UI Toolkit and copies the style of the OmiLAXR Wizard (`XapiWizardWindow.uss`), without depending on the core. Its actions live in `LocalSourceView` (download, patch, clone, pull) and `FetcherWindow` (static generate and validate helpers and menu items; the window itself only links to the wizard). It clones the `xapi` registry with the git CLI (`GitHelper`, `ProcessHelper`) or points to a local folder with a `definitions/` root. Settings are in `Editor/Settings`: `MainSettings`, `FetcherSettings` and `LocalSourceSettings`, with defaults in `DefaultValues`. `MainSettings` is stored through `ISettingsStore` (`EditorPrefsSettingsStore`). `RegistryPaths` holds the project's paths (source, `definitions`, `<source>.config.json`, `Assets/<namespace>`), and `ProjectStatus` the checks the wizard and `Startup` show. `ConfigFile` asks and refreshes through `IEditorDialogs` and `IAssetRefresher`.
 2. **Parse.** `Editor/Parser/Definitions` models the JSON (`xAPIDefinition`, verbs, activities, extensions, contexts). `Editor/Parser/IO` reads files and tracks file meta.
 3. **Types.** Optional `{def_folder}.config.json` (`ConfigFile`, `Editor/Types`) types the extensions. It supports aliases (`str`, `vec3`, …), `?` nullables, ranges, tuples, regex patterns, variables, and any C# type from loaded assemblies.
-4. **Generate.** `Parser/Generator.Generate` (internal) builds a syntax tree (`Parser/Code/SyntaxTree`) and serializes it to C# (`Parser/Code/CSharp`). `CoreFiles` emits the static registry core.
-5. **Watch.** `DefinitionAssetPostProcessor` regenerates when JSON under `Assets/xapi` changes, if the watcher is enabled. `Startup` runs the initial checks.
+4. **Generate.** `Parser/RegistryGenerator.Build` turns definitions into a `GeneratedRegistry` in memory: `DefinitionsFiles` builds a syntax tree (`Parser/Code/SyntaxTree`) and serializes it to C# (`Parser/Code/CSharp`), and `CoreFiles` fills the static core from templates and writes the `.asmdef`. `RegistryGenerator` only knows interfaces: `IDefinitionSource`, `ICoreTemplateSource`, `IRegistryWriter` (in `Parser/IO`) and `IGeneratorLog`. `RegistryUpdate` (in `Editor/`) reads the types config, builds the `GenerationOptions` and runs the generator; the menu, the wizard and the watcher all go through `Parser/Generator.Update`. `Parser/Generator` (internal) wires the disk and console implementations (`DirectoryDefinitionSource`, `DirectoryCoreTemplateSource.ForPackage()`, `DirectoryRegistryWriter` on `Assets/<namespace>`, `UnityGeneratorLog`). The type system depends on `ITypeNameResolver`. Tests use the in-memory fakes in `Tests/GeneratorFakes.cs`; keep new generator code behind these interfaces instead of calling `File`, `Application.dataPath` or `Debug` directly.
+5. **Watch.** `DefinitionAssetPostProcessor` regenerates through `Generator.Update` (with the types config) when JSON under a `definitions` folder changes, if the watcher is enabled. `Startup` runs the initial checks.
 
 Other tools: `XapiDefinitionsEditorWindow` edits definitions, `XapiMergeWindow`/`MergeReport` merge upstream patches into local definitions, and `UnityPackageExporter` exports `xapi`/`xAPI.Registry` as a `.unitypackage`.

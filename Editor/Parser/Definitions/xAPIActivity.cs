@@ -26,6 +26,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         public xAPIActivity(string context, string name, IDictionary<string, string> names, Dictionary<string, string> descriptions)
             : base(context, name, names, descriptions) { }
         
+        /// <summary>
+        /// Returns <c>activities</c>, the folder of activities in a context.
+        /// </summary>
         public override string GetDefinitionGroup() => "activities";
     }
 }

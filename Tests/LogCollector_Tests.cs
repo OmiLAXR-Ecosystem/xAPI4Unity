@@ -13,9 +13,15 @@ using xAPI4Unity.Editor;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="LogCollector"/>.
+    /// </summary>
     [TestFixture]
     public class LogCollector_Tests
     {
+        /// <summary>
+        /// Errors and warnings are collected, info messages are not.
+        /// </summary>
         [Test]
         public void Run_Collects_Errors_And_Warnings()
         {
@@ -35,6 +41,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEqual(new[] { "careful" }, log.Warnings);
         }
 
+        /// <summary>
+        /// An exception of the action becomes an error.
+        /// </summary>
         [Test]
         public void Run_Turns_An_Exception_Into_An_Error()
         {
@@ -48,6 +57,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEqual(new[] { "broken" }, log.Errors);
         }
 
+        /// <summary>
+        /// Messages logged after the action are not collected.
+        /// </summary>
         [Test]
         public void Run_Stops_Collecting_Afterwards()
         {

@@ -11,13 +11,21 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A constructor in the syntax tree
     /// </summary>
     internal sealed class Constructor {
-        // Backing field for the constructor body statements.
+        /// <summary>
+        /// Backing field for the constructor body statements.
+        /// </summary>
         private MethodBody _body;
-        // Arguments to be forwarded to the base(...) constructor invocation.
+        /// <summary>
+        /// Arguments to be forwarded to the base(...) constructor invocation.
+        /// </summary>
         private readonly List<Argument> _baseArguments = new List<Argument>();
-        // Access and other modifiers applied to this constructor.
+        /// <summary>
+        /// Access and other modifiers applied to this constructor.
+        /// </summary>
         private readonly List<Modifier> _modifiers = new List<Modifier>();
-        // Formal parameters declared by this constructor.
+        /// <summary>
+        /// Formal parameters declared by this constructor.
+        /// </summary>
         private readonly List<Parameter> _parameters = new List<Parameter>();
 
         /// <summary>

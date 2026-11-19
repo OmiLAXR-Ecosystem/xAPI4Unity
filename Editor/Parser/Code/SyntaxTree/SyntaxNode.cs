@@ -14,7 +14,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
     /// <typeparam name="T">The derived type of the syntax node, enabling fluent API chaining.</typeparam>
     internal abstract class SyntaxNode<T> where T : SyntaxNode<T>
     {
-        // Holds the list of modifiers associated with this syntax node.
+        /// <summary>
+        /// Holds the list of modifiers associated with this syntax node.
+        /// </summary>
         private readonly List<Modifier> _modifiers = new List<Modifier>();
 
         /// <summary>
@@ -90,7 +92,7 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
         /// <summary>
         /// Sets the comment/description for the syntax node.
         /// </summary>
-        /// <param name="comment">The description or XML comment to assign. Replaces < and > for safety.</param>
+        /// <param name="comment">The description or XML comment to assign. Replaces &lt; and &gt; for safety.</param>
         /// <returns>The same syntax node instance for fluent chaining.</returns>
         public T WithComment(string comment) {
             Comment = comment.Replace(">", "&gt;").Replace("<", "&lt;");

@@ -27,10 +27,9 @@ xAPI4Unity is a Unity package designed to bridge xAPI functionalities into Unity
 
 ### Step-by-Step Guide
 1. **Install the xAPI4Unity package**: Follow the installation instructions below.
-2. **Set up xAPI Registry**: Go to `Unity Menu > xAPI4Unity > Open Wizard`. The wizard opens by itself on editor start while the definitions or the registry are missing. In the "Source" step, choose how you want to fetch the xAPI registry:
-   - Patch the definitions into `Assets/xapi`.
-   - Download a zip and use the extracted directory.
-   - Clone the Git repository (as a submodule if your project uses git).
+2. **Set up xAPI Registry**: Go to `Unity Menu > xAPI4Unity > Open Wizard`. The wizard opens by itself on editor start while the definitions or the registry are missing. In the "Source" step, choose where the definitions come from:
+   - **OmiLAXR official**: pick a [release](https://github.com/OmiLAXR-Ecosystem/xapi/releases) of the official definitions, read its changelog and install it into `Assets/xapi`. Updates keep the files you changed. xAPI4Unity checks for a newer release on editor start and when the wizard opens, logs it to the Console and marks the wizard with an icon.
+   - **Custom repository**: any repository with a `definitions` folder, such as a fork. Pick a branch, a tag, a commit or `HEAD`, then patch it into `Assets/xapi`, download it as a zip, or clone it with git (as a submodule if your project uses git). `Reset to defaults` restores the example repository.
 3. **Edit and transform JSON files**: Use the `Assets/xapi` folder for your xAPI JSON files. Changes are automatically transformed into C# if "Regenerate on changes" is on. Alternatively, use `Update xAPI.Registry` in the wizard's "Generate" step for manual transformation.
 4. **Manual Transformation**: Use the Unity menu `xAPI4Unity > Update xAPI.Registry (JSON => C#)` to trigger transformation manually if required.
 5. **View Documentation**: Open `https://omilaxr-ecosystem.github.io/xapi` via `xAPI4Unity > Open registry page` in the Unity menu for more information.
@@ -75,7 +74,8 @@ xAPI4Unity is a Unity package designed to bridge xAPI functionalities into Unity
 
 ### JSON Definitions Location
 You need a source for xAPI Registry definitions for transformation:
-- **Git Repository**: Fetch definitions directly from a published Git repository (default: [OmiLAXR-Ecosystem/xapi](https://github.com/OmiLAXR-Ecosystem/xapi)) (requires git CLI installed).
+- **Official releases**: Released versions of [OmiLAXR-Ecosystem/xapi](https://github.com/OmiLAXR-Ecosystem/xapi), installed into `Assets/xapi`. The installed version is kept in `Assets/xapi/version.txt`.
+- **Git Repository**: Fetch definitions from any Git repository at a branch, tag or commit (cloning requires the git CLI).
 - **Local Source**: Select a local directory with the `definitions` folder at its root.
 
 ### Fetcher Configuration

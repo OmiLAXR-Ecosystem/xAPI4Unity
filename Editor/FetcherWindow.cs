@@ -4,7 +4,6 @@
 * This file is part of xAPI4Unity.
 */
 #if UNITY_EDITOR
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -23,10 +22,18 @@ namespace xAPI4Unity.Editor
     /// </summary>
     public class FetcherWindow : EditorWindow
     {
+        /// <summary>
+        /// The settings of this project.
+        /// </summary>
         private static MainSettings mainSettings => MainSettings.Instance;
+        /// <summary>
+        /// Website of the xAPI registry.
+        /// </summary>
         private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
-        private bool _isDownloading;
 
+        /// <summary>
+        /// Lazily created view for <see cref="LocalSourceView"/>.
+        /// </summary>
         private LocalSourceView _localSourceView;
 
         /// <summary>
@@ -41,6 +48,9 @@ namespace xAPI4Unity.Editor
             }
         }
         
+        /// <summary>
+        /// Created by Unity only. Use <see cref="ShowWindow"/>.
+        /// </summary>
         private FetcherWindow() { }
 
         /// <summary>
@@ -74,6 +84,9 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 1000)]
         public static void QuickFetch() => ExecuteFetcher();
         
+        /// <summary>
+        /// Only shown when a saved editor layout still contains this window: links to the wizard.
+        /// </summary>
         private void OnGUI()
         {
             // Only reached when an editor layout still contains this window
@@ -85,6 +98,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Saves the settings when the window closes.
+        /// </summary>
         private void OnDisable()
         {
             // Save settings when the window is closed
@@ -96,34 +112,9 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private static void ExecuteFetcher()
         {
-            var definitionsPath = Path.Combine(mainSettings.localSource.path, "definitions");
-            if (!Directory.Exists(definitionsPath))
-            {
-                Debug.LogError($"[xAPI4Unity] Cannot transform JSON files because '{definitionsPath}' doesn't exist.");
-                return;
-            }
-
-            var folder = Path.GetDirectoryName(definitionsPath);
-            var configFile = ReadConfigFile(folder);
-            var aliases = new Aliases();
-            var typeNameResolver = new TypeNameResolver(aliases);
-
-            var typesSchema = ReadTypesSchema(configFile, typeNameResolver);
-
-            if (typesSchema != null)
-            {
-                Debug.Log($"[xAPI4Unity] Parsed Types Schema for '{typesSchema.Count}' definitions..");
-            }
-
-            // Generate C# classes from JSON definitions
-            Generator.Generate(
-                mainSettings.@namespace, 
-                definitionsPath, 
-                configFile?.references, 
-                typesSchema, 
-                configFile?.ignoredContexts);
-
-            AssetDatabase.Refresh();
+            // Reads the types config next to the source folder and generates Assets/<namespace>
+            if (Generator.Update(RegistryPaths.FromSettings(mainSettings)))
+                AssetDatabase.Refresh();
         }
 
         /// <summary>
@@ -132,17 +123,16 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Validate '*.config.json'", priority = 201)]
         internal static void DebugTypes()
         {
-            var configFile = ReadConfigFile(mainSettings.localSource.path);
+            var typeNameResolver = new TypeNameResolver(new Aliases());
+            var update = Generator.CreateUpdate(typeNameResolver);
+            var configFile = update.ReadConfig(RegistryPaths.FromSettings(mainSettings));
             if (configFile == null)
             {
                 Debug.LogError("Failed to read config file.");
                 return;           
             }
 
-            var aliases = new Aliases();
-            var typeNameResolver = new TypeNameResolver(aliases);
-            
-            var typesSchema = ReadTypesSchema(configFile, typeNameResolver);
+            var typesSchema = update.ReadTypes(configFile);
             if (typesSchema != null)
             {
                 Debug.Log($"[xAPI4Unity] Parsed Types Schema for '{typesSchema.Count}' definitions..");
@@ -160,43 +150,8 @@ namespace xAPI4Unity.Editor
         }
 
         /// <summary>
-        /// Reads and deserializes the configuration file from a given path.
+        /// Loads the settings when the window opens.
         /// </summary>
-        private static ConfigFile ReadConfigFile(string path)
-        {
-            if (!Directory.Exists(path))
-            {
-                Debug.LogError($"[xAPI4Unity] Cannot find '{path}'.");
-                return null;
-            }
-
-            var folderName = path.Replace('\\', '/').Split('/').Last();
-            var typesFilename = folderName + ".config.json";
-            var typesFilepath = Path.Combine(Directory.GetParent(path)!.FullName, typesFilename);
-
-            if (!File.Exists(typesFilepath))
-            {
-                Debug.LogWarning($"[xAPI4Unity] Cannot find '{typesFilepath}'. Default types will be applied.");
-                return null;
-            }
-
-            return ConfigFile.Read(typesFilepath);
-        }
-
-        /// <summary>
-        /// Parses the type schema from a configuration file.
-        /// </summary>
-        private static TypeSchema ReadTypesSchema(ConfigFile configFile, TypeNameResolver resolver)
-            => configFile == null ? null : TypeSchema.Parse(configFile?.Types, validateResolution: true, resolver, configFile?.Variables, true);
-
-        private static string SafePath(string path) => $"\"{path}\"";
-
-        private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-            => Debug.LogError(e.Data);
-
-        private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-            => Debug.Log(e.Data);
-
         protected void OnEnable()
         {
             // Load settings when the window is enabled

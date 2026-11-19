@@ -11,6 +11,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEditor.UIElements;
+using xAPI4Unity.Editor.Releases;
 using xAPI4Unity.Editor.Settings;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
@@ -22,31 +24,88 @@ namespace xAPI4Unity.Editor.Wizard
     /// </summary>
     public sealed class XapiWizardWindow : EditorWindow
     {
+        /// <summary>
+        /// Folder of the wizard's assets in this package.
+        /// </summary>
         private const string PackageRoot = "Packages/com.rwth.unity.omilaxr.xapi4unity/Editor/Wizard/";
+        /// <summary>
+        /// Style sheet of the wizard.
+        /// </summary>
         private const string StyleSheetPath = PackageRoot + "XapiWizardWindow.uss";
-        // Shown only if the OmiLAXR core package is installed, xAPI4Unity does not depend on it
+        /// <summary>
+        /// OmiLAXR logo, shown in the header only if the OmiLAXR core package is installed. xAPI4Unity does not depend on it.
+        /// </summary>
         private const string LogoPath = "Packages/com.rwth.unity.omilaxr/Editor/Wizard/Images/OmiLAXR_Logo.png";
+        /// <summary>
+        /// SessionState key of the current step, so the step survives script reloads.
+        /// </summary>
         private const string StepKey = "xAPI4Unity.Wizard.Step";
+        /// <summary>
+        /// Website of the xAPI registry.
+        /// </summary>
         private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
+        /// <summary>
+        /// Define that OmiLAXR.xAPI sets once the registry exists.
+        /// </summary>
         private const string RegistryDefine = "XAPI_REGISTRY_EXISTS";
+        /// <summary>
+        /// Title of the window.
+        /// </summary>
+        private const string Title = "xAPI4Unity Wizard";
+        /// <summary>
+        /// Built-in icon that marks the window and the Source step when a newer official release exists.
+        /// </summary>
+        private const string UpdateIcon = "console.infoicon.sml";
 
+        /// <summary>
+        /// Steps of the wizard, in order.
+        /// </summary>
         private enum Step
         {
+            /// <summary>
+            /// Introduction and overview.
+            /// </summary>
             Welcome,
+            /// <summary>
+            /// Where the definitions come from.
+            /// </summary>
             Source,
+            /// <summary>
+            /// Generate the registry and set the options.
+            /// </summary>
             Generate,
+            /// <summary>
+            /// Optional tools: definitions editor, merge conflicts, export.
+            /// </summary>
             Use,
+            /// <summary>
+            /// Summary and links.
+            /// </summary>
             Done
         }
 
-        // Same order as LocalSourceSettings.selectedOptionIndex
+        /// <summary>
+        /// How the wizard gets the definitions of a custom repository. Same order as <see cref="LocalSourceSettings.selectedOptionIndex"/>.
+        /// </summary>
         private enum SourceOption
         {
+            /// <summary>
+            /// Download the repository archive and merge it into <c>Assets/xapi</c>.
+            /// </summary>
             PatchIntoAssets,
+            /// <summary>
+            /// Download the archive with the browser.
+            /// </summary>
             DownloadZip,
+            /// <summary>
+            /// Clone the repository with git, as a submodule if the project uses git.
+            /// </summary>
             GitClone
         }
 
+        /// <summary>
+        /// Steps with their labels in the stepper.
+        /// </summary>
         private static readonly (Step Step, string Label)[] Steps =
         {
             (Step.Welcome, "Welcome"),
@@ -56,13 +115,34 @@ namespace xAPI4Unity.Editor.Wizard
             (Step.Done, "Done"),
         };
 
+        /// <summary>
+        /// One line of a status card: a check with a hint and an optional fix button.
+        /// </summary>
         private sealed class Check
         {
+            /// <summary>
+            /// Text of the check.
+            /// </summary>
             public string Label;
+            /// <summary>
+            /// True if the check passed.
+            /// </summary>
             public bool Passed;
+            /// <summary>
+            /// Shown below the label while the check fails.
+            /// </summary>
             public string Hint;
+            /// <summary>
+            /// Text of the fix button. Defaults to <c>Fix</c>.
+            /// </summary>
             public string FixLabel;
+            /// <summary>
+            /// Action of the fix button. No button without it.
+            /// </summary>
             public Action Fix;
+            /// <summary>
+            /// An optional check shows an info icon instead of a warning when it fails.
+            /// </summary>
             public bool Optional;
         }
 
@@ -71,33 +151,81 @@ namespace xAPI4Unity.Editor.Wizard
         /// </summary>
         private sealed class ActionResult
         {
+            /// <summary>
+            /// Name of the action.
+            /// </summary>
             public string Title;
+            /// <summary>
+            /// One sentence about the outcome.
+            /// </summary>
             public string Summary;
+            /// <summary>
+            /// Errors and warnings logged while the action ran.
+            /// </summary>
             public LogCollector Log;
+            /// <summary>
+            /// When the action ran.
+            /// </summary>
             public DateTime Time;
         }
 
+        /// <summary>
+        /// The settings of this project.
+        /// </summary>
         private static MainSettings Settings => MainSettings.Instance;
+        /// <summary>
+        /// Download, patch, clone and pull actions of the Source step.
+        /// </summary>
         private readonly LocalSourceView _source = new LocalSourceView();
+        /// <summary>
+        /// Project state of the last <see cref="Evaluate"/>, to rebuild only when it changes.
+        /// </summary>
         private string _signature;
+        /// <summary>
+        /// Message shown below the Source step's actions, such as a running download.
+        /// </summary>
         private string _message;
+        /// <summary>
+        /// Result of the last Generate run, shown in the Generate step.
+        /// </summary>
         private ActionResult _generateResult;
+        /// <summary>
+        /// Result of the last config validation, shown in the Generate step.
+        /// </summary>
         private ActionResult _validateResult;
 
+        /// <summary>
+        /// Row with one circle per step.
+        /// </summary>
         private VisualElement _stepper;
+        /// <summary>
+        /// Scrollable area that holds the current page.
+        /// </summary>
         private ScrollView _content;
+        /// <summary>
+        /// Footer button to the previous step.
+        /// </summary>
         private Button _back;
+        /// <summary>
+        /// Footer button to the next step, or Finish on the last one.
+        /// </summary>
         private Button _next;
 
+        /// <summary>
+        /// Opens the wizard (<c>xAPI4Unity / Open Wizard</c>).
+        /// </summary>
         [MenuItem("xAPI4Unity / Open Wizard", priority = 0)]
         public static void Open()
         {
             var window = GetWindow<XapiWizardWindow>();
-            window.titleContent = new GUIContent("xAPI4Unity Wizard");
+            window.UpdateTitle();
             window.minSize = new Vector2(560f, 520f);
             window.Show();
         }
 
+        /// <summary>
+        /// The step that is shown, kept in SessionState.
+        /// </summary>
         private static Step CurrentStep
         {
             get => (Step)SessionState.GetInt(StepKey, (int)Step.Welcome);
@@ -106,19 +234,59 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region State
 
+        /// <summary>
+        /// Paths and checks of the project, shared with the menu items and <see cref="Startup"/>.
+        /// </summary>
+        private static ProjectStatus Status => new ProjectStatus(RegistryPaths.FromSettings(Settings));
+        /// <summary>
+        /// Source folder from the settings.
+        /// </summary>
         private static string SourcePath => Settings.localSource.path;
-        private static string DefinitionsPath => string.IsNullOrEmpty(SourcePath) ? null : Path.Combine(SourcePath, "definitions");
-        private static string RegistryPath => Path.Combine(Application.dataPath, Settings.@namespace);
-        // FetcherWindow reads the types config from '<folder>.config.json' next to the source folder
-        private static string ConfigPath => string.IsNullOrEmpty(SourcePath) ? null : SourcePath.TrimEnd('/', '\\') + ".config.json";
+        /// <summary>
+        /// The <c>definitions</c> folder in the source folder.
+        /// </summary>
+        private static string DefinitionsPath => Status.Paths.DefinitionsFolder;
+        /// <summary>
+        /// The registry folder <c>Assets/&lt;namespace&gt;</c>.
+        /// </summary>
+        private static string RegistryPath => Status.Paths.RegistryFolder;
+        /// <summary>
+        /// The types config next to the source folder.
+        /// </summary>
+        private static string ConfigPath => Status.Paths.ConfigFile;
 
-        private static bool HasDefinitions => DefinitionsPath != null && Directory.Exists(DefinitionsPath);
-        private static bool HasRegistry => Directory.Exists(RegistryPath);
+        /// <summary>
+        /// The source folder has a <c>definitions</c> folder.
+        /// </summary>
+        private static bool HasDefinitions => Status.HasDefinitions;
+        /// <summary>
+        /// The registry folder exists.
+        /// </summary>
+        private static bool HasRegistry => Status.HasRegistry;
+        /// <summary>
+        /// The <c>XAPI_REGISTRY_EXISTS</c> define is set.
+        /// </summary>
         private static bool HasDefine => Startup.DefineExist(RegistryDefine);
-        private static bool HasConfig => ConfigPath != null && File.Exists(ConfigPath);
-        private static bool HasMergeReports => Directory.Exists(SourcePath) &&
-                                               Directory.GetFiles(SourcePath, "*-xapi-report.json", SearchOption.TopDirectoryOnly).Length > 0;
+        /// <summary>
+        /// The types config exists.
+        /// </summary>
+        private static bool HasConfig => Status.HasConfig;
+        /// <summary>
+        /// The source folder has merge reports.
+        /// </summary>
+        private static bool HasMergeReports => Status.HasMergeReports;
+        /// <summary>
+        /// True if the definitions come from the official releases.
+        /// </summary>
+        private static bool IsOfficial => Settings.localSource.IsOfficial;
+        /// <summary>
+        /// A newer official release than the installed one, or null.
+        /// </summary>
+        private static ReleaseInfo AvailableUpdate => OfficialReleases.AvailableUpdate;
 
+        /// <summary>
+        /// The selected source option, saved in the settings.
+        /// </summary>
         private static SourceOption SelectedOption
         {
             get => (SourceOption)Mathf.Clamp(Settings.localSource.selectedOptionIndex, 0, 2);
@@ -133,21 +301,37 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Lifecycle
 
+        /// <summary>
+        /// Loads the settings, builds the layout and starts watching for project changes.
+        /// </summary>
         private void OnEnable()
         {
             Settings.Load();
             BuildLayout();
             EditorApplication.projectChanged += Evaluate;
+            OfficialReleases.Changed += OnReleasesChanged;
             _signature = null;
             Evaluate();
+            UpdateTitle();
+
+            // Check for a newer official release whenever the window opens
+            if (IsOfficial)
+                OfficialReleases.Refresh();
         }
 
+        /// <summary>
+        /// Stops watching for project changes and saves the settings.
+        /// </summary>
         private void OnDisable()
         {
             EditorApplication.projectChanged -= Evaluate;
+            OfficialReleases.Changed -= OnReleasesChanged;
             Settings.Save();
         }
 
+        /// <summary>
+        /// Checks the project again when the window gets focus.
+        /// </summary>
         private void OnFocus() => Evaluate();
 
         /// <summary>
@@ -155,18 +339,43 @@ namespace xAPI4Unity.Editor.Wizard
         /// </summary>
         private void Evaluate()
         {
-            var signature = string.Concat(HasDefinitions, HasRegistry, HasDefine, HasConfig, HasMergeReports, _source.IsCloned);
+            var signature = string.Concat(HasDefinitions, HasRegistry, HasDefine, HasConfig, HasMergeReports, _source.IsCloned,
+                IsOfficial, OfficialReleases.InstalledVersion, AvailableUpdate?.tag_name);
             if (signature == _signature)
                 return;
             _signature = signature;
             Rebuild();
+            UpdateTitle();
+        }
+
+        /// <summary>
+        /// Rebuilds the page when the official releases start or finish loading.
+        /// </summary>
+        private void OnReleasesChanged()
+        {
+            _signature = null;
+            Evaluate();
+        }
+
+        /// <summary>
+        /// Sets the window title, with an icon and a tooltip when a newer official release exists.
+        /// </summary>
+        private void UpdateTitle()
+        {
+            var update = AvailableUpdate;
+            titleContent = update != null
+                ? new GUIContent(Title, EditorGUIUtility.IconContent(UpdateIcon).image,
+                    $"xAPI definitions {update.tag_name} are available (installed: v{OfficialReleases.InstalledVersion}).")
+                : new GUIContent(Title);
         }
 
         #endregion
 
         #region Layout
 
-        // Built in OnEnable instead of CreateGUI, which older Unity versions do not call
+        /// <summary>
+        /// Builds the header, stepper, content area and footer. Called in OnEnable instead of CreateGUI, which older Unity versions do not call.
+        /// </summary>
         private void BuildLayout()
         {
             var root = rootVisualElement;
@@ -191,6 +400,9 @@ namespace xAPI4Unity.Editor.Wizard
             root.Add(CreateFooter());
         }
 
+        /// <summary>
+        /// Creates the header with the logo (if available), the title and the versions.
+        /// </summary>
         private static VisualElement CreateHeader()
         {
             var header = Css(new VisualElement(), "header");
@@ -212,6 +424,9 @@ namespace xAPI4Unity.Editor.Wizard
             return header;
         }
 
+        /// <summary>
+        /// Creates the footer with the startup toggle and the Back and Next buttons.
+        /// </summary>
         private VisualElement CreateFooter()
         {
             var footer = Css(new VisualElement(), "footer");
@@ -245,6 +460,9 @@ namespace xAPI4Unity.Editor.Wizard
             return footer;
         }
 
+        /// <summary>
+        /// Shows a step and clears the messages and results of the previous one.
+        /// </summary>
         private void GoTo(Step step)
         {
             if (step < Step.Welcome || step > Step.Done)
@@ -286,6 +504,9 @@ namespace xAPI4Unity.Editor.Wizard
             _next.text = CurrentStep == Step.Done ? "Finish" : CurrentStep == Step.Welcome ? "Start" : "Next";
         }
 
+        /// <summary>
+        /// Builds the stepper: one circle per step, marked done or needing attention.
+        /// </summary>
         private void BuildStepper()
         {
             _stepper.Clear();
@@ -313,7 +534,8 @@ namespace xAPI4Unity.Editor.Wizard
         {
             switch (step)
             {
-                case Step.Source: return HasDefinitions;
+                // A newer official release marks the step, too
+                case Step.Source: return HasDefinitions && AvailableUpdate == null;
                 case Step.Generate: return HasRegistry;
                 default: return null;
             }
@@ -323,6 +545,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Pages
 
+        /// <summary>
+        /// Builds the Welcome page.
+        /// </summary>
         private static void BuildWelcome(VisualElement page)
         {
             page.Add(Css(new Label("Welcome to xAPI4Unity"), "h1"));
@@ -331,7 +556,7 @@ namespace xAPI4Unity.Editor.Wizard
                           "This wizard sets up your project in a few steps:"));
 
             var overview = Css(new VisualElement(), "overview");
-            overview.Add(OverviewCard("1  Source", "Get the JSON definitions: patch them into 'Assets', download a zip or clone the git repository."));
+            overview.Add(OverviewCard("1  Source", "Get the JSON definitions: install a release of the official OmiLAXR definitions, or use a repository of your own."));
             overview.Add(OverviewCard("2  Generate", "Generate the C# registry and keep it up to date when a definition changes."));
             overview.Add(OverviewCard("3  Use", "Edit definitions, resolve merge conflicts and export everything as a .unitypackage."));
             page.Add(overview);
@@ -339,30 +564,53 @@ namespace xAPI4Unity.Editor.Wizard
             page.Add(Muted("You can come back any time via 'xAPI4Unity > Open Wizard'."));
         }
 
+        /// <summary>
+        /// Builds the Source page: status, the choice between the official releases and a custom repository, and its settings.
+        /// </summary>
         private void BuildSource(VisualElement page)
         {
             page.Add(Css(new Label("Source"), "h1"));
-            page.Add(Text("Where the xAPI JSON definitions come from. The local path must contain a 'definitions' folder."));
+            page.Add(Text("Where the xAPI JSON definitions come from: a release of the official OmiLAXR definitions, or a repository of your own. " +
+                          "The local path must contain a 'definitions' folder."));
 
             page.Add(H2("Status"));
-            page.Add(ChecksCard(new Check
+            var checks = new List<Check>
             {
-                Label = "JSON definitions",
-                Passed = HasDefinitions,
-                Hint = HasDefinitions ? null : $"No 'definitions' folder in '{ToDisplayPath(SourcePath)}'. Get the definitions below."
-            }));
+                new Check
+                {
+                    Label = "JSON definitions",
+                    Passed = HasDefinitions,
+                    Hint = HasDefinitions ? null : $"No 'definitions' folder in '{ToDisplayPath(SourcePath)}'. Get the definitions below."
+                }
+            };
+            if (IsOfficial)
+                checks.Add(ReleaseCheck());
+            page.Add(ChecksCard(checks.ToArray()));
 
-            page.Add(H2("Local path"));
-            page.Add(PathCard());
+            page.Add(H2("Repository"));
+            page.Add(SourceCard());
 
-            page.Add(H2("Get the definitions"));
-            page.Add(OptionsCard());
-            page.Add(OptionDetailsCard());
+            if (IsOfficial)
+            {
+                BuildOfficial(page);
+            }
+            else
+            {
+                page.Add(H2("Local path"));
+                page.Add(PathCard());
 
-            if (_message != null)
-                page.Add(Css(Muted(_message), "field"));
+                page.Add(H2("Get the definitions"));
+                page.Add(OptionsCard());
+                page.Add(OptionDetailsCard());
+
+                if (_message != null)
+                    page.Add(Css(Muted(_message), "field"));
+            }
         }
 
+        /// <summary>
+        /// Builds the Generate page: status checks, options and the generate and validate buttons.
+        /// </summary>
         private void BuildGenerate(VisualElement page)
         {
             page.Add(Css(new Label("Generate"), "h1"));
@@ -432,7 +680,7 @@ namespace xAPI4Unity.Editor.Wizard
         private void RunGenerate()
         {
             var log = LogCollector.Run(FetcherWindow.QuickFetch);
-            var files = HasRegistry ? Directory.GetFiles(RegistryPath, "*.cs", SearchOption.AllDirectories).Length : 0;
+            var files = Status.RegistryFileCount;
             _generateResult = new ActionResult
             {
                 Title = "Update xAPI.Registry",
@@ -466,6 +714,9 @@ namespace xAPI4Unity.Editor.Wizard
             Rebuild();
         }
 
+        /// <summary>
+        /// Builds the Use page with the optional tools.
+        /// </summary>
         private static void BuildUse(VisualElement page)
         {
             page.Add(Css(new Label("Use"), "h1"));
@@ -477,8 +728,8 @@ namespace xAPI4Unity.Editor.Wizard
 
             page.Add(ToolCard("Merge conflicts",
                 HasMergeReports
-                    ? "'Download and patch' saved files that differ from yours as '*.json-conflict'. Pick a version per file."
-                    : "No merge reports yet. 'Download and patch' creates one when downloaded files differ from yours.",
+                    ? "Installing a release or 'Download and patch' saved files that differ from yours as '*.json-conflict'. Pick a version per file."
+                    : "No merge reports yet. Installing a release or 'Download and patch' creates one when downloaded files differ from yours.",
                 Enabled(Css(new Button(XapiMergeWindow.ShowWindow) { text = "Resolve conflicts" }, "btn"), HasMergeReports)));
 
             page.Add(ToolCard("Export",
@@ -492,6 +743,9 @@ namespace xAPI4Unity.Editor.Wizard
                 Css(new Button(() => Application.OpenURL(RegistryUrl)) { text = "Open website" }, "btn")));
         }
 
+        /// <summary>
+        /// Builds the Done page with a summary and links.
+        /// </summary>
         private static void BuildDone(VisualElement page)
         {
             var ready = HasDefinitions && HasRegistry;
@@ -503,6 +757,14 @@ namespace xAPI4Unity.Editor.Wizard
             page.Add(H2("Summary"));
             var summary = Css(new VisualElement(), "card");
             summary.Add(SummaryRow("JSON definitions", HasDefinitions ? ToDisplayPath(DefinitionsPath) : "missing", HasDefinitions));
+            if (IsOfficial)
+            {
+                var installed = OfficialReleases.InstalledVersion;
+                var update = AvailableUpdate;
+                summary.Add(SummaryRow("Official release",
+                    installed == null ? "not installed" : update != null ? $"v{installed}, {update.tag_name} is available" : $"v{installed}",
+                    installed != null && update == null));
+            }
             summary.Add(SummaryRow("C# registry", HasRegistry ? ToDisplayPath(RegistryPath) : "not generated", HasRegistry));
             summary.Add(SummaryRow("Regenerate on changes", Settings.fetcher.watcherEnabled ? "on" : "off", Settings.fetcher.watcherEnabled));
             page.Add(summary);
@@ -511,7 +773,8 @@ namespace xAPI4Unity.Editor.Wizard
             var links = Css(new VisualElement(), "card");
             links.Add(LinkButton("Documentation (omilaxr.dev)", "https://omilaxr.dev/"));
             links.Add(LinkButton("xAPI Registry", RegistryUrl));
-            links.Add(LinkButton("xAPI definitions repository", DefaultValues.RepoDownloadUrl));
+            links.Add(LinkButton("xAPI definitions repository", DefaultValues.OfficialRepoUrl));
+            links.Add(LinkButton("xAPI definitions releases", DefaultValues.OfficialReleasesUrl));
             links.Add(LinkButton("Changelog", "https://github.com/OmiLAXR-Ecosystem/xAPI4Unity/blob/main/CHANGELOG.md"));
             page.Add(links);
         }
@@ -520,6 +783,187 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Source
 
+        /// <summary>
+        /// Creates the check of the installed official release, with a button to install or update it.
+        /// </summary>
+        private Check ReleaseCheck()
+        {
+            var installed = OfficialReleases.InstalledVersion;
+            var update = AvailableUpdate;
+            var latest = OfficialReleases.Releases?.Latest();
+            var target = update ?? latest;
+            return new Check
+            {
+                Label = installed != null ? $"Official release v{installed}" : "Official release",
+                Passed = installed != null && update == null,
+                Hint = update != null
+                    ? $"{update.tag_name} is available. See its changelog below."
+                    : "No official release is installed in 'Assets/xapi' yet.",
+                FixLabel = target != null ? (update != null ? $"Update to {target.tag_name}" : $"Install {target.tag_name}") : null,
+                Fix = target != null && !_source.IsInstalling ? () => Install(target) : (Action)null,
+                // A newer release is news, not a problem
+                Optional = update != null
+            };
+        }
+
+        /// <summary>
+        /// Creates the card with the choice between the official releases and a custom repository.
+        /// </summary>
+        private VisualElement SourceCard()
+        {
+            var card = Css(new VisualElement(), "card");
+            AddRadio(card, IsOfficial, "OmiLAXR official",
+                $"Released versions of the official definitions ({DefaultValues.OfficialRepository}). Pick a version, " +
+                "read its changelog and install it into 'Assets/xapi'. xAPI4Unity tells you when a newer version is out.",
+                () => SelectSource(DefinitionsSource.Official));
+            AddRadio(card, !IsOfficial, "Custom repository",
+                "Any repository with a 'definitions' folder, such as a fork or the old Learning Technologies repository. " +
+                "Patch, download or clone a branch, a tag, a commit or HEAD.",
+                () => SelectSource(DefinitionsSource.Custom));
+            return card;
+        }
+
+        /// <summary>
+        /// Saves the chosen source and loads the official releases if needed.
+        /// </summary>
+        private void SelectSource(DefinitionsSource source)
+        {
+            Settings.localSource.Source = source;
+            Settings.Save();
+            _message = null;
+            if (source == DefinitionsSource.Official)
+                OfficialReleases.Refresh();
+            _signature = null;
+            Evaluate();
+        }
+
+        /// <summary>
+        /// The release picked in the version field: <see cref="LocalSourceSettings.officialVersion"/>, or the latest one.
+        /// </summary>
+        private static ReleaseInfo SelectedRelease(ReleaseList releases)
+            => releases.Find(Settings.localSource.officialVersion) ?? releases.Latest() ?? releases.All.FirstOrDefault();
+
+        /// <summary>
+        /// Builds the official part of the Source page: version, install button and changelog.
+        /// </summary>
+        private void BuildOfficial(VisualElement page)
+        {
+            page.Add(H2("Version"));
+            var card = Css(new VisualElement(), "card");
+            page.Add(card);
+
+            var releases = OfficialReleases.Releases;
+            if (releases == null || releases.All.Count == 0)
+            {
+                card.Add(Muted(OfficialReleases.IsLoading
+                    ? "Loading the releases from GitHub..."
+                    : OfficialReleases.Error != null
+                        ? $"Could not load the releases. {OfficialReleases.Error}"
+                        : "No releases found."));
+                var retry = Css(new VisualElement(), "card-row", "actions");
+                retry.Add(Enabled(Css(new Button(() => OfficialReleases.Refresh(true)) { text = "Retry" }, "btn", "btn--primary"), !OfficialReleases.IsLoading));
+                retry.Add(Css(new Button(() => Application.OpenURL(DefaultValues.OfficialReleasesUrl)) { text = "Open releases page" }, "btn"));
+                card.Add(retry);
+                return;
+            }
+
+            var installed = OfficialReleases.InstalledVersion;
+            ReleaseVersion.TryParse(installed, out var installedVersion);
+            var latest = releases.Latest();
+            var selected = SelectedRelease(releases);
+
+            string Format(string tag)
+            {
+                var release = releases.Find(tag);
+                var marks = new List<string>();
+                if (release == latest) marks.Add("latest");
+                if (installed != null && release != null && release.Version.Equals(installedVersion)) marks.Add("installed");
+                if (release != null && release.IsPreRelease) marks.Add("pre-release");
+                return marks.Count > 0 ? $"{tag}  ({string.Join(", ", marks)})" : tag;
+            }
+
+            var row = Css(new VisualElement(), "card-row");
+            var choices = releases.All.Select(r => r.tag_name).ToList();
+            var version = Css(new PopupField<string>("Version", choices, Mathf.Max(0, choices.IndexOf(selected.tag_name)), Format, Format), "path-field");
+            version.RegisterValueChangedCallback(e =>
+            {
+                // Empty means 'latest', so a new release is picked up without changing the setting
+                Settings.localSource.officialVersion = e.newValue == latest?.tag_name ? "" : e.newValue;
+                Settings.Save();
+                _message = null;
+                Rebuild();
+            });
+            row.Add(version);
+            row.Add(Enabled(Css(new Button(() => OfficialReleases.Refresh(true)) { text = OfficialReleases.IsLoading ? "Checking..." : "Check for updates" }, "btn"),
+                !OfficialReleases.IsLoading));
+            card.Add(row);
+
+            var loadedAt = OfficialReleases.LoadedAt;
+            card.Add(Css(Muted($"Installed: {(installed != null ? "v" + installed : "none")} · Latest: {latest?.tag_name ?? "none"}" +
+                               (loadedAt.HasValue ? $" · Checked at {loadedAt.Value.ToLocalTime():HH:mm}" : "")), "field"));
+
+            var update = AvailableUpdate;
+            if (update != null)
+                card.Add(Css(MessageRow(UpdateIcon, $"New version {update.tag_name} available",
+                    $"You have v{installed}. Update to get the new and corrected definitions. Files you changed are kept."), "field"));
+
+            string label;
+            if (installed == null)
+                label = $"Install {selected.tag_name}";
+            else
+            {
+                var order = selected.Version.CompareTo(installedVersion);
+                label = order == 0 ? $"Reinstall {selected.tag_name}" : order > 0 ? $"Update to {selected.tag_name}" : $"Downgrade to {selected.tag_name}";
+            }
+
+            var actions = Css(new VisualElement(), "card-row", "actions");
+            actions.Add(Enabled(Css(new Button(Deferred(() => Install(selected))) { text = _source.IsInstalling ? "Installing..." : label }, "btn", "btn--primary"),
+                !_source.IsInstalling));
+            if (!string.IsNullOrEmpty(selected.html_url))
+                actions.Add(Css(new Button(() => Application.OpenURL(selected.html_url)) { text = "Open on GitHub" }, "btn"));
+            if (HasMergeReports)
+                actions.Add(Css(new Button(XapiMergeWindow.ShowWindow) { text = "Resolve conflicts" }, "btn"));
+            card.Add(actions);
+            card.Add(Css(Muted("Installs into 'Assets/xapi'. Files you did not change are updated, files you changed are kept and the release's " +
+                               "version is saved next to them as '*.json-conflict'."), "field"));
+
+            if (_message != null)
+                card.Add(Css(Text(_message), "field"));
+
+            page.Add(H2(string.IsNullOrEmpty(selected.PublishedDate) ? $"Changelog {selected.tag_name}" : $"Changelog {selected.tag_name} · {selected.PublishedDate}"));
+            var notes = Css(new VisualElement(), "card");
+#if UNITY_2021_2_OR_NEWER
+            // UI Toolkit renders underline and strikethrough tags since TextCore
+            const bool extendedTags = true;
+#else
+            const bool extendedTags = false;
+#endif
+            var codeColor = EditorGUIUtility.isProSkin ? "#99C9ED" : "#2959A5";
+            var changelog = string.IsNullOrWhiteSpace(selected.body)
+                ? "This release has no release notes."
+                : MarkdownRichText.Convert(selected.body, codeColor, extendedTags);
+            notes.Add(Css(new Label(changelog), "text", "changelog"));
+            page.Add(notes);
+        }
+
+        /// <summary>
+        /// Installs an official release and shows the outcome below the version.
+        /// </summary>
+        private void Install(ReleaseInfo release)
+        {
+            _message = $"Downloading {release.tag_name}...";
+            _source.InstallOfficialRelease(release, (message, ok) =>
+            {
+                _message = message;
+                _signature = null;
+                Evaluate();
+            });
+            Rebuild();
+        }
+
+        /// <summary>
+        /// Creates the card with the local path field and the Browse and Open folder buttons.
+        /// </summary>
         private VisualElement PathCard()
         {
             var card = Css(new VisualElement(), "card");
@@ -551,25 +995,41 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates the card with the three source options.
+        /// </summary>
         private VisualElement OptionsCard()
         {
             var card = Css(new VisualElement(), "card");
             AddOption(card, SourceOption.PatchIntoAssets, "Patch into Assets",
-                "Downloads the repository archive and merges it into 'Assets/xapi'. New files are added, identical files are skipped, " +
+                "Downloads the archive of the branch, tag or commit and merges it into 'Assets/xapi'. New files are added, identical files are skipped, " +
                 "and files that differ from yours are kept next to them for review.");
             AddOption(card, SourceOption.DownloadZip, "Download zip",
-                "Downloads the archive with your browser. Extract it and set the local path to the extracted folder.");
+                "Downloads the archive of the branch, tag or commit with your browser. Extract it and set the local path to the extracted folder.");
             AddOption(card, SourceOption.GitClone, LocalSourceView.ProjectHasGit ? "Git submodule" : "Git clone",
                 LocalSourceView.ProjectHasGit
-                    ? "Adds the repository as a git submodule next to the local path and checks out a new local branch. Needs git."
-                    : "Clones the repository next to the local path and checks out a new local branch. Needs git.");
+                    ? "Adds the repository as a git submodule next to the local path and checks out a new local branch at the branch, tag or commit. Needs git."
+                    : "Clones the repository next to the local path and checks out a new local branch at the branch, tag or commit. Needs git.");
             return card;
         }
 
+        /// <summary>
+        /// Adds one source option. The toggles act as radio buttons.
+        /// </summary>
         private void AddOption(VisualElement card, SourceOption option, string title, string description)
+            => AddRadio(card, SelectedOption == option, title, description, () =>
+            {
+                SelectedOption = option;
+                _message = null;
+                Rebuild();
+            });
+
+        /// <summary>
+        /// Adds a toggle with a description that acts as a radio button: it cannot be switched off, only another one switched on.
+        /// </summary>
+        private static void AddRadio(VisualElement card, bool selected, string title, string description, Action select)
         {
-            var toggle = new Toggle { text = title, value = SelectedOption == option };
-            // The toggles act as radio buttons
+            var toggle = new Toggle { text = title, value = selected };
             toggle.RegisterValueChangedCallback(e =>
             {
                 if (!e.newValue)
@@ -577,24 +1037,34 @@ namespace xAPI4Unity.Editor.Wizard
                     toggle.SetValueWithoutNotify(true);
                     return;
                 }
-                SelectedOption = option;
-                _message = null;
-                Rebuild();
+                select();
             });
             card.Add(Css(toggle, "option"));
             card.Add(Css(Muted(description), "option-hint"));
         }
 
+        /// <summary>
+        /// Creates the card with the settings and the action buttons of the selected source option.
+        /// </summary>
         private VisualElement OptionDetailsCard()
         {
             var card = Css(new VisualElement(), "card");
             var source = Settings.localSource;
             var option = SelectedOption;
 
+            const string refHint = "A branch, a tag or a commit hash. Leave it empty or write 'HEAD' for the default branch.";
+            var refWarning = Css(Muted(""), "field");
+            void UpdateRefWarning() => refWarning.text = source.IsValidGitRef ? "" : $"'{source.GitRef}' is not a valid branch, tag or commit.";
+
             if (option == SourceOption.GitClone)
             {
                 card.Add(SettingField("Git URL", source.repoUrl, v => source.repoUrl = v));
-                card.Add(Css(Muted("Change this only if you work with a fork of the repository."), "field"));
+                card.Add(SettingField("Branch, tag or commit", source.repoBranch, v =>
+                {
+                    source.repoBranch = v;
+                    UpdateRefWarning();
+                }));
+                card.Add(Css(Muted(refHint + " The clone gets a new local branch that starts there."), "field"));
             }
             else
             {
@@ -605,15 +1075,29 @@ namespace xAPI4Unity.Editor.Wizard
                     source.repoDownloadUrl = v;
                     UpdateArchive();
                 }));
-                card.Add(SettingField("Branch", source.repoBranch, v =>
+                card.Add(SettingField("Branch, tag or commit", source.repoBranch, v =>
                 {
                     source.repoBranch = v;
                     UpdateArchive();
+                    UpdateRefWarning();
                 }));
                 UpdateArchive();
+                card.Add(Css(Muted(refHint), "field"));
                 card.Add(Css(archive, "field"));
-                card.Add(Muted("Change these only if you work with a fork of the repository."));
             }
+            UpdateRefWarning();
+            card.Add(refWarning);
+
+            var reset = Css(new VisualElement(), "card-row", "field");
+            reset.Add(Css(Muted($"Example: {DefaultValues.RepoDownloadUrl} ({DefaultValues.RepoBranch})."), "card-body"));
+            reset.Add(Css(new Button(() =>
+            {
+                source.ResetRepository();
+                Settings.Save();
+                _message = null;
+                Rebuild();
+            }) { text = "Reset to defaults", tooltip = "Puts the repository URLs and the branch back to the example repository." }, "btn"));
+            card.Add(reset);
 
             var actions = Css(new VisualElement(), "card-row", "actions");
             switch (option)
@@ -623,7 +1107,12 @@ namespace xAPI4Unity.Editor.Wizard
                     {
                         _message = "Downloading... The definitions appear in 'Assets/xapi' once the download is done.";
                         Rebuild();
-                        EditorApplication.delayCall += _source.DownloadToAssetsAndPatch;
+                        EditorApplication.delayCall += () => _source.DownloadToAssetsAndPatch((message, ok) =>
+                        {
+                            _message = message;
+                            _signature = null;
+                            Evaluate();
+                        });
                     }) { text = "Download and patch" }, "btn", "btn--primary"));
                     if (HasMergeReports)
                         actions.Add(Css(new Button(XapiMergeWindow.ShowWindow) { text = "Resolve conflicts" }, "btn"));
@@ -652,6 +1141,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a text field that saves the settings on every change.
+        /// </summary>
         private static TextField SettingField(string label, string value, Action<string> onChange)
         {
             var field = Css(new TextField(label) { value = value }, "field");
@@ -667,6 +1159,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Building blocks
 
+        /// <summary>
+        /// Creates a card with one row per check.
+        /// </summary>
         private VisualElement ChecksCard(params Check[] checks)
         {
             var card = Css(new VisualElement(), "card");
@@ -675,6 +1170,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates the row of a check: icon, label, hint and fix button.
+        /// </summary>
         private VisualElement CheckRow(Check check)
         {
             var row = Css(new VisualElement(), "check");
@@ -697,6 +1195,9 @@ namespace xAPI4Unity.Editor.Wizard
             return row;
         }
 
+        /// <summary>
+        /// Creates the card of an action result with its errors and warnings (at most eight, the rest in the Console).
+        /// </summary>
         private static VisualElement ResultCard(ActionResult result)
         {
             const int maxMessages = 8;
@@ -717,6 +1218,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a row with an icon, an optional title and a text.
+        /// </summary>
         private static VisualElement MessageRow(string icon, string title, string text)
         {
             var row = Css(new VisualElement(), "check");
@@ -729,6 +1233,9 @@ namespace xAPI4Unity.Editor.Wizard
             return row;
         }
 
+        /// <summary>
+        /// Creates a card of the Use page with a title, a description and buttons.
+        /// </summary>
         private static VisualElement ToolCard(string title, string description, params Button[] buttons)
         {
             var card = Css(new VisualElement(), "card");
@@ -748,6 +1255,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a card of the Welcome page's overview.
+        /// </summary>
         private static VisualElement OverviewCard(string title, string text)
         {
             var card = Css(new VisualElement(), "card");
@@ -756,6 +1266,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a row of the Done page's summary.
+        /// </summary>
         private static VisualElement SummaryRow(string label, string value, bool ok)
         {
             var row = Css(new VisualElement(), "check");
@@ -779,22 +1292,42 @@ namespace xAPI4Unity.Editor.Wizard
             return fullPath.StartsWith(projectRoot) ? fullPath.Substring(projectRoot.Length) : fullPath;
         }
 
-        // Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout
+        /// <summary>
+        /// Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout.
+        /// </summary>
         private static Action Deferred(Action action) => () => EditorApplication.delayCall += () => action();
 
+        /// <summary>
+        /// Creates a section heading.
+        /// </summary>
         private static Label H2(string text) => Css(new Label(text), "h2");
+        /// <summary>
+        /// Creates a paragraph.
+        /// </summary>
         private static Label Text(string text) => Css(new Label(text), "text");
+        /// <summary>
+        /// Creates a dimmed hint text.
+        /// </summary>
         private static Label Muted(string text) => Css(new Label(text), "muted");
 
+        /// <summary>
+        /// Creates a button that opens a URL.
+        /// </summary>
         private static Button LinkButton(string text, string url)
             => Css(new Button(() => Application.OpenURL(url)) { text = text }, "btn", "link");
 
+        /// <summary>
+        /// Enables or disables an element and returns it.
+        /// </summary>
         private static T Enabled<T>(T element, bool enabled) where T : VisualElement
         {
             element.SetEnabled(enabled);
             return element;
         }
 
+        /// <summary>
+        /// Adds USS classes to an element and returns it.
+        /// </summary>
         private static T Css<T>(T element, params string[] classes) where T : VisualElement
         {
             foreach (var c in classes)

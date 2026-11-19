@@ -4,6 +4,7 @@
 * This file is part of xAPI4Unity.
 */
 using System;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using xAPI4Unity.Editor.Parser;
 
@@ -15,30 +16,121 @@ namespace xAPI4Unity.Editor.Settings
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
-        [SerializeField] public string path = DefaultValues.RepoPath;
-        [SerializeField] public int selectedOptionIndex = 0; // Selected source option
-        [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
-        [SerializeField] public string repoDownloadUrl = DefaultValues.RepoDownloadUrl;
-        [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
-        [SerializeField] public int gitCloneAmount = 0; // Counter for cloning operations
-
         /// <summary>
-        /// Gets the download filename based on the branch.
+        /// Value of <see cref="source"/> before it is decided, in settings saved by versions before the official releases.
         /// </summary>
-        public string DownloadFilename => "xapi-" + repoBranch;
+        internal const int UnsetSource = -1;
 
         /// <summary>
-        /// Constructs the full download URL for the repository zip file.
+        /// Source folder that holds the <c>definitions</c> folder.
+        /// </summary>
+        [SerializeField] public string path = DefaultValues.RepoPath;
+        /// <summary>
+        /// Where the definitions come from, a <see cref="DefinitionsSource"/>. <see cref="UnsetSource"/> until
+        /// <see cref="ResolveSource"/> decides it for settings saved by older versions.
+        /// </summary>
+        [SerializeField] public int source = UnsetSource;
+        /// <summary>
+        /// Tag of the official release to install, such as <c>v2.1.0</c>. Empty for the latest release.
+        /// </summary>
+        [SerializeField] public string officialVersion = "";
+        /// <summary>
+        /// How the wizard gets a custom repository: 0 patch into <c>Assets</c>, 1 download a zip, 2 git clone.
+        /// </summary>
+        [SerializeField] public int selectedOptionIndex = 0;
+        /// <summary>
+        /// Git URL of the custom repository.
+        /// </summary>
+        [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
+        /// <summary>
+        /// Web URL of the custom repository, used for the zip download.
+        /// </summary>
+        [SerializeField] public string repoDownloadUrl = DefaultValues.RepoDownloadUrl;
+        /// <summary>
+        /// Branch, tag or commit of the custom repository to clone or download. Empty or <c>HEAD</c> for the default branch.
+        /// </summary>
+        [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
+        /// <summary>
+        /// Counter for the names of new branches (<see cref="GetNewBranchName"/>).
+        /// </summary>
+        [SerializeField] public int gitCloneAmount = 0;
+
+        /// <summary>
+        /// Characters allowed in <see cref="repoBranch"/>, so it is safe to pass to git and to put into a URL.
+        /// </summary>
+        private static readonly Regex GitRefPattern = new Regex(@"^[A-Za-z0-9][A-Za-z0-9._/\-]*$");
+        /// <summary>
+        /// A full or abbreviated commit hash.
+        /// </summary>
+        private static readonly Regex CommitPattern = new Regex(@"^[0-9a-fA-F]{7,40}$");
+
+        /// <summary>
+        /// The source as enum. Official until <see cref="ResolveSource"/> decided it.
+        /// </summary>
+        public DefinitionsSource Source
+        {
+            get => source == (int)DefinitionsSource.Custom ? DefinitionsSource.Custom : DefinitionsSource.Official;
+            set => source = (int)value;
+        }
+
+        /// <summary>
+        /// True if the definitions come from an official release.
+        /// </summary>
+        public bool IsOfficial => Source == DefinitionsSource.Official;
+
+        /// <summary>
+        /// The branch, tag or commit to use: <see cref="repoBranch"/> trimmed, or <c>HEAD</c> if it is empty.
+        /// </summary>
+        public string GitRef => string.IsNullOrWhiteSpace(repoBranch) ? "HEAD" : repoBranch.Trim();
+
+        /// <summary>
+        /// True if <see cref="GitRef"/> is <c>HEAD</c>, the default branch of the repository.
+        /// </summary>
+        public bool IsHead => string.Equals(GitRef, "HEAD", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// True if <see cref="GitRef"/> looks like a commit hash.
+        /// </summary>
+        public bool IsCommit => CommitPattern.IsMatch(GitRef);
+
+        /// <summary>
+        /// True if <see cref="GitRef"/> only has characters git allows and that are safe in a command line and a URL.
+        /// </summary>
+        public bool IsValidGitRef => IsValidRef(GitRef);
+
+        /// <summary>
+        /// True if the text only has characters git allows and that are safe in a command line and a URL.
+        /// </summary>
+        internal static bool IsValidRef(string gitRef)
+            => !string.IsNullOrEmpty(gitRef) && GitRefPattern.IsMatch(gitRef) && !gitRef.Contains("..") && !gitRef.EndsWith("/") && !gitRef.EndsWith(".lock");
+
+        /// <summary>
+        /// Gets the download filename based on the branch, tag or commit.
+        /// </summary>
+        public string DownloadFilename => "xapi-" + GitRef.Replace('/', '-');
+
+        /// <summary>
+        /// Constructs the full download URL for the repository zip file of <see cref="GitRef"/>.
         /// </summary>
         public string GetDownloadUrl()
         {
-            var url = repoDownloadUrl.TrimEnd('/');
-            // GitHub and GitLab use different archive URL schemes
+            var url = (repoDownloadUrl ?? "").Trim().TrimEnd('/');
+            // GitHub and GitLab use different archive URL schemes. Both accept a branch, a tag, a commit or HEAD.
             return url.Contains("github.com")
-                ? $"{url}/archive/refs/heads/{repoBranch}.zip"
-                : $"{url}/-/archive/{repoBranch}/{DownloadFilename}.zip";
+                ? $"{url}/archive/{GitRef}.zip"
+                : $"{url}/-/archive/{GitRef}/{DownloadFilename}.zip";
         }
-        
+
+        /// <summary>
+        /// Puts the custom repository back to the example repository and its branch.
+        /// </summary>
+        public void ResetRepository()
+        {
+            repoUrl = DefaultValues.RepoUrl;
+            repoDownloadUrl = DefaultValues.RepoDownloadUrl;
+            repoBranch = DefaultValues.RepoBranch;
+        }
+
         /// <inheritdoc />
         public T Clone<T>()
         {
@@ -55,49 +147,45 @@ namespace xAPI4Unity.Editor.Settings
         /// <returns>A unique branch name string.</returns>
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
 
-        // Repository the definitions came from before 2.3.0, as SSH and HTTPS URL without '.git'
-        private static readonly string[] LegacyRepoUrls =
+        /// <summary>
+        /// Repositories with the same definitions as the official releases, without <c>.git</c>: the official
+        /// one and the GitLab repository the definitions came from before 2.3.0.
+        /// </summary>
+        private static readonly string[] OfficialOrLegacyRepoUrls =
         {
+            DefaultValues.OfficialRepoUrl,
+            "git@github.com:" + DefaultValues.OfficialRepository,
             "git@gitlab.com:learntech-rwth/xapi",
             "https://gitlab.com/learntech-rwth/xapi"
         };
-        private const string LegacyRepoBranch = "master";
 
         /// <summary>
-        /// Replaces the GitLab repository and its 'master' branch, saved by versions before 2.3.0, with the GitHub defaults.
-        /// Other URLs, such as forks, are kept.
+        /// Decides <see cref="source"/> for settings saved before the official releases existed.
+        /// A git clone and a fork stay custom, everything else switches to the official releases.
+        /// Does nothing if the source is decided already.
         /// </summary>
-        /// <returns>True if a value changed.</returns>
-        internal bool MigrateLegacyRepository()
+        /// <returns>True if the source changed.</returns>
+        internal bool ResolveSource()
         {
-            var changed = false;
-            if (IsLegacyRepoUrl(repoUrl))
-            {
-                repoUrl = DefaultValues.RepoUrl;
-                changed = true;
-            }
-            if (IsLegacyRepoUrl(repoDownloadUrl))
-            {
-                repoDownloadUrl = DefaultValues.RepoDownloadUrl;
-                changed = true;
-            }
-            // The GitHub repository has no 'master' branch
-            if (repoDownloadUrl == DefaultValues.RepoDownloadUrl && repoBranch == LegacyRepoBranch)
-            {
-                repoBranch = DefaultValues.RepoBranch;
-                changed = true;
-            }
-            return changed;
+            if (source == (int)DefinitionsSource.Official || source == (int)DefinitionsSource.Custom)
+                return false;
+            var isClone = selectedOptionIndex == 2;
+            var isFork = !IsOfficialOrLegacyRepoUrl(repoUrl) || !IsOfficialOrLegacyRepoUrl(repoDownloadUrl);
+            Source = isClone || isFork ? DefinitionsSource.Custom : DefinitionsSource.Official;
+            return true;
         }
 
-        private static bool IsLegacyRepoUrl(string url)
+        /// <summary>
+        /// True if the URL is empty or points to the official or the old GitLab repository, ignoring case, a trailing <c>/</c> and <c>.git</c>.
+        /// </summary>
+        private static bool IsOfficialOrLegacyRepoUrl(string url)
         {
-            if (string.IsNullOrEmpty(url))
-                return false;
+            if (string.IsNullOrWhiteSpace(url))
+                return true;
             var normalized = url.Trim().TrimEnd('/');
             if (normalized.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
                 normalized = normalized.Substring(0, normalized.Length - 4);
-            return Array.Exists(LegacyRepoUrls, legacy => string.Equals(normalized, legacy, StringComparison.OrdinalIgnoreCase));
+            return Array.Exists(OfficialOrLegacyRepoUrls, known => string.Equals(normalized, known, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

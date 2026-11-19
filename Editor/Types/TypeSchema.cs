@@ -17,15 +17,18 @@ namespace xAPI4Unity.Editor.Types
     /// </summary>
     public class TypeSchema : Dictionary<string, TypeExpressionSet>
     {
-        private TypeNameResolver _resolver;
+        /// <summary>
+        /// Resolves the type names of the schema's expressions.
+        /// </summary>
+        private readonly ITypeNameResolver _resolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TypeSchema"/> class.
         /// Uses <see cref="StringComparer.Ordinal"/> for case-sensitive keys.
         /// </summary>
-        public TypeSchema(TypeNameResolver resolver) : base(StringComparer.Ordinal)
+        public TypeSchema(ITypeNameResolver resolver) : base(StringComparer.Ordinal)
         {
-            _resolver = resolver;
+            _resolver = resolver ?? CreateDefaultResolver();
         }
 
         /// <summary>
@@ -43,6 +46,14 @@ namespace xAPI4Unity.Editor.Types
         }
 
         
+        /// <summary>
+        /// The resolver used when none is passed: the built-in aliases plus loaded assemblies.
+        /// </summary>
+        private static ITypeNameResolver CreateDefaultResolver() => new TypeNameResolver(new Aliases());
+
+        /// <summary>
+        /// Matches a <c>${name}</c> placeholder that is not escaped with a backslash.
+        /// </summary>
         private static readonly Regex PlaceholderRegex = new Regex(
             @"(?<!\\)\$\{\s*(?<id>[A-Za-z_][A-Za-z0-9_.-]*)\s*\}",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -59,13 +70,14 @@ namespace xAPI4Unity.Editor.Types
         public static TypeSchema Parse(
             IDictionary<string, string> input,
             bool validateResolution = true,
-            TypeNameResolver resolver = null,
+            ITypeNameResolver resolver = null,
             IReadOnlyDictionary<string, string> variables = null,
             bool strictVariables = true)
         {
             if (input == null) 
                 throw new ArgumentNullException("input");
 
+            resolver = resolver ?? CreateDefaultResolver();
             var result = new TypeSchema(resolver);
             
             foreach (var kv in input)
@@ -98,6 +110,10 @@ namespace xAPI4Unity.Editor.Types
             return result;
         }
         
+        /// <summary>
+        /// Replaces the <c>${name}</c> placeholders in an expression with their variables, repeatedly so variables can use variables.
+        /// Unknown names are logged as errors when <paramref name="strict"/> is true and left as they are. <c>\\${</c> stays a literal <c>${</c>.
+        /// </summary>
         private static string ExpandVariables(
             string expr,
             IReadOnlyDictionary<string, string> variables,
@@ -137,6 +153,9 @@ namespace xAPI4Unity.Editor.Types
             return current.Replace(@"\${", "${");
         }
         
+        /// <summary>
+        /// Expands the variables in every expression of a schema input, without parsing the types.
+        /// </summary>
         public static Dictionary<string, string> ExpandAll(
             IDictionary<string, string> input,
             IReadOnlyDictionary<string, string> variables,
@@ -173,8 +192,9 @@ namespace xAPI4Unity.Editor.Types
             out Dictionary<string, TypeExpressionSet> schema,
             out List<string> errors,
             bool validateResolution = true,
-            TypeNameResolver resolver = null)
+            ITypeNameResolver resolver = null)
         {
+            resolver = resolver ?? CreateDefaultResolver();
             schema = new TypeSchema(resolver);
             errors = new List<string>();
             if (input == null)
