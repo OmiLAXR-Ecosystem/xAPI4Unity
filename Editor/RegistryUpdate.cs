@@ -20,10 +20,22 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class RegistryUpdate
     {
+        /// <summary>
+        /// Builds the registry.
+        /// </summary>
         private readonly RegistryGenerator _generator;
+        /// <summary>
+        /// Resolves the type names of the types config.
+        /// </summary>
         private readonly ITypeNameResolver _resolver;
+        /// <summary>
+        /// Receives warnings and errors.
+        /// </summary>
         private readonly IGeneratorLog _log;
 
+        /// <summary>
+        /// Creates an update with its generator, type resolver and log.
+        /// </summary>
         public RegistryUpdate(RegistryGenerator generator, ITypeNameResolver resolver, IGeneratorLog log)
         {
             _generator = generator ?? throw new ArgumentNullException(nameof(generator));

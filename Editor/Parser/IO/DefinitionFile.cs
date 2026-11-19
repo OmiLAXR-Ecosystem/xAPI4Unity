@@ -14,9 +14,21 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     internal enum ExtensionType
     {
+        /// <summary>
+        /// The folder below <c>extensions</c> is none of <c>activity</c>, <c>context</c> or <c>result</c>.
+        /// </summary>
         Unknown,
+        /// <summary>
+        /// Extension of an activity (<c>extensions/activity</c>).
+        /// </summary>
         Activity,
+        /// <summary>
+        /// Extension of the statement context (<c>extensions/context</c>).
+        /// </summary>
         Context,
+        /// <summary>
+        /// Extension of the statement result (<c>extensions/result</c>).
+        /// </summary>
         Result
     }
 
@@ -25,9 +37,21 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     internal enum DefinitionType
     {
+        /// <summary>
+        /// The folder is none of <c>extensions</c>, <c>verbs</c> or <c>activities</c>.
+        /// </summary>
         Unknown,
+        /// <summary>
+        /// Extension (<c>extensions</c> folder).
+        /// </summary>
         Extension,
+        /// <summary>
+        /// Verb (<c>verbs</c> folder).
+        /// </summary>
         Verb,
+        /// <summary>
+        /// Activity (<c>activities</c> folder).
+        /// </summary>
         Activity
     }
 

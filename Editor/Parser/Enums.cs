@@ -13,12 +13,33 @@ namespace xAPI4Unity.Editor.Parser
     /// </summary>
     internal enum Modifier
     {
+        /// <summary>
+        /// <c>public</c>
+        /// </summary>
         Public,
+        /// <summary>
+        /// <c>private</c>
+        /// </summary>
         Private,
+        /// <summary>
+        /// <c>protected</c>
+        /// </summary>
         Protected,
+        /// <summary>
+        /// <c>static</c>
+        /// </summary>
         Static,
+        /// <summary>
+        /// <c>virtual</c>
+        /// </summary>
         Virtual,
+        /// <summary>
+        /// <c>readonly</c>
+        /// </summary>
         ReadOnly,
+        /// <summary>
+        /// <c>sealed</c>
+        /// </summary>
         Sealed
     }
 

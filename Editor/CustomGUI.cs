@@ -22,9 +22,18 @@ namespace xAPI4Unity.Editor
         /// </summary>
         internal struct Tab
         {
-            internal readonly Action ClickTab; // Action to perform when the tab is clicked.
-            internal readonly Action Content;  // Action defining the tab's main content.
-            internal readonly string TabLabel; // The label of the tab.
+            /// <summary>
+            /// Action to perform when the tab is clicked.
+            /// </summary>
+            internal readonly Action ClickTab;
+            /// <summary>
+            /// Action defining the tab's main content.
+            /// </summary>
+            internal readonly Action Content;
+            /// <summary>
+            /// The label of the tab.
+            /// </summary>
+            internal readonly string TabLabel;
 
             /// <summary>
             /// Initializes a new instance of a Tab with the specified label, content, and click action.
@@ -79,7 +88,13 @@ namespace xAPI4Unity.Editor
         /// </summary>
         internal static class Vertical
         {
+            /// <summary>
+            /// Starts a vertical layout group.
+            /// </summary>
             public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginVertical(options);
+            /// <summary>
+            /// Ends the vertical layout group.
+            /// </summary>
             public static void End() => EditorGUILayout.EndVertical();
 
             /// <summary>
@@ -100,7 +115,13 @@ namespace xAPI4Unity.Editor
         /// </summary>
         internal static class Horizontal
         {
+            /// <summary>
+            /// Starts a horizontal layout group.
+            /// </summary>
             public static void Begin(params GUILayoutOption[] options) => EditorGUILayout.BeginHorizontal(options);
+            /// <summary>
+            /// Ends the horizontal layout group.
+            /// </summary>
             public static void End() => EditorGUILayout.EndHorizontal();
 
             /// <summary>
@@ -121,18 +142,30 @@ namespace xAPI4Unity.Editor
         /// </summary>
         internal class ScrollViewGUI
         {
+            /// <summary>
+            /// Current scroll position.
+            /// </summary>
             private Vector2 _scrollPos;
 
+            /// <summary>
+            /// Creates a scroll view at a start position.
+            /// </summary>
             private ScrollViewGUI(Vector2 startScroll)
             {
                 _scrollPos = startScroll;
             }
 
+            /// <summary>
+            /// Starts the scroll view.
+            /// </summary>
             private void Begin(params GUILayoutOption[] options)
             {
                 _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, options);
             }
 
+            /// <summary>
+            /// Ends the scroll view.
+            /// </summary>
             private void End()
             {
                 EditorGUILayout.EndScrollView();
@@ -153,40 +186,69 @@ namespace xAPI4Unity.Editor
             }
         }
         
-        // Colors that stay readable in the dark and the light editor skin.
+        /// <summary>
+        /// Color of a passed check: green, readable in the dark and the light editor skin.
+        /// </summary>
         private static Color SuccessColor => EditorGUIUtility.isProSkin ? new Color(0.45f, 0.85f, 0.45f) : new Color(0.1f, 0.5f, 0.1f);
+        /// <summary>
+        /// Color of a failed check: red, readable in both editor skins.
+        /// </summary>
         private static Color FailureColor => EditorGUIUtility.isProSkin ? new Color(1f, 0.45f, 0.45f) : new Color(0.7f, 0.1f, 0.1f);
+        /// <summary>
+        /// Color of hyperlinks, readable in both editor skins.
+        /// </summary>
         private static Color LinkColor => EditorGUIUtility.isProSkin ? new Color(0.45f, 0.65f, 1f) : new Color(0.1f, 0.3f, 0.8f);
 
+        /// <summary>
+        /// Style of <see cref="Title"/>.
+        /// </summary>
         private static readonly GUIStyle TitleLabelStyle = new GUIStyle(EditorStyles.largeLabel)
         {
             fontSize = 16,
             fontStyle = FontStyle.Bold
         };
 
+        /// <summary>
+        /// Style of <see cref="Subtitle"/>.
+        /// </summary>
         private static readonly GUIStyle SubtitleLabelStyle = new GUIStyle(EditorStyles.boldLabel)
         {
             fontSize = 13,
         };
 
+        /// <summary>
+        /// Style of the check mark of <see cref="Step"/>.
+        /// </summary>
         private static readonly GUIStyle StepMarkStyle = new GUIStyle(EditorStyles.boldLabel);
 
+        /// <summary>
+        /// Style of the detail text of <see cref="Step"/>.
+        /// </summary>
         private static readonly GUIStyle StepDetailStyle = new GUIStyle(EditorStyles.miniLabel)
         {
             alignment = TextAnchor.MiddleLeft
         };
 
+        /// <summary>
+        /// Style of the box of <see cref="Section"/>.
+        /// </summary>
         private static readonly GUIStyle SectionStyle = new GUIStyle(EditorStyles.helpBox)
         {
             padding = new RectOffset(10, 10, 6, 8)
         };
 
+        /// <summary>
+        /// Style of <see cref="Button(string, GUILayoutOption[])"/>.
+        /// </summary>
         private static readonly GUIStyle ButtonStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 12,
             padding = new RectOffset(10, 10, 2, 2)
         };
 
+        /// <summary>
+        /// Style of an entry of <see cref="Listbox"/>.
+        /// </summary>
         private static readonly GUIStyle ListboxItemStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 12,
@@ -195,6 +257,9 @@ namespace xAPI4Unity.Editor
             border = new RectOffset(1,1,1,1),
             alignment = TextAnchor.MiddleLeft,
         };
+        /// <summary>
+        /// Style of the selected entry of <see cref="Listbox"/>.
+        /// </summary>
         private static readonly GUIStyle ListboxSelectedItemStyle = new GUIStyle(GUI.skin.button)
         {
             fontSize = 12,
@@ -210,6 +275,9 @@ namespace xAPI4Unity.Editor
             
         };
 
+        /// <summary>
+        /// Style of <see cref="Label"/>, <see cref="Description"/> and <see cref="Bullets"/>: wrapping rich text.
+        /// </summary>
         private static readonly GUIStyle TextStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 11,
@@ -217,6 +285,9 @@ namespace xAPI4Unity.Editor
             richText = true
         };
         
+        /// <summary>
+        /// Style of <see cref="Hyperlink(string, string)"/>.
+        /// </summary>
         private static readonly GUIStyle HyperlinkStyle = new GUIStyle(GUI.skin.label)
         {
             fontSize = 11
@@ -384,7 +455,13 @@ namespace xAPI4Unity.Editor
             return result;
         }
 
+        /// <summary>
+        /// Mark of a passed <see cref="Step"/>.
+        /// </summary>
         private const string CorrectMark = "✓";
+        /// <summary>
+        /// Mark of a failed <see cref="Step"/>.
+        /// </summary>
         private const string WrongMark = "✗";
 
         /// <summary>

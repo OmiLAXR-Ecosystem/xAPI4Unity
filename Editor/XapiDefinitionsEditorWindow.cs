@@ -28,18 +28,43 @@ namespace xAPI4Unity.Editor
     /// </summary>
     public class XapiDefinitionsEditorWindow : EditorWindow
     {
+        /// <summary>
+        /// Folder of the editor's assets in this package.
+        /// </summary>
         private const string PackageRoot = "Packages/com.rwth.unity.omilaxr.xapi4unity/Editor/";
+        /// <summary>
+        /// Style sheet of the wizard, whose look the editor shares.
+        /// </summary>
         private const string WizardStyleSheetPath = PackageRoot + "Wizard/XapiWizardWindow.uss";
+        /// <summary>
+        /// Style sheet of the editor.
+        /// </summary>
         private const string StyleSheetPath = PackageRoot + "XapiDefinitionsEditorWindow.uss";
+        /// <summary>
+        /// SessionState key prefix of the expanded state of each tree folder.
+        /// </summary>
         private const string ExpandedKey = "xAPI4Unity.DefinitionsEditor.Expanded.";
+        /// <summary>
+        /// SessionState key of the open state of the raw JSON foldout.
+        /// </summary>
         private const string RawJsonOpenKey = "xAPI4Unity.DefinitionsEditor.RawJsonOpen";
 
-        // Keys of the previous IMGUI editor, read once to keep its unsaved changes
+        /// <summary>
+        /// EditorPrefs key of the unsaved changes of the previous IMGUI editor, read once by <see cref="ImportLegacyState"/>.
+        /// </summary>
         private const string LegacyUnsavedKey = "XapiEditor.UnsavedChanges";
+        /// <summary>
+        /// EditorPrefs key of the previous editor's selected file.
+        /// </summary>
         private const string LegacySelectedKey = "XapiEditor.LastSelectedJson";
+        /// <summary>
+        /// EditorPrefs key of the previous editor's selected folder. Only deleted.
+        /// </summary>
         private const string LegacySelectedDirKey = "XapiEditor.LastSelectedDir";
 
-        // Folder of each kind below 'definitions/<context>/'
+        /// <summary>
+        /// Kinds a new definition can have, with their folder below <c>definitions/&lt;context&gt;/</c>.
+        /// </summary>
         private static readonly (string Label, string Folder)[] Kinds =
         {
             ("Verb", "verbs"),
@@ -48,65 +73,201 @@ namespace xAPI4Unity.Editor
             ("Context extension", "extensions/context"),
             ("Result extension", "extensions/result"),
         };
+        /// <summary>
+        /// Choice in the context dropdown that asks for a new context name.
+        /// </summary>
         private const string NewContextChoice = "New context...";
 
+        /// <summary>
+        /// A folder or definition file in the tree.
+        /// </summary>
         private sealed class Node
         {
+            /// <summary>
+            /// File name without extension, or folder name.
+            /// </summary>
             public string Name;
+            /// <summary>
+            /// Text shown in the tree.
+            /// </summary>
             public string Label;
+            /// <summary>
+            /// Full path with <c>/</c> separators.
+            /// </summary>
             public string FullPath;
+            /// <summary>
+            /// Path below the definitions root without extension, such as <c>generic/verbs/accepted</c>.
+            /// </summary>
             public string Key;
+            /// <summary>
+            /// Depth below the definitions root: 1 for a context.
+            /// </summary>
             public int Depth;
+            /// <summary>
+            /// True for a definition file, false for a folder.
+            /// </summary>
             public bool IsFile;
+            /// <summary>
+            /// True if the context is in the types config's <c>ignoredContexts</c>.
+            /// </summary>
             public bool Ignored;
+            /// <summary>
+            /// Number of definition files below a folder.
+            /// </summary>
             public int FileCount;
+            /// <summary>
+            /// The folder above, null for the root.
+            /// </summary>
             public Node Parent;
+            /// <summary>
+            /// Folders and files in this folder.
+            /// </summary>
             public readonly List<Node> Children = new List<Node>();
         }
 
+        /// <summary>
+        /// What the detail pane shows.
+        /// </summary>
         private enum Mode
         {
+            /// <summary>
+            /// The selected definition.
+            /// </summary>
             View,
+            /// <summary>
+            /// The form for a new definition.
+            /// </summary>
             Create,
+            /// <summary>
+            /// The form to rename a file or folder.
+            /// </summary>
             Rename
         }
 
-        // Kept across domain reloads by Unity's serialization of the window
+        /// <summary>
+        /// The selected file. Serialized by Unity, so it survives domain reloads.
+        /// </summary>
         [SerializeField] private string _selectedPath;
+        /// <summary>
+        /// Paths of the unsaved files, serialized with <see cref="_dirtyJson"/> because Unity cannot serialize a dictionary.
+        /// </summary>
         [SerializeField] private List<string> _dirtyPaths = new List<string>();
+        /// <summary>
+        /// Unsaved JSON of the files in <see cref="_dirtyPaths"/>.
+        /// </summary>
         [SerializeField] private List<string> _dirtyJson = new List<string>();
 
-        // Unsaved JSON per file and the saved JSON in the same formatting, to tell whether a file changed
+        /// <summary>
+        /// Unsaved JSON per file.
+        /// </summary>
         private readonly Dictionary<string, string> _dirty = new Dictionary<string, string>();
+        /// <summary>
+        /// Saved JSON per file in the editor's formatting, to tell whether an edit changed a file.
+        /// </summary>
         private readonly Dictionary<string, string> _originals = new Dictionary<string, string>();
+        /// <summary>
+        /// Tree row of each file, to mark the selection and unsaved files without rebuilding the tree.
+        /// </summary>
         private readonly Dictionary<string, VisualElement> _rows = new Dictionary<string, VisualElement>();
 
+        /// <summary>
+        /// Root of the scanned definitions tree, null without a definitions folder.
+        /// </summary>
         private Node _root;
+        /// <summary>
+        /// All paths of the last scan, to notice added, moved or removed files.
+        /// </summary>
         private string _treeSignature;
+        /// <summary>
+        /// Search term of the tree.
+        /// </summary>
         private string _search = "";
+        /// <summary>
+        /// What the detail pane shows.
+        /// </summary>
         private Mode _mode;
+        /// <summary>
+        /// File or folder of the rename form.
+        /// </summary>
         private string _renameTarget;
+        /// <summary>
+        /// Key that sets the context and kind of the create form.
+        /// </summary>
         private string _createDefaultKey;
+        /// <summary>
+        /// Parsed JSON of the selected file, with its unsaved changes.
+        /// </summary>
         private JObject _current;
+        /// <summary>
+        /// Parse error of the selected file, null if it is valid.
+        /// </summary>
         private string _currentError;
+        /// <summary>
+        /// Text of the selected file if it could not be parsed.
+        /// </summary>
         private string _currentRaw;
+        /// <summary>
+        /// Message in the footer, such as the result of a save. Null shows the unsaved count.
+        /// </summary>
         private string _status;
 
+        /// <summary>
+        /// Scroll view of the tree.
+        /// </summary>
         private ScrollView _tree;
+        /// <summary>
+        /// Scroll view of the detail pane.
+        /// </summary>
         private ScrollView _detail;
+        /// <summary>
+        /// Toolbar button to rename the selection.
+        /// </summary>
         private ToolbarButton _renameButton;
+        /// <summary>
+        /// Toolbar button to delete the selection.
+        /// </summary>
         private ToolbarButton _deleteButton;
+        /// <summary>
+        /// Toolbar button to show the selection in the file browser.
+        /// </summary>
         private ToolbarButton _revealButton;
+        /// <summary>
+        /// Footer button to save the selected file.
+        /// </summary>
         private Button _saveButton;
+        /// <summary>
+        /// Footer button to save all files, shown with more than one unsaved file.
+        /// </summary>
         private Button _saveAllButton;
+        /// <summary>
+        /// Footer button to discard the selected file's changes.
+        /// </summary>
         private Button _revertButton;
+        /// <summary>
+        /// Footer status text.
+        /// </summary>
         private Label _statusLabel;
+        /// <summary>
+        /// Badge that marks the selected file as unsaved.
+        /// </summary>
         private Label _dirtyBadge;
+        /// <summary>
+        /// Card with the checks of the selected definition.
+        /// </summary>
         private VisualElement _checksCard;
+        /// <summary>
+        /// Text field of the raw JSON foldout.
+        /// </summary>
         private TextField _rawField;
 
+        /// <summary>
+        /// The settings of this project.
+        /// </summary>
         private static MainSettings Settings => MainSettings.Instance;
 
+        /// <summary>
+        /// The <c>definitions</c> folder of the source folder, null without a source folder.
+        /// </summary>
         private static string DefinitionsRoot => string.IsNullOrEmpty(Settings.localSource.path)
             ? null
             : Norm(Path.Combine(Settings.localSource.path, "definitions"));
@@ -123,12 +284,18 @@ namespace xAPI4Unity.Editor
             window.Show();
         }
 
+        /// <summary>
+        /// Saves the selected file (Ctrl/Cmd+S while the editor has focus).
+        /// </summary>
         [Shortcut("xAPI4Unity/Definitions Editor/Save", typeof(XapiDefinitionsEditorWindow), KeyCode.S, ShortcutModifiers.Action)]
         private static void SaveShortcut(ShortcutArguments args)
             => (args.context as XapiDefinitionsEditorWindow)?.SaveSelected();
 
         #region Lifecycle
 
+        /// <summary>
+        /// Restores unsaved changes, builds the layout, scans the definitions and starts watching for project changes.
+        /// </summary>
         private void OnEnable()
         {
             _dirty.Clear();
@@ -149,6 +316,9 @@ namespace xAPI4Unity.Editor
             EditorApplication.projectChanged += OnProjectChanged;
         }
 
+        /// <summary>
+        /// Stops watching for project changes and keeps the unsaved changes in serialized fields for the next domain reload.
+        /// </summary>
         private void OnDisable()
         {
             EditorApplication.projectChanged -= OnProjectChanged;
@@ -156,15 +326,24 @@ namespace xAPI4Unity.Editor
             _dirtyJson = _dirty.Values.ToList();
         }
 
+        /// <summary>
+        /// Checks the definitions again when the window gets focus.
+        /// </summary>
         private void OnFocus() => OnProjectChanged();
 
 #if UNITY_2022_1_OR_NEWER
+        /// <summary>
+        /// Saves all files when the user chooses Save in Unity's unsaved changes dialog.
+        /// </summary>
         public override void SaveChanges()
         {
             SaveAll();
             base.SaveChanges();
         }
 #else
+        /// <summary>
+        /// Before Unity 2022.1: asks whether to save the unsaved files when the window closes.
+        /// </summary>
         private void OnDestroy()
         {
             if (_dirty.Count > 0 && EditorUtility.DisplayDialog("Unsaved definitions",
@@ -239,7 +418,9 @@ namespace xAPI4Unity.Editor
 
         #region Layout
 
-        // Built in OnEnable instead of CreateGUI, which older Unity versions do not call
+        /// <summary>
+        /// Builds the toolbar, the tree with its search field and the detail pane. Called in OnEnable instead of CreateGUI, which older Unity versions do not call.
+        /// </summary>
         private void BuildLayout()
         {
             var root = rootVisualElement;
@@ -284,6 +465,9 @@ namespace xAPI4Unity.Editor
             root.Add(body);
         }
 
+        /// <summary>
+        /// Creates the toolbar: new, rename, delete, reveal, update registry and wizard.
+        /// </summary>
         private VisualElement CreateToolbar()
         {
             var toolbar = new Toolbar();
@@ -304,6 +488,9 @@ namespace xAPI4Unity.Editor
             return toolbar;
         }
 
+        /// <summary>
+        /// Creates the footer with the status text and the Revert, Save all and Save buttons.
+        /// </summary>
         private VisualElement CreateFooter()
         {
             var footer = Css(new VisualElement(), "footer");
@@ -323,6 +510,9 @@ namespace xAPI4Unity.Editor
 
         #region Tree
 
+        /// <summary>
+        /// Scans the definitions folder into <see cref="_root"/> and drops unsaved changes of files that are gone.
+        /// </summary>
         private void Rescan()
         {
             var root = DefinitionsRoot;
@@ -343,6 +533,9 @@ namespace xAPI4Unity.Editor
                 _dirty.Remove(path);
         }
 
+        /// <summary>
+        /// Scans a folder and its children. Adds every path to the signature, so a later scan can tell whether anything changed.
+        /// </summary>
         private static Node ScanFolder(string path, string root, Node parent, int depth, ICollection<string> ignored, StringBuilder signature)
         {
             var node = new Node
@@ -387,6 +580,9 @@ namespace xAPI4Unity.Editor
             return node;
         }
 
+        /// <summary>
+        /// Returns the tree label of a folder: kind folders are capitalized, other folders keep their name.
+        /// </summary>
         private static string FolderLabel(Node node)
         {
             if (node.Depth == 2)
@@ -403,6 +599,9 @@ namespace xAPI4Unity.Editor
             return node.Name;
         }
 
+        /// <summary>
+        /// Reads <c>ignoredContexts</c> from the types config. A missing or broken config ignores nothing.
+        /// </summary>
         private static HashSet<string> ReadIgnoredContexts()
         {
             var path = Settings.localSource.path;
@@ -419,6 +618,9 @@ namespace xAPI4Unity.Editor
             return new HashSet<string>();
         }
 
+        /// <summary>
+        /// Rebuilds the tree from the last scan and the search term.
+        /// </summary>
         private void RenderTree()
         {
             if (_tree == null)
@@ -439,6 +641,9 @@ namespace xAPI4Unity.Editor
                 _tree.Add(Css(Muted(term.Length == 0 ? "No definitions yet." : $"Nothing matches '{term}'."), "tree-empty"));
         }
 
+        /// <summary>
+        /// Adds the row of a node and, if it is expanded or a search runs, the rows of its children.
+        /// </summary>
         private void AddRows(Node node, int depth, string term)
         {
             var searching = term.Length > 0;
@@ -492,22 +697,36 @@ namespace xAPI4Unity.Editor
                     AddRows(child, depth + 1, term);
         }
 
+        /// <summary>
+        /// True if a file's key contains the term, or a folder contains such a file.
+        /// </summary>
         private static bool Matches(Node node, string term)
             => node.IsFile
                 ? node.Key.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
                 : node.Children.Any(c => Matches(c, term));
 
-        // Contexts start collapsed, the folders inside a context start open
+        /// <summary>
+        /// True if a folder is expanded. Contexts start collapsed, the folders inside a context start open.
+        /// </summary>
         private static bool IsExpanded(Node node) => SessionState.GetBool(ExpandedKey + node.Key, node.Depth >= 2);
 
+        /// <summary>
+        /// Saves whether a folder is expanded.
+        /// </summary>
         private static void SetExpanded(Node node, bool expanded) => SessionState.SetBool(ExpandedKey + node.Key, expanded);
 
+        /// <summary>
+        /// Expands all folders above a path.
+        /// </summary>
         private void ExpandTo(string path)
         {
             for (var node = FindNode(path)?.Parent; node != null && node.Depth > 0; node = node.Parent)
                 SetExpanded(node, true);
         }
 
+        /// <summary>
+        /// Finds the node of a path, null if there is none.
+        /// </summary>
         private Node FindNode(string path)
         {
             if (_root == null || path == null)
@@ -525,6 +744,9 @@ namespace xAPI4Unity.Editor
             return null;
         }
 
+        /// <summary>
+        /// Fills the context menu of a file.
+        /// </summary>
         private void AddFileMenu(ContextualMenuPopulateEvent e, Node node)
         {
             e.menu.AppendAction("Rename", _ => StartRename(node.FullPath));
@@ -534,6 +756,9 @@ namespace xAPI4Unity.Editor
             e.menu.AppendAction("Reveal in file browser", _ => EditorUtility.RevealInFinder(node.FullPath));
         }
 
+        /// <summary>
+        /// Fills the context menu of a folder.
+        /// </summary>
         private void AddFolderMenu(ContextualMenuPopulateEvent e, Node node)
         {
             e.menu.AppendAction("New definition here", _ => StartCreate(node));
@@ -547,6 +772,9 @@ namespace xAPI4Unity.Editor
 
         #region Selection and model
 
+        /// <summary>
+        /// Selects a file and shows it in the detail pane.
+        /// </summary>
         private void Select(string path)
         {
             if (_selectedPath == path && _mode == Mode.View)
@@ -565,6 +793,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Reads the selected file, applies its unsaved changes and remembers the saved version.
+        /// </summary>
         private void LoadSelected()
         {
             _current = null;
@@ -596,6 +827,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// True if the file on disk differs from the version the editor loaded.
+        /// </summary>
         private bool ChangedOnDisk(string path)
         {
             try
@@ -633,6 +867,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Updates the unsaved markers, the badge, the buttons, the status text and Unity's unsaved changes flag.
+        /// </summary>
         private void UpdateDirtyState()
         {
             if (_statusLabel == null)
@@ -670,6 +907,9 @@ namespace xAPI4Unity.Editor
 
         #region Detail pages
 
+        /// <summary>
+        /// Rebuilds the detail pane for the current mode.
+        /// </summary>
         private void RebuildDetail()
         {
             if (_detail == null)
@@ -689,6 +929,9 @@ namespace xAPI4Unity.Editor
             _detail.Add(page);
         }
 
+        /// <summary>
+        /// Builds the page of the selected definition, or a hint if nothing is selected or there are no definitions.
+        /// </summary>
         private void BuildView(VisualElement page)
         {
             if (_root == null)
@@ -740,6 +983,9 @@ namespace xAPI4Unity.Editor
             page.Add(RawJsonFoldout());
         }
 
+        /// <summary>
+        /// Builds the page of a file that is not valid JSON, with a raw editor to fix it.
+        /// </summary>
         private void BuildInvalid(VisualElement page)
         {
             var card = Css(new VisualElement(), "card", "field");
@@ -756,6 +1002,9 @@ namespace xAPI4Unity.Editor
             page.Add(actions);
         }
 
+        /// <summary>
+        /// Creates the badges of a definition: kind, context, ignored and unsaved.
+        /// </summary>
         private VisualElement Badges(string key)
         {
             var row = Css(new VisualElement(), "badge-row");
@@ -771,6 +1020,9 @@ namespace xAPI4Unity.Editor
             return row;
         }
 
+        /// <summary>
+        /// Creates the row with the definition's IRI and the Copy and Open buttons.
+        /// </summary>
         private static VisualElement IriRow(string key)
         {
             var iri = DefinitionDocument.GetIri(key);
@@ -782,6 +1034,9 @@ namespace xAPI4Unity.Editor
             return row;
         }
 
+        /// <summary>
+        /// Fills the checks card: English name and English description.
+        /// </summary>
         private void FillChecks()
         {
             if (_checksCard == null || _current == null)
@@ -799,6 +1054,9 @@ namespace xAPI4Unity.Editor
                 "The generated code shows the English description as documentation comment."));
         }
 
+        /// <summary>
+        /// Creates the card of a language map (name or description) with a row per language.
+        /// </summary>
         private VisualElement LanguageCard(string field, bool multiline)
         {
             var card = Css(new VisualElement(), "card");
@@ -850,6 +1108,9 @@ namespace xAPI4Unity.Editor
             return card;
         }
 
+        /// <summary>
+        /// Creates the card of the <c>exactMatch</c> IRIs.
+        /// </summary>
         private VisualElement ExactMatchCard()
         {
             var card = Css(new VisualElement(), "card");
@@ -888,6 +1149,9 @@ namespace xAPI4Unity.Editor
             return card;
         }
 
+        /// <summary>
+        /// Creates the raw JSON foldout. Its edits only apply with Apply JSON.
+        /// </summary>
         private VisualElement RawJsonFoldout()
         {
             var foldout = Css(new Foldout { text = "Raw JSON", value = SessionState.GetBool(RawJsonOpenKey, false) }, "raw-foldout");
@@ -915,6 +1179,9 @@ namespace xAPI4Unity.Editor
             return foldout;
         }
 
+        /// <summary>
+        /// Replaces the definition with the parsed JSON, or shows the parse error.
+        /// </summary>
         private void ApplyRaw(string json, Label error)
         {
             try
@@ -934,6 +1201,9 @@ namespace xAPI4Unity.Editor
 
         #region Create, rename, delete
 
+        /// <summary>
+        /// Opens the create form. The folder that was right-clicked, or the selected definition, sets the default context and kind.
+        /// </summary>
         private void StartCreate(Node at)
         {
             _mode = Mode.Create;
@@ -944,6 +1214,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Builds the create form with context, kind, name and a preview of the file and its IRI.
+        /// </summary>
         private void BuildCreate(VisualElement page)
         {
             page.Add(H1("New definition"));
@@ -999,6 +1272,9 @@ namespace xAPI4Unity.Editor
             nameField.Focus();
         }
 
+        /// <summary>
+        /// Creates a definition file from the template and selects it.
+        /// </summary>
         private void Create(string context, string folder, string fileName, Label error)
         {
             if (!IsValidName(context) || !IsValidName(fileName))
@@ -1038,6 +1314,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Opens the rename form for a file or folder.
+        /// </summary>
         private void StartRename(string path)
         {
             if (path == null)
@@ -1049,6 +1328,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Builds the rename form.
+        /// </summary>
         private void BuildRename(VisualElement page)
         {
             var isFile = File.Exists(_renameTarget);
@@ -1073,6 +1355,9 @@ namespace xAPI4Unity.Editor
             nameField.Focus();
         }
 
+        /// <summary>
+        /// Renames a file or folder, and moves its unsaved changes and the selection along.
+        /// </summary>
         private void Rename(string path, string newName, bool isFile, Label error)
         {
             if (!IsValidName(newName))
@@ -1112,6 +1397,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Deletes a file or folder after a confirmation, with its .meta file.
+        /// </summary>
         private void Delete(string path)
         {
             if (path == null)
@@ -1163,6 +1451,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Leaves the create or rename form.
+        /// </summary>
         private void CancelMode()
         {
             _mode = Mode.View;
@@ -1171,6 +1462,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Moves unsaved changes and the selection from a renamed path to the new one.
+        /// </summary>
         private void RemapPaths(string from, string to)
         {
             string Remap(string p) => p == from ? to : p.StartsWith(from + "/", StringComparison.Ordinal) ? to + p.Substring(from.Length) : p;
@@ -1214,6 +1508,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// True if a name is usable as a file or folder name.
+        /// </summary>
         private static bool IsValidName(string name)
             => !string.IsNullOrEmpty(name) && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 && name != "." && name != "..";
 
@@ -1221,6 +1518,9 @@ namespace xAPI4Unity.Editor
 
         #region Saving
 
+        /// <summary>
+        /// Saves the selected file.
+        /// </summary>
         private void SaveSelected()
         {
             if (_selectedPath == null || !_dirty.ContainsKey(_selectedPath))
@@ -1229,6 +1529,9 @@ namespace xAPI4Unity.Editor
                 AfterSave(1, ToAssetPath(_selectedPath) != null);
         }
 
+        /// <summary>
+        /// Saves all unsaved files in one asset import, so the watcher regenerates the registry once.
+        /// </summary>
         private void SaveAll()
         {
             if (_dirty.Count == 0)
@@ -1254,6 +1557,9 @@ namespace xAPI4Unity.Editor
             AfterSave(saved, allInAssets);
         }
 
+        /// <summary>
+        /// Writes a file, keeping whether it ended with a line break, and imports it if it is in <c>Assets</c>.
+        /// </summary>
         private bool SaveFile(string path, string json)
         {
             try
@@ -1277,6 +1583,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Shows how many files were saved and whether the registry updates by itself, then reloads the page.
+        /// </summary>
         private void AfterSave(int saved, bool allInAssets)
         {
             if (saved > 0)
@@ -1291,6 +1600,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Discards the unsaved changes of the selected file.
+        /// </summary>
         private void RevertSelected()
         {
             if (_selectedPath == null)
@@ -1302,6 +1614,9 @@ namespace xAPI4Unity.Editor
             UpdateDirtyState();
         }
 
+        /// <summary>
+        /// Generates the registry and shows the outcome in the status text.
+        /// </summary>
         private void UpdateRegistry()
         {
             var log = LogCollector.Run(FetcherWindow.QuickFetch);
@@ -1356,6 +1671,9 @@ namespace xAPI4Unity.Editor
             return split.ToLowerInvariant();
         }
 
+        /// <summary>
+        /// Uses <c>/</c> as separator.
+        /// </summary>
         private static string Norm(string path) => path?.Replace('\\', '/');
 
         /// <summary>
@@ -1370,6 +1688,9 @@ namespace xAPI4Unity.Editor
             return full.StartsWith(dataPath + "/", StringComparison.Ordinal) ? "Assets" + full.Substring(dataPath.Length) : null;
         }
 
+        /// <summary>
+        /// Shortens a path inside the Unity project to a project-relative path.
+        /// </summary>
         private static string ToDisplayPath(string path)
         {
             var projectRoot = Norm(Path.GetDirectoryName(Application.dataPath)) + "/";
@@ -1377,6 +1698,9 @@ namespace xAPI4Unity.Editor
             return full.StartsWith(projectRoot, StringComparison.Ordinal) ? full.Substring(projectRoot.Length) : full;
         }
 
+        /// <summary>
+        /// Creates the row of a check with an icon, a label and a hint while it fails.
+        /// </summary>
         private static VisualElement CheckRow(bool passed, bool optional, string label, string hint)
         {
             var row = Css(new VisualElement(), "check");
@@ -1390,14 +1714,31 @@ namespace xAPI4Unity.Editor
             return row;
         }
 
-        // Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout
+        /// <summary>
+        /// Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout
+        /// </summary>
         private static Action Deferred(Action action) => () => EditorApplication.delayCall += () => action();
 
+        /// <summary>
+        /// Creates a page title.
+        /// </summary>
         private static Label H1(string text) => Css(new Label(text), "h1");
+        /// <summary>
+        /// Creates a section heading.
+        /// </summary>
         private static Label H2(string text) => Css(new Label(text), "h2");
+        /// <summary>
+        /// Creates a paragraph.
+        /// </summary>
         private static Label Text(string text) => Css(new Label(text), "text");
+        /// <summary>
+        /// Creates a dimmed hint text.
+        /// </summary>
         private static Label Muted(string text) => Css(new Label(text), "muted");
 
+        /// <summary>
+        /// Adds USS classes to an element and returns it.
+        /// </summary>
         private static T Css<T>(T element, params string[] classes) where T : VisualElement
         {
             foreach (var c in classes)

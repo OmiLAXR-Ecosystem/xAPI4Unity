@@ -37,6 +37,9 @@ namespace xAPI4Unity.Editor
         /// </summary>
         public string[] ignoredContexts = Array.Empty<string>();
 
+        /// <summary>
+        /// Variables for the type expressions: <c>${name}</c> in <see cref="Types"/> is replaced by the value of <c>name</c>.
+        /// </summary>
         public Dictionary<string, string> Variables = new Dictionary<string, string>();
 
         /// <summary>

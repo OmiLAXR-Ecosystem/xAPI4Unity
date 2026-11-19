@@ -21,6 +21,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions
         /// </summary>
         public readonly IDictionary<string, xAPIContext> Contexts;
 
+        /// <summary>
+        /// Receives warnings about definitions that are skipped.
+        /// </summary>
         private readonly IGeneratorLog _log;
 
         /// <summary>

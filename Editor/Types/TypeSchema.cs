@@ -17,6 +17,9 @@ namespace xAPI4Unity.Editor.Types
     /// </summary>
     public class TypeSchema : Dictionary<string, TypeExpressionSet>
     {
+        /// <summary>
+        /// Resolves the type names of the schema's expressions.
+        /// </summary>
         private readonly ITypeNameResolver _resolver;
 
         /// <summary>
@@ -48,6 +51,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         private static ITypeNameResolver CreateDefaultResolver() => new TypeNameResolver(new Aliases());
 
+        /// <summary>
+        /// Matches a <c>${name}</c> placeholder that is not escaped with a backslash.
+        /// </summary>
         private static readonly Regex PlaceholderRegex = new Regex(
             @"(?<!\\)\$\{\s*(?<id>[A-Za-z_][A-Za-z0-9_.-]*)\s*\}",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -104,6 +110,10 @@ namespace xAPI4Unity.Editor.Types
             return result;
         }
         
+        /// <summary>
+        /// Replaces the <c>${name}</c> placeholders in an expression with their variables, repeatedly so variables can use variables.
+        /// Unknown names are logged as errors when <paramref name="strict"/> is true and left as they are. <c>\\${</c> stays a literal <c>${</c>.
+        /// </summary>
         private static string ExpandVariables(
             string expr,
             IReadOnlyDictionary<string, string> variables,
@@ -143,6 +153,9 @@ namespace xAPI4Unity.Editor.Types
             return current.Replace(@"\${", "${");
         }
         
+        /// <summary>
+        /// Expands the variables in every expression of a schema input, without parsing the types.
+        /// </summary>
         public static Dictionary<string, string> ExpandAll(
             IDictionary<string, string> input,
             IReadOnlyDictionary<string, string> variables,

@@ -14,6 +14,9 @@ namespace xAPI4Unity.Editor.Parser {
     /// </summary>
     internal static class StringExt
     {
+        /// <summary>
+        /// Formats values as <c>[a,b,c]</c>.
+        /// </summary>
         public static string ToString(object[] values) => $"[{string.Join(",", values)}]";
         /// <summary>
         /// Capitalizes the first letter of a string

@@ -22,9 +22,18 @@ namespace xAPI4Unity.Editor
     /// </summary>
     public class FetcherWindow : EditorWindow
     {
+        /// <summary>
+        /// The settings of this project.
+        /// </summary>
         private static MainSettings mainSettings => MainSettings.Instance;
+        /// <summary>
+        /// Website of the xAPI registry.
+        /// </summary>
         private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
 
+        /// <summary>
+        /// Lazily created view for <see cref="LocalSourceView"/>.
+        /// </summary>
         private LocalSourceView _localSourceView;
 
         /// <summary>
@@ -39,6 +48,9 @@ namespace xAPI4Unity.Editor
             }
         }
         
+        /// <summary>
+        /// Created by Unity only. Use <see cref="ShowWindow"/>.
+        /// </summary>
         private FetcherWindow() { }
 
         /// <summary>
@@ -72,6 +84,9 @@ namespace xAPI4Unity.Editor
         [MenuItem("xAPI4Unity / Update xAPI.Registry (JSON => C#)", priority = 1000)]
         public static void QuickFetch() => ExecuteFetcher();
         
+        /// <summary>
+        /// Only shown when a saved editor layout still contains this window: links to the wizard.
+        /// </summary>
         private void OnGUI()
         {
             // Only reached when an editor layout still contains this window
@@ -83,6 +98,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Saves the settings when the window closes.
+        /// </summary>
         private void OnDisable()
         {
             // Save settings when the window is closed
@@ -131,6 +149,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Loads the settings when the window opens.
+        /// </summary>
         protected void OnEnable()
         {
             // Load settings when the window is enabled

@@ -14,11 +14,17 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class ProjectStatus
     {
+        /// <summary>
+        /// Creates the checks for a project's paths.
+        /// </summary>
         public ProjectStatus(RegistryPaths paths)
         {
             Paths = paths;
         }
 
+        /// <summary>
+        /// The paths that are checked.
+        /// </summary>
         public RegistryPaths Paths { get; }
 
         /// <summary>

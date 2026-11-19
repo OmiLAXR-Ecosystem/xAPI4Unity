@@ -25,8 +25,14 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class UnityAssetRefresher : IAssetRefresher
     {
+        /// <summary>
+        /// Shared instance. The class has no state.
+        /// </summary>
         public static readonly UnityAssetRefresher Instance = new UnityAssetRefresher();
 
+        /// <summary>
+        /// Use <see cref="Instance"/>.
+        /// </summary>
         private UnityAssetRefresher() { }
 
         /// <inheritdoc/>

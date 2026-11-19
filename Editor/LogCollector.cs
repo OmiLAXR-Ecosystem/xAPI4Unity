@@ -16,9 +16,18 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class LogCollector
     {
+        /// <summary>
+        /// Messages of errors, exceptions and failed asserts.
+        /// </summary>
         public readonly List<string> Errors = new List<string>();
+        /// <summary>
+        /// Messages of warnings.
+        /// </summary>
         public readonly List<string> Warnings = new List<string>();
 
+        /// <summary>
+        /// Use <see cref="Run"/>.
+        /// </summary>
         private LogCollector() { }
 
         /// <summary>
@@ -51,6 +60,9 @@ namespace xAPI4Unity.Editor
             return collector;
         }
 
+        /// <summary>
+        /// Receives a Unity log message and keeps errors and warnings.
+        /// </summary>
         private void Collect(string message, string stackTrace, LogType type)
         {
             switch (type)

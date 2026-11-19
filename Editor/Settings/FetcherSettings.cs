@@ -20,7 +20,13 @@ namespace xAPI4Unity.Editor.Settings
         /// </summary>
         public class FetcherArguments : Dictionary<string, string> { }
 
+        /// <summary>
+        /// Older setting for a local folder, defaulting to the home folder. The generator uses <see cref="LocalSourceSettings.path"/> instead.
+        /// </summary>
         [SerializeField] public string localPath = DefaultValues.HomeDirectory;
+        /// <summary>
+        /// Regenerate the registry when a JSON file in a <c>definitions</c> folder changes.
+        /// </summary>
         [SerializeField] public bool watcherEnabled = DefaultValues.WatcherEnabled;
 
         /// <inheritdoc />

@@ -15,6 +15,9 @@ namespace xAPI4Unity.Editor.Parser
     /// </summary>
     internal sealed class GeneratedFile
     {
+        /// <summary>
+        /// Creates a file with its path inside the registry folder and its text.
+        /// </summary>
         public GeneratedFile(string relativePath, string content)
         {
             RelativePath = relativePath;
@@ -38,10 +41,19 @@ namespace xAPI4Unity.Editor.Parser
     /// </summary>
     internal sealed class GeneratedRegistry
     {
+        /// <summary>
+        /// Paths in the order they were first added.
+        /// </summary>
         private readonly List<string> _order = new List<string>();
+        /// <summary>
+        /// Files by path.
+        /// </summary>
         private readonly Dictionary<string, GeneratedFile> _files =
             new Dictionary<string, GeneratedFile>(StringComparer.Ordinal);
 
+        /// <summary>
+        /// Creates an empty registry for a namespace.
+        /// </summary>
         public GeneratedRegistry(string @namespace)
         {
             Namespace = @namespace;

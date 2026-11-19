@@ -42,6 +42,9 @@ namespace xAPI4Unity.Editor.Types
             Elements = elements;
         }
 
+        /// <summary>
+        /// Open <c>ValueTuple</c> types with one to eight type arguments.
+        /// </summary>
         private static readonly Type[] ValueTupleDefinitions =
         {
             typeof(ValueTuple<>), typeof(ValueTuple<,>), typeof(ValueTuple<,,>), typeof(ValueTuple<,,,>),
@@ -59,6 +62,9 @@ namespace xAPI4Unity.Editor.Types
             return MakeValueTupleType(elements.Select(e => e.Type).ToArray());
         }
 
+        /// <summary>
+        /// Builds the <c>ValueTuple</c> type of the element types.
+        /// </summary>
         private static Type MakeValueTupleType(Type[] types)
         {
             if (types.Length <= 7)

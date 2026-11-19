@@ -17,6 +17,9 @@ namespace xAPI4Unity.Editor.Parser.Code
     /// </summary>
     internal abstract class SyntaxTreeSerializer
     {
+        /// <summary>
+        /// Maps the modifiers to the keywords of the target language.
+        /// </summary>
         protected abstract IDictionary<Modifier, string> Modifiers { get; }
 
         /// <summary>

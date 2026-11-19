@@ -16,8 +16,14 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     internal sealed class DirectoryDefinitionSource : IDefinitionSource
     {
+        /// <summary>
+        /// The <c>definitions</c> folder as passed to the constructor.
+        /// </summary>
         private readonly string _rootPath;
 
+        /// <summary>
+        /// Creates a source that reads the definitions below a folder.
+        /// </summary>
         /// <param name="rootPath">The <c>definitions</c> folder, which holds one folder per context.</param>
         public DirectoryDefinitionSource(string rootPath)
         {

@@ -15,12 +15,30 @@ namespace xAPI4Unity.Editor.Settings
     [Serializable]
     public class LocalSourceSettings : ISettings
     {
+        /// <summary>
+        /// Source folder that holds the <c>definitions</c> folder.
+        /// </summary>
         [SerializeField] public string path = DefaultValues.RepoPath;
-        [SerializeField] public int selectedOptionIndex = 0; // Selected source option
+        /// <summary>
+        /// How the wizard gets the definitions: 0 patch into <c>Assets</c>, 1 download a zip, 2 git clone.
+        /// </summary>
+        [SerializeField] public int selectedOptionIndex = 0;
+        /// <summary>
+        /// Git URL of the definitions repository.
+        /// </summary>
         [SerializeField] public string repoUrl = DefaultValues.RepoUrl;
+        /// <summary>
+        /// Web URL of the repository, used for the zip download.
+        /// </summary>
         [SerializeField] public string repoDownloadUrl = DefaultValues.RepoDownloadUrl;
+        /// <summary>
+        /// Branch to clone or download.
+        /// </summary>
         [SerializeField] public string repoBranch = DefaultValues.RepoBranch;
-        [SerializeField] public int gitCloneAmount = 0; // Counter for cloning operations
+        /// <summary>
+        /// Counter for the names of new branches (<see cref="GetNewBranchName"/>).
+        /// </summary>
+        [SerializeField] public int gitCloneAmount = 0;
 
         /// <summary>
         /// Gets the download filename based on the branch.
@@ -55,12 +73,17 @@ namespace xAPI4Unity.Editor.Settings
         /// <returns>A unique branch name string.</returns>
         public string GetNewBranchName() => $"xapi-4-unity-{Application.productName.ClearName()}-{gitCloneAmount++}";
 
-        // Repository the definitions came from before 2.3.0, as SSH and HTTPS URL without '.git'
+        /// <summary>
+        /// Repository the definitions came from before 2.3.0, as SSH and HTTPS URL without '.git'
+        /// </summary>
         private static readonly string[] LegacyRepoUrls =
         {
             "git@gitlab.com:learntech-rwth/xapi",
             "https://gitlab.com/learntech-rwth/xapi"
         };
+        /// <summary>
+        /// Branch the definitions came from before 2.3.0.
+        /// </summary>
         private const string LegacyRepoBranch = "master";
 
         /// <summary>
@@ -90,6 +113,9 @@ namespace xAPI4Unity.Editor.Settings
             return changed;
         }
 
+        /// <summary>
+        /// True if the URL points to the old GitLab repository, ignoring case, a trailing <c>/</c> and <c>.git</c>.
+        /// </summary>
         private static bool IsLegacyRepoUrl(string url)
         {
             if (string.IsNullOrEmpty(url))

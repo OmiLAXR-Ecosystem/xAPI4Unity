@@ -27,8 +27,17 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// </summary>
         public readonly List<T> Definitions = new List<T>();
 
+        /// <summary>
+        /// Number of definitions directly in this list.
+        /// </summary>
         public int Count => Definitions.Count;
+        /// <summary>
+        /// Number of sub categories.
+        /// </summary>
         public int SubCount => SubDefinitions.Count;
+        /// <summary>
+        /// Number of definitions plus number of sub categories (sub categories are not expanded).
+        /// </summary>
         public int DeepCount => Count + SubCount;
 
         /// <summary>

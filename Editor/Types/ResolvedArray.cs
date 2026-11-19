@@ -29,6 +29,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public int Rank { get; }
 
+        /// <summary>
+        /// Creates an array type of an element type.
+        /// </summary>
         public ResolvedArray(ResolvedType elementType, bool isJagged, int rank, string definition)
             : base(MakeArrayType(elementType, isJagged, rank), definition)
         {
@@ -37,9 +40,15 @@ namespace xAPI4Unity.Editor.Types
             Rank = isJagged ? 1 : rank;
         }
 
+        /// <summary>
+        /// Returns the element's syntax followed by <c>[]</c> or <c>[,…]</c>.
+        /// </summary>
         public override string GetTypeSyntax() =>
             ElementType.GetTypeSyntax() + (IsJagged ? "[]" : "[" + new string(',', Rank - 1) + "]");
 
+        /// <summary>
+        /// Builds the .NET array type of the element type.
+        /// </summary>
         private static Type MakeArrayType(ResolvedType elementType, bool isJagged, int rank)
         {
             if (elementType == null) throw new ArgumentNullException(nameof(elementType));

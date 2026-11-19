@@ -18,6 +18,9 @@ namespace xAPI4Unity.Editor.Settings
         /// </summary>
         public static readonly EditorPrefsSettingsStore Instance = new EditorPrefsSettingsStore();
 
+        /// <summary>
+        /// Use <see cref="Instance"/>.
+        /// </summary>
         private EditorPrefsSettingsStore() { }
 
         /// <inheritdoc/>

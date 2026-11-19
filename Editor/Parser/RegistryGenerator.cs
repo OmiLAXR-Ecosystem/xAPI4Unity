@@ -28,9 +28,18 @@ namespace xAPI4Unity.Editor.Parser
         /// </summary>
         public const string DefinitionsFolder = "Definitions";
 
+        /// <summary>
+        /// Source of the core class templates.
+        /// </summary>
         private readonly ICoreTemplateSource _templates;
+        /// <summary>
+        /// Receives progress messages and warnings.
+        /// </summary>
         private readonly IGeneratorLog _log;
 
+        /// <summary>
+        /// Creates a generator with its template source and log.
+        /// </summary>
         /// <param name="templates">Source of the core class templates.</param>
         /// <param name="log">Receives progress messages and warnings.</param>
         public RegistryGenerator(ICoreTemplateSource templates, IGeneratorLog log)

@@ -58,6 +58,9 @@ namespace xAPI4Unity.Editor.Settings
         /// Automatically loads settings if not initialized.
         /// </summary>
         private static MainSettings _instance;
+        /// <summary>
+        /// The settings of this project, loaded from EditorPrefs on first use.
+        /// </summary>
         public static MainSettings Instance
         {
             get
@@ -71,9 +74,21 @@ namespace xAPI4Unity.Editor.Settings
             }
         }
 
+        /// <summary>
+        /// Settings of the file watcher.
+        /// </summary>
         [SerializeReference] public FetcherSettings fetcher = new FetcherSettings();
+        /// <summary>
+        /// Where the definitions come from.
+        /// </summary>
         [SerializeReference] public LocalSourceSettings localSource = new LocalSourceSettings();
+        /// <summary>
+        /// Namespace of the generated registry, also its folder in <c>Assets</c>.
+        /// </summary>
         [SerializeField] public string @namespace = DefaultValues.Namespace;
+        /// <summary>
+        /// Open the wizard on editor start when the definitions or the registry are missing.
+        /// </summary>
         [SerializeField] public bool isOpeningOnStartup = true;
 
         /// <summary>

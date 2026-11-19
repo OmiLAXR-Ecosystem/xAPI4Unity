@@ -14,7 +14,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
     /// Serializes C# source code out of a syntax tree
     /// </summary>
     internal class CSharpSerializer : SyntaxTreeSerializer {
-        // Maps internal modifier flags to their C# keyword representations (order preserved by usage site).
+        /// <summary>
+        /// Maps the modifiers to their C# keywords.
+        /// </summary>
         protected override IDictionary<Modifier, string> Modifiers { get; } = new Dictionary<Modifier, string> {
             [Modifier.Public] = "public",
             [Modifier.Private] = "private",
@@ -25,7 +27,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             [Modifier.Sealed] = "sealed"
         };
 
-        // Formats a string->string dictionary as a C# Dictionary<string, string> initializer with proper indentation.
+        /// <summary>
+        /// Formats a string-to-string dictionary as a C# <c>Dictionary&lt;string, string&gt;</c> initializer with proper indentation.
+        /// </summary>
         public override string DictionaryToString(IDictionary<string, string> dict, int indentDepth) {
             var str = $"new Dictionary<string, string> {{{CodeGenerator.NewLine}";
             var count = 0;
@@ -44,9 +48,11 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return str;
         }
 
-        // Converts the root node into a complete C# file string:
-        // - emits usings
-        // - wraps class into namespace if provided
+        /// <summary>
+        /// Converts the root node into a complete C# file string:
+        /// - emits usings
+        /// - wraps class into namespace if provided
+        /// </summary>
         public override string RootToString(Root root) {
             var indent = 0;
             var formatStr = "{0}";
@@ -72,18 +78,24 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return importStr + string.Format(formatStr, classStr);
         }
 
-        // Builds a namespace wrapper with a slot ({0}) for inner content.
+        /// <summary>
+        /// Builds a namespace wrapper with a slot ({0}) for inner content.
+        /// </summary>
         private static string NamespaceToString(string @namespace) {
             return $"namespace {@namespace} {{{{{CodeGenerator.NewLine}{{0}}{CodeGenerator.NewLine}}}}}";
         }
 
-        // Renders a single using directive with the requested indentation depth.
+        /// <summary>
+        /// Renders a single using directive with the requested indentation depth.
+        /// </summary>
         protected override string ImportToString(Import import, int indentDepth) {
             return $"{CodeGenerator.Indent(indentDepth)}using {import?.Target};{CodeGenerator.NewLine}";
         }
 
-        // Emits a C# class declaration, including modifiers, optional base class, XML comment if present,
-        // and the serialized class contents (members).
+        /// <summary>
+        /// Emits a C# class declaration, including modifiers, optional base class, XML comment if present,
+        /// and the serialized class contents (members).
+        /// </summary>
         protected override string ClassToString(Class cls, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var baseStr = string.IsNullOrEmpty(cls?.BaseClass) ? "" : $" : {cls.BaseClass}";
@@ -97,7 +109,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return classStr;
         }
 
-        // Serializes an auto-get property with a custom getter body and optional XML comment.
+        /// <summary>
+        /// Serializes an auto-get property with a custom getter body and optional XML comment.
+        /// </summary>
         protected override string GetablePropertyToString(GetableProperty property, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var indentStr2 = CodeGenerator.Indent(indentDepth + 1);
@@ -115,9 +129,11 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return getableStr;
         }
 
-        // Serializes a property assignment:
-        // - If Initializer is provided, emit a direct assignment.
-        // - Otherwise, emit a 'new Type(args)' construction using named/indented arguments.
+        /// <summary>
+        /// Serializes a property assignment:
+        /// - If Initializer is provided, emit a direct assignment.
+        /// - Otherwise, emit a 'new Type(args)' construction using named/indented arguments.
+        /// </summary>
         protected override string PropertyToString(Property property, int indentDepth)
         {
             string propStr;
@@ -153,7 +169,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return propStr;
         }
         
-        // Serializes a constructor including optional base(...) call when BaseArguments are provided.
+        /// <summary>
+        /// Serializes a constructor including optional base(...) call when BaseArguments are provided.
+        /// </summary>
         protected override string ConstructorToString(Constructor constructor, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var baseStr = constructor?.BaseArguments == null || constructor.BaseArguments.Count == 0 ?
@@ -164,7 +182,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
                 $"{{{CodeGenerator.NewLine}{indentStr}}}{CodeGenerator.NewLine}";
         }
 
-        // Serializes a method with modifiers, signature, XML doc comment (if any), and formatted body.
+        /// <summary>
+        /// Serializes a method with modifiers, signature, XML doc comment (if any), and formatted body.
+        /// </summary>
         protected override string MethodToString(Method method, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var mthStr = $"{indentStr}{ModifiersToString(method?.Modifiers)}{method?.Type} {method?.Name}({ParametersToString(method?.Parameters)}) {{{CodeGenerator.NewLine}" +
@@ -178,10 +198,12 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return mthStr;
         }
 
-        // Joins method/constructor arguments into a single string.
-        // - When 'withName' is true, prefixes each value with `name: `.
-        // - When 'newLines' is true, breaks arguments into separate lines with proper indentation.
-        // - Dictionary values are serialized via DictionaryToString; Null via NullToString.
+        /// <summary>
+        /// Joins method/constructor arguments into a single string.
+        /// - When 'withName' is true, prefixes each value with `name: `.
+        /// - When 'newLines' is true, breaks arguments into separate lines with proper indentation.
+        /// - Dictionary values are serialized via DictionaryToString; Null via NullToString.
+        /// </summary>
         protected override string ArgumentsToString(IReadOnlyList<Argument> args, int indentDepth, bool newLines = false, bool withName = false) {
             var str = string.Empty;
             if (args == null) return str;
@@ -199,7 +221,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return str;
         }
 
-        // Serializes a parameter list, including default values (with proper null literal).
+        /// <summary>
+        /// Serializes a parameter list, including default values (with proper null literal).
+        /// </summary>
         protected override string ParametersToString(IReadOnlyList<Parameter> parameters) {
             var str = string.Empty;
             if (parameters == null) return str;
@@ -215,7 +239,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return str;
         }
         
-        // Builds an XML summary comment for a property, preserving line breaks and indentation.
+        /// <summary>
+        /// Builds an XML summary comment for a property, preserving line breaks and indentation.
+        /// </summary>
         protected override string PropertyCommentToString(Property property, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var str = $"{indentStr}/// <summary>{CodeGenerator.NewLine}";
@@ -228,7 +254,9 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp {
             return str;
         }
 
-        // Builds an XML summary comment block, preserving line breaks and indentation.
+        /// <summary>
+        /// Builds an XML summary comment block, preserving line breaks and indentation.
+        /// </summary>
         protected override string CommentToString(string comment, int indentDepth) {
             var indentStr = CodeGenerator.Indent(indentDepth);
             var str = $"{indentStr}/// <summary>{CodeGenerator.NewLine}";

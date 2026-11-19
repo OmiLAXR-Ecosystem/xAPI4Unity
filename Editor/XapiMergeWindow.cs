@@ -25,22 +25,58 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private class Conflict
         {
-            public string RelativePath; // Path of the conflicting file within the repository
-            public string ExistingContent; // Content of the existing file
-            public string IncomingContent; // Content of the incoming conflicting file
-            public string IncomingFile; // Full path to the incoming conflicting file
-            public string ExistingFile; // Full path to the existing file
+            /// <summary>
+            /// Path of the conflicting file within the repository
+            /// </summary>
+            public string RelativePath;
+            /// <summary>
+            /// Content of the existing file
+            /// </summary>
+            public string ExistingContent;
+            /// <summary>
+            /// Content of the incoming conflicting file
+            /// </summary>
+            public string IncomingContent;
+            /// <summary>
+            /// Full path to the incoming conflicting file
+            /// </summary>
+            public string IncomingFile;
+            /// <summary>
+            /// Full path to the existing file
+            /// </summary>
+            public string ExistingFile;
         }
 
-        private Vector2 _scrollPos; // Scroll position for the conflict list
-        private string[] _reportPaths; // List of available merge report file paths
-        private int _selectedReportIndex = 0; // Index of the currently selected merge report
+        /// <summary>
+        /// Scroll position for the conflict list
+        /// </summary>
+        private Vector2 _scrollPos;
+        /// <summary>
+        /// List of available merge report file paths
+        /// </summary>
+        private string[] _reportPaths;
+        /// <summary>
+        /// Index of the currently selected merge report
+        /// </summary>
+        private int _selectedReportIndex = 0;
         
+        /// <summary>
+        /// Currently loaded merge report.
+        /// </summary>
         private MergeReport _mergeReport; // Currently loaded a merge report
         
-        private readonly List<Conflict> _conflicts = new List<Conflict>(); // List of conflicts for resolution
-        private readonly Dictionary<string, Vector2> _existingScrolls = new Dictionary<string, Vector2>(); // Scroll positions for "existing" files
-        private readonly Dictionary<string, Vector2> _incomingScrolls = new Dictionary<string, Vector2>(); // Scroll positions for "incoming" files
+        /// <summary>
+        /// List of conflicts for resolution
+        /// </summary>
+        private readonly List<Conflict> _conflicts = new List<Conflict>();
+        /// <summary>
+        /// Scroll positions for "existing" files
+        /// </summary>
+        private readonly Dictionary<string, Vector2> _existingScrolls = new Dictionary<string, Vector2>();
+        /// <summary>
+        /// Scroll positions for "incoming" files
+        /// </summary>
+        private readonly Dictionary<string, Vector2> _incomingScrolls = new Dictionary<string, Vector2>();
 
         /// <summary>
         /// Displays the xAPI Conflict Resolver window.
@@ -119,6 +155,9 @@ namespace xAPI4Unity.Editor
             }
         }
 
+        /// <summary>
+        /// Draws the report dropdown, the list of conflicts and the buttons to resolve them.
+        /// </summary>
         private void OnGUI()
         {
             DrawReportDropdown();

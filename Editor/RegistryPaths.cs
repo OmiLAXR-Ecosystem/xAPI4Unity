@@ -16,6 +16,9 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class RegistryPaths
     {
+        /// <summary>
+        /// Creates the paths of a project.
+        /// </summary>
         /// <param name="sourceFolder">Folder that holds the <c>definitions</c> folder (the local source path). May be empty.</param>
         /// <param name="assetsFolder">The project's <c>Assets</c> folder.</param>
         /// <param name="namespace">Namespace of the registry, also the name of its folder in <c>Assets</c>.</param>

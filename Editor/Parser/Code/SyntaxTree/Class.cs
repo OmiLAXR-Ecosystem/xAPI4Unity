@@ -11,13 +11,21 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A class in the syntax tree
     /// </summary>
     internal sealed class Class : SyntaxNode<Class> {
-        // Accumulates field/property declarations to be emitted for this class.
+        /// <summary>
+        /// Accumulates field/property declarations to be emitted for this class.
+        /// </summary>
         private readonly List<Property> _properties = new List<Property>();
-        // Accumulates constructor declarations for this class.
+        /// <summary>
+        /// Accumulates constructor declarations for this class.
+        /// </summary>
         private readonly List<Constructor> _constructors = new List<Constructor>();
-        // Accumulates get-only properties (with custom getters).
+        /// <summary>
+        /// Accumulates get-only properties (with custom getters).
+        /// </summary>
         private readonly List<GetableProperty> _getableProperties = new List<GetableProperty>();
-        // Accumulates method declarations for this class.
+        /// <summary>
+        /// Accumulates method declarations for this class.
+        /// </summary>
         private readonly List<Method> _methods = new List<Method>();
         
         /// <summary>
@@ -42,6 +50,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
         /// </summary>
         public IReadOnlyList<Method> Methods => _methods.AsReadOnly();
 
+        /// <summary>
+        /// Regex fields of the class by pattern, so methods that validate against the same pattern share one compiled <c>Regex</c>.
+        /// </summary>
         public readonly Dictionary<string, string> CachedRegexFields = new Dictionary<string, string>();
         
         /// <summary>

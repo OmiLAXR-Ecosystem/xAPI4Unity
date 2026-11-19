@@ -26,6 +26,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         public xAPIVerb(string context, string name, IDictionary<string, string> names, Dictionary<string, string> descriptions)
             : base(context, name, names, descriptions) { }
         
+        /// <summary>
+        /// Returns <c>verbs</c>, the folder of verbs in a context.
+        /// </summary>
         public override string GetDefinitionGroup() => "verbs";
     }
 }

@@ -14,8 +14,14 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     internal sealed class DirectoryCoreTemplateSource : ICoreTemplateSource
     {
+        /// <summary>
+        /// Templates of this package, relative to the Unity project.
+        /// </summary>
         private const string PackageTemplatePath = "Packages/com.rwth.unity.omilaxr.xapi4unity/Editor/Assets/Core";
 
+        /// <summary>
+        /// Creates a source that reads the templates from a folder.
+        /// </summary>
         /// <param name="directory">Folder that holds the <c>.tmpl</c> files.</param>
         public DirectoryCoreTemplateSource(string directory)
         {

@@ -42,6 +42,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public bool IsArray => ArrayParts.Count > 0;
 
+        /// <summary>
+        /// Creates an expression from its parts. Use <see cref="Parse"/>.
+        /// </summary>
         private TypeExpression(string original, string coreName, bool isNullable, List<ArrayPart> parts)
         {
             Original = original;
@@ -220,17 +223,32 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public readonly struct ArrayPart
         {
+            /// <summary>
+            /// True for <c>[]</c>, false for multidimensional arrays such as <c>[,]</c>.
+            /// </summary>
             public bool IsJagged { get; }
+            /// <summary>
+            /// Number of dimensions: 1 for <c>[]</c>, 2 for <c>[,]</c>, …
+            /// </summary>
             public int Rank { get; } // 2 => [,], 3 => [,,]
 
+            /// <summary>
+            /// Creates an array part.
+            /// </summary>
             private ArrayPart(bool isJagged, int rank)
             {
                 IsJagged = isJagged;
                 Rank = rank;
             }
 
+            /// <summary>
+            /// Creates a one-dimensional array part (<c>[]</c>).
+            /// </summary>
             public static ArrayPart Jagged() => new ArrayPart(true, 1);
 
+            /// <summary>
+            /// Creates a multidimensional array part with the given rank (at least 2).
+            /// </summary>
             public static ArrayPart Multi(int rank)
             {
                 if (rank < 2)
@@ -238,6 +256,9 @@ namespace xAPI4Unity.Editor.Types
                 return new ArrayPart(false, rank);
             }
 
+            /// <summary>
+            /// Returns the brackets, such as <c>[]</c> or <c>[,]</c>.
+            /// </summary>
             public override string ToString() => IsJagged ? "[]" : $"[{new string(',', Rank - 1)}]";
         }
     }
@@ -252,6 +273,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public IReadOnlyList<TypeExpression> Options { get; }
 
+        /// <summary>
+        /// Creates a set of options. Use <see cref="Parse"/>.
+        /// </summary>
         private TypeExpressionSet(IReadOnlyList<TypeExpression> options)
         {
             if (options == null || options.Count == 0)
@@ -324,6 +348,9 @@ namespace xAPI4Unity.Editor.Types
             return false;
         }
 
+        /// <summary>
+        /// Returns the options joined with <c> | </c>.
+        /// </summary>
         public override string ToString() => string.Join(" | ", Options.Select(o => o.Original));
     }
 }

@@ -35,6 +35,9 @@ namespace xAPI4Unity.Editor.Parser.IO {
         /// </summary>
         public bool IsDirectory => DirContent != null;
 
+        /// <summary>
+        /// Creates an empty FileMeta.
+        /// </summary>
         public FileMeta() { }
 
         /// <summary>

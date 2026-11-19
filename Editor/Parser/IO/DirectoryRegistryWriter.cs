@@ -15,6 +15,9 @@ namespace xAPI4Unity.Editor.Parser.IO
     /// </summary>
     internal sealed class DirectoryRegistryWriter : IRegistryWriter
     {
+        /// <summary>
+        /// Creates a writer for a registry folder.
+        /// </summary>
         /// <param name="rootFolder">Registry folder, such as <c>Assets/xAPI.Registry</c>.</param>
         public DirectoryRegistryWriter(string rootFolder)
         {

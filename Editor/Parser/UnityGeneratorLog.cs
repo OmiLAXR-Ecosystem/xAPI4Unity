@@ -18,6 +18,9 @@ namespace xAPI4Unity.Editor.Parser
         /// </summary>
         public static readonly UnityGeneratorLog Instance = new UnityGeneratorLog();
 
+        /// <summary>
+        /// Use <see cref="Instance"/>.
+        /// </summary>
         private UnityGeneratorLog() { }
 
         /// <inheritdoc/>

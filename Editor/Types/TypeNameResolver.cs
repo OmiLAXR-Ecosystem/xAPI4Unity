@@ -15,8 +15,14 @@ namespace xAPI4Unity.Editor.Types
     /// </summary>
     public class TypeNameResolver : ITypeNameResolver
     {
+        /// <summary>
+        /// The aliases checked before full type names.
+        /// </summary>
         public readonly Aliases Aliases;
 
+        /// <summary>
+        /// Creates a resolver that uses the given aliases.
+        /// </summary>
         public TypeNameResolver(Aliases aliases)
         {
             Aliases = aliases;

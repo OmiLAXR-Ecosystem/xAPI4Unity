@@ -26,8 +26,14 @@ namespace xAPI4Unity.Editor
     /// </summary>
     internal sealed class UnityEditorDialogs : IEditorDialogs
     {
+        /// <summary>
+        /// Shared instance. The class has no state.
+        /// </summary>
         public static readonly UnityEditorDialogs Instance = new UnityEditorDialogs();
 
+        /// <summary>
+        /// Use <see cref="Instance"/>.
+        /// </summary>
         private UnityEditorDialogs() { }
 
         /// <inheritdoc/>

@@ -54,6 +54,9 @@ namespace xAPI4Unity.Editor.Parser
         public static string CreateAsmDef(string @namespace, IEnumerable<string> references) =>
             AsmDefFile(@namespace, @namespace, (references ?? Array.Empty<string>()).ToArray());
 
+        /// <summary>
+        /// Builds the JSON of an .asmdef file with the given name, root namespace and references.
+        /// </summary>
         private static string AsmDefFile(string name, string rootNamespace, string[] references) =>
             "{\n  \"name\": \""+ name +"\",\n" +
                           "  \"rootNamespace\": \""+ rootNamespace + "\",\n" +
