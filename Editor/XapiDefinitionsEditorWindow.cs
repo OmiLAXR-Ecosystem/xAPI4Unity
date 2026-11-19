@@ -268,9 +268,7 @@ namespace xAPI4Unity.Editor
         /// <summary>
         /// The <c>definitions</c> folder of the source folder, null without a source folder.
         /// </summary>
-        private static string DefinitionsRoot => string.IsNullOrEmpty(Settings.localSource.path)
-            ? null
-            : Norm(Path.Combine(Settings.localSource.path, "definitions"));
+        private static string DefinitionsRoot => Norm(RegistryPaths.FromSettings(Settings).DefinitionsFolder);
 
         /// <summary>
         /// Opens the xAPI Definitions Editor window via the Unity menu.
@@ -604,8 +602,7 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private static HashSet<string> ReadIgnoredContexts()
         {
-            var path = Settings.localSource.path;
-            var configPath = string.IsNullOrEmpty(path) ? null : path.TrimEnd('/', '\\') + ".config.json";
+            var configPath = RegistryPaths.FromSettings(Settings).ConfigFile;
             try
             {
                 if (configPath != null && File.Exists(configPath))
