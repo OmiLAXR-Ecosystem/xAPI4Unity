@@ -40,6 +40,28 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEqual(new[] { "c.json" }, report.SkipResults.Select(r => r.path));
             CollectionAssert.AreEqual(new[] { "d.json" }, report.ConflictResults.Select(r => r.path));
         }
+
+        /// <summary>
+        /// Updated and removed files of a release update are counted and listed apart from the others.
+        /// </summary>
+        [Test]
+        public void MergeReport_Counts_Updated_And_Removed_Files()
+        {
+            // Arrange
+            var report = new MergeReport("OmiLAXR-Ecosystem/xapi v2.1.0");
+
+            // Act
+            report.AddUpdate("a.json");
+            report.AddRemove("b.json");
+            report.AddRemove("c.json");
+
+            // Assert
+            Assert.AreEqual(1, report.updated);
+            Assert.AreEqual(2, report.removed);
+            Assert.AreEqual(0, report.copied + report.skipped + report.conflicts);
+            CollectionAssert.AreEqual(new[] { "a.json" }, report.UpdateResults.Select(r => r.path));
+            CollectionAssert.AreEqual(new[] { "b.json", "c.json" }, report.RemoveResults.Select(r => r.path));
+        }
     }
 }
 #endif
