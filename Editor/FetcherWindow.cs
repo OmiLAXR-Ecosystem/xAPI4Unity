@@ -4,7 +4,6 @@
 * This file is part of xAPI4Unity.
 */
 #if UNITY_EDITOR
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -25,7 +24,6 @@ namespace xAPI4Unity.Editor
     {
         private static MainSettings mainSettings => MainSettings.Instance;
         private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
-        private bool _isDownloading;
 
         private LocalSourceView _localSourceView;
 
@@ -132,14 +130,6 @@ namespace xAPI4Unity.Editor
                 Debug.Log(ts.Key + ":" + string.Join(",", types.Select(t => t.GetTypeSyntax())));
             }
         }
-
-        private static string SafePath(string path) => $"\"{path}\"";
-
-        private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
-            => Debug.LogError(e.Data);
-
-        private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-            => Debug.Log(e.Data);
 
         protected void OnEnable()
         {
