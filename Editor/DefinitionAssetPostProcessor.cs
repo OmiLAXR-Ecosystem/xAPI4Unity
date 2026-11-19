@@ -66,17 +66,15 @@ namespace xAPI4Unity.Editor
             }
 
             Debug.Log("xAPI Definitions Path: " + definitionsPath);
-            
-            var @namespace = settings.@namespace;
 
-            // Expand the path by appending "/definitions" and check if it exists
-            definitionsPath = Path.Combine(definitionsPath, "definitions");
-            if (!Directory.Exists(definitionsPath))
+            // definitionsPath is the source folder that holds 'definitions'; skip if it was deleted
+            var paths = new RegistryPaths(definitionsPath, Application.dataPath, settings.@namespace);
+            if (!Directory.Exists(paths.DefinitionsFolder))
                 return;
 
-            // Trigger code generation for the identified definitions
-            Generator.Generate(@namespace, definitionsPath);
-            Debug.Log("Generated " + definitionsPath);
+            // Generate like the menu and the wizard do, with the types config next to the source folder
+            if (Generator.Update(paths))
+                Debug.Log("Generated " + paths.DefinitionsFolder);
         }
     }
 }

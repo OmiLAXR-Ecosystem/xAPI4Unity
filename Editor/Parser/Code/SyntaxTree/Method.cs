@@ -11,9 +11,13 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A method in the syntax tree
     /// </summary>
     internal sealed class Method : TypedNode<Method> {
-        // Holds the serialized body for this method (its statements).
+        /// <summary>
+        /// Holds the serialized body for this method (its statements).
+        /// </summary>
         private MethodBody _body;
-        // Arguments to be forwarded to a base method invocation, when applicable.
+        /// <summary>
+        /// Arguments to be forwarded to a base method invocation, when applicable.
+        /// </summary>
         private readonly List<Argument> _baseArguments = new List<Argument>();
         
         /// <summary>

@@ -9,7 +9,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A getter in the syntax tree
     /// </summary>
     internal sealed class Getter {
-        // Backing field for the getter body. Stored as a MethodBody node representing the serialized statements.
+        /// <summary>
+        /// Backing field for the getter body. Stored as a MethodBody node representing the serialized statements.
+        /// </summary>
         private MethodBody _body;
 
         /// <summary>

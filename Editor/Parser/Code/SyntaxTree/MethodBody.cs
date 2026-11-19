@@ -11,7 +11,9 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// A method body in the syntax tree
     /// </summary>
     internal sealed class MethodBody {
-        // Accumulates the ordered list of statements that compose this method body.
+        /// <summary>
+        /// Accumulates the ordered list of statements that compose this method body.
+        /// </summary>
         private readonly List<Statement> _statements = new List<Statement>();
 
         /// <summary>

@@ -24,7 +24,9 @@ namespace xAPI4Unity.Editor
         /// </summary>
         private LocalSourceSettings _settings => MainSettings.Instance.localSource;
 
-        // Git helper instance for managing Git operations
+        /// <summary>
+        /// Runs git for the clone option.
+        /// </summary>
         private readonly GitHelper _git = new GitHelper(DefaultValues.RepoUrl, DefaultValues.AssetRoot);
 
         /// <summary>

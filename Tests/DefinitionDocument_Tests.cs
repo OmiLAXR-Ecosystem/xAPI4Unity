@@ -11,9 +11,15 @@ using xAPI4Unity.Editor.Parser.Code;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for <see cref="DefinitionDocument"/>, the JSON model of the definitions editor.
+    /// </summary>
     [TestFixture]
     public class DefinitionDocument_Tests
     {
+        /// <summary>
+        /// Serializing keeps date-like strings, decimals and umlauts as they were.
+        /// </summary>
         [Test]
         public void Serialize_Keeps_Dates_Decimals_And_Umlauts()
         {
@@ -29,6 +35,9 @@ namespace xAPI4Unity.Tests
             StringAssert.Contains("Größe", serialized);
         }
 
+        /// <summary>
+        /// Serialized JSON uses four spaces and LF line breaks.
+        /// </summary>
         [Test]
         public void Serialize_Indents_With_Four_Spaces_And_LF()
         {
@@ -42,6 +51,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("{\n    \"name\": {\n        \"en-US\": \"x\"\n    }\n}", serialized);
         }
 
+        /// <summary>
+        /// Parse rejects a JSON array, because a definition is an object.
+        /// </summary>
         [Test]
         public void Parse_Rejects_A_Json_Array()
         {
@@ -52,6 +64,9 @@ namespace xAPI4Unity.Tests
             Assert.Throws<Newtonsoft.Json.JsonReaderException>(() => DefinitionDocument.Parse(json));
         }
 
+        /// <summary>
+        /// GetKey removes the definitions root and the .json extension.
+        /// </summary>
         [Test]
         public void GetKey_Strips_The_Root_And_The_Extension()
         {
@@ -66,6 +81,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("media/extensions/activity/duration", key);
         }
 
+        /// <summary>
+        /// GetIri builds the registry IRI and replaces spaces with underscores.
+        /// </summary>
         [Test]
         public void GetIri_Replaces_Spaces_With_Underscores()
         {
@@ -79,7 +97,10 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(CodeGenerator.XAPI_BASE_URI + "definitions/observation/activities/Schere_ab", iri);
         }
 
-        // The kind is passed as text, because DefinitionKind is internal and test methods are public
+        /// <summary>
+        /// GetKind and GetExtensionType read the kind and the extension type from the folders of a key.
+        /// The kind is passed as text, because <see cref="DefinitionKind"/> is internal and a public test method cannot take it.
+        /// </summary>
         [TestCase("generic/verbs/accepted", "Verb", null)]
         [TestCase("media/activities/video", "Activity", null)]
         [TestCase("media/extensions/result/progress", "Extension", "result")]
@@ -96,6 +117,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(extensionType, actualType);
         }
 
+        /// <summary>
+        /// Renaming a language keeps the order of the languages.
+        /// </summary>
         [Test]
         public void RenameLanguage_Keeps_The_Order()
         {
@@ -112,6 +136,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("b", document["name"]["de-DE"].ToString());
         }
 
+        /// <summary>
+        /// Renaming to a language that is already there is refused.
+        /// </summary>
         [Test]
         public void RenameLanguage_Refuses_A_Taken_Code()
         {
@@ -126,6 +153,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("b", document["name"]["de-DE"].ToString());
         }
 
+        /// <summary>
+        /// AddLanguage adds the first common language that is missing.
+        /// </summary>
         [Test]
         public void AddLanguage_Picks_The_First_Missing_Common_Language()
         {
@@ -140,6 +170,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("", document["description"]["de-DE"].ToString());
         }
 
+        /// <summary>
+        /// Setting an empty exactMatch list removes the field.
+        /// </summary>
         [Test]
         public void SetExactMatches_Removes_The_Field_When_Empty()
         {
@@ -153,6 +186,9 @@ namespace xAPI4Unity.Tests
             Assert.IsFalse(document.ContainsKey("exactMatch"));
         }
 
+        /// <summary>
+        /// GetOtherFields lists the fields the editor does not know, in file order.
+        /// </summary>
         [Test]
         public void GetOtherFields_Lists_Unknown_Fields_In_File_Order()
         {
@@ -166,6 +202,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.AreEqual(new[] { "choices", "rules" }, others);
         }
 
+        /// <summary>
+        /// A new template gets an English name derived from the file name.
+        /// </summary>
         [Test]
         public void CreateTemplate_Derives_The_English_Name_From_The_File_Name()
         {

@@ -9,12 +9,24 @@ using xAPI4Unity.Editor.Settings;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for the migration of the old GitLab repository in <see cref="LocalSourceSettings"/>.
+    /// </summary>
     [TestFixture]
     public class LocalSourceSettings_Tests
     {
+        /// <summary>
+        /// Git URL of the current default repository.
+        /// </summary>
         private const string GitHubRepoUrl = "https://github.com/OmiLAXR-Ecosystem/xapi.git";
+        /// <summary>
+        /// Web URL of the current default repository.
+        /// </summary>
         private const string GitHubDownloadUrl = "https://github.com/OmiLAXR-Ecosystem/xapi";
 
+        /// <summary>
+        /// The GitLab URLs and the master branch are replaced with the GitHub defaults.
+        /// </summary>
         [Test]
         public void MigrateLegacyRepository_Replaces_GitLab_Defaults()
         {
@@ -36,6 +48,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("main", settings.repoBranch);
         }
 
+        /// <summary>
+        /// GitLab URLs with a trailing slash, .git or other casing are recognized.
+        /// </summary>
         [TestCase("https://gitlab.com/learntech-rwth/xapi/")]
         [TestCase("https://gitlab.com/learntech-rwth/xapi.git")]
         [TestCase(" HTTPS://GitLab.com/learntech-rwth/xapi ")]
@@ -52,6 +67,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual(GitHubDownloadUrl, settings.repoDownloadUrl);
         }
 
+        /// <summary>
+        /// A fork keeps its URLs and branch.
+        /// </summary>
         [Test]
         public void MigrateLegacyRepository_Keeps_Forks()
         {
@@ -73,6 +91,9 @@ namespace xAPI4Unity.Tests
             Assert.AreEqual("master", settings.repoBranch);
         }
 
+        /// <summary>
+        /// Current defaults are left as they are.
+        /// </summary>
         [Test]
         public void MigrateLegacyRepository_Changes_Nothing_For_Current_Defaults()
         {

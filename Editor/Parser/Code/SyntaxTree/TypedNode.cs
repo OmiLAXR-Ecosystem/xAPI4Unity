@@ -14,9 +14,13 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree
     /// <typeparam name="T">The derived type of the syntax node, enabling fluent API chaining.</typeparam>
     internal abstract class TypedNode<T> : SyntaxNode<T> where T : SyntaxNode<T>
     {
-        // Holds the list of arguments used to initialize this node.
+        /// <summary>
+        /// Holds the list of arguments used to initialize this node.
+        /// </summary>
         public readonly List<Argument> Arguments = new List<Argument>();
-        // Holds the list of parameters associated with this node.
+        /// <summary>
+        /// Holds the list of parameters associated with this node.
+        /// </summary>
         public readonly List<Parameter> Parameters = new List<Parameter>();
         
         /// <summary>

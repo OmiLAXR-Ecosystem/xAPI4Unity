@@ -1,0 +1,17 @@
+{
+    "types": {
+        "demo/extensions/result/score": "float | (int,int)[]",
+        "demo/extensions/result/height": "float[0,3]",
+        "demo/extensions/context/place": "${position}?"
+    },
+    "references": [
+        "OmiLAXR",
+        "OmiLAXR.xAPI"
+    ],
+    "ignoredContexts": [
+        "ignored"
+    ],
+    "Variables": {
+        "position": "vec3"
+    }
+}

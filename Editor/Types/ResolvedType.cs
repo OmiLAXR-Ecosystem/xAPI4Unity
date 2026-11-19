@@ -38,6 +38,9 @@ namespace xAPI4Unity.Editor.Types
         /// </summary>
         public virtual bool IsRange => false;
 
+        /// <summary>
+        /// True if the type is nullable (<c>?</c>).
+        /// </summary>
         public virtual bool IsNullable => false;
 
         /// <summary>

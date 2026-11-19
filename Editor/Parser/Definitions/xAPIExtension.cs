@@ -12,6 +12,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
     /// </summary>
     internal sealed class xAPIExtension : xAPIDefinition
     {
+        /// <summary>
+        /// Extension type (<c>activity</c>, <c>context</c> or <c>result</c>). The parser does not set it; the type is the key in <see cref="xAPIContext.Extensions"/>.
+        /// </summary>
         public string Type { get; set; }
         /// <summary>
         /// Creates an empty xAPIExtension
@@ -31,6 +34,9 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         {
         }
 
+        /// <summary>
+        /// Returns <c>extensions</c>, the folder of extensions in a context.
+        /// </summary>
         public override string GetDefinitionGroup() => "extensions";
     }
 }

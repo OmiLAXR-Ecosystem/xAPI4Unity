@@ -1,4 +1,9 @@
-﻿#if UNITY_EDITOR
+﻿/*
+* SPDX-License-Identifier: AGPL-3.0-or-later
+* Copyright (C) 2025 Sergej Görzen <sergej.goerzen@gmail.com>
+* This file is part of xAPI4Unity.
+*/
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +15,18 @@ using xAPI4Unity.Editor;
 
 namespace xAPI4Unity.Tests
 {
+    /// <summary>
+    /// Tests for the type system: aliases, type expressions, tuples, unions, schemas, regex and ranges.
+    /// </summary>
     [TestFixture]
     public class TypeSystemTests
     {
         // -----------------------------
         // Helpers
         // -----------------------------
+        /// <summary>
+        /// Returns the open ValueTuple type with the given number of type arguments.
+        /// </summary>
         private static Type VTDef(int arity)
         {
             switch (arity)
@@ -32,8 +43,14 @@ namespace xAPI4Unity.Tests
             }
         }
 
+        /// <summary>
+        /// Resolver with the built-in aliases.
+        /// </summary>
         public static readonly TypeNameResolver TypeNameResolver = new TypeNameResolver(new Aliases());
 
+        /// <summary>
+        /// Builds the ValueTuple type the C# compiler uses for the elements, nested after seven.
+        /// </summary>
         private static Type ExpectedTuple(params Type[] elements)
         {
             if (elements.Length <= 7)
@@ -47,12 +64,18 @@ namespace xAPI4Unity.Tests
             return VTDef(8).MakeGenericType(args);
         }
 
+        /// <summary>
+        /// Parses and resolves a type expression.
+        /// </summary>
         private static ResolvedType ResolveExpr(string expr)
         {
             var e = TypeExpression.Parse(expr);
             return e.Resolve(TypeNameResolver);
         }
 
+        /// <summary>
+        /// Asserts that an expression resolves to the expected type.
+        /// </summary>
         private static void AssertOkExpr(string expr, Type expected)
         {
             var t = ResolveExpr(expr);
@@ -60,6 +83,9 @@ namespace xAPI4Unity.Tests
             Assert.That(t.Type, Is.EqualTo(expected));
         }
 
+        /// <summary>
+        /// Asserts that an expression does not resolve.
+        /// </summary>
         private static void AssertNullExpr(string expr)
         {
             var t = ResolveExpr(expr);
@@ -69,6 +95,9 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // TypeNameResolver – Aliases & FQN
         // -----------------------------
+        /// <summary>
+        /// Aliases resolve in any case.
+        /// </summary>
         [Test]
         public void Resolver_Resolves_Aliases_CaseInsensitive()
         {
@@ -79,6 +108,9 @@ namespace xAPI4Unity.Tests
             Assert.That(TypeNameResolver.ResolveType("u64").Type, Is.EqualTo(typeof(ulong)));
         }
 
+        /// <summary>
+        /// Full type names resolve.
+        /// </summary>
         [Test]
         public void Resolver_Resolves_FullyQualified()
         {
@@ -86,6 +118,9 @@ namespace xAPI4Unity.Tests
             Assert.That(TypeNameResolver.ResolveType("System.Single").Type, Is.EqualTo(typeof(float)));
         }
 
+        /// <summary>
+        /// An unknown name gives null.
+        /// </summary>
         [Test]
         public void Resolver_ReturnsNull_For_Unknown()
         {
@@ -95,6 +130,9 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // TypeExpression – Primitive, Nullable, Arrays
         // -----------------------------
+        /// <summary>
+        /// Primitive aliases resolve.
+        /// </summary>
         [Test]
         public void Expression_Parses_Primitive()
         {
@@ -103,6 +141,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("bool", typeof(bool));
         }
 
+        /// <summary>
+        /// A regex expression resolves to string and keeps its pattern.
+        /// </summary>
         [Test]
         public void Expression_Parses_Regex()
         {
@@ -116,13 +157,23 @@ namespace xAPI4Unity.Tests
             Assert.IsFalse(r.IsMatch("ABCXXXX"));
         }
 
+        /// <summary>
+        /// A nullable keeps its inner type, is marked nullable and adds ? to the syntax.
+        /// </summary>
         [Test]
         public void Expression_Parses_Nullable_Value()
         {
-            var expected = typeof(Nullable<>).MakeGenericType(typeof(int));
-            AssertOkExpr("int?", expected);
+            // ResolvedNullable keeps the inner type and marks it nullable; the syntax carries the "?"
+            var resolved = ResolveExpr("int?");
+            Assert.That(resolved, Is.InstanceOf<ResolvedNullable>());
+            Assert.That(resolved.IsNullable, Is.True);
+            Assert.That(resolved.Type, Is.EqualTo(typeof(int)));
+            Assert.That(resolved.GetTypeSyntax(), Is.EqualTo("System.Int32?"));
         }
 
+        /// <summary>
+        /// Jagged and multidimensional arrays resolve to the matching array types.
+        /// </summary>
         [Test]
         public void Expression_Parses_Arrays_Jagged_And_MultiDimensional()
         {
@@ -137,12 +188,18 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // TypeExpression – Tupel
         // -----------------------------
+        /// <summary>
+        /// A single element becomes ValueTuple with one argument.
+        /// </summary>
         [Test]
         public void Tuple_Single_Element()
         {
             AssertOkExpr("(int)", ExpectedTuple(typeof(int)));
         }
 
+        /// <summary>
+        /// Three floats become ValueTuple with three float arguments.
+        /// </summary>
         [Test]
         public void Tuple_Three_Floats()
         {
@@ -150,6 +207,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(float, float, float)", expected);
         }
 
+        /// <summary>
+        /// Seven elements fit into one ValueTuple.
+        /// </summary>
         [Test]
         public void Tuple_Seven_Elements()
         {
@@ -157,6 +217,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(int, int, int, int, int, int, int)", ExpectedTuple(elems));
         }
 
+        /// <summary>
+        /// Eight elements nest the eighth into the rest argument.
+        /// </summary>
         [Test]
         public void Tuple_Eight_Elements_Nested()
         {
@@ -164,6 +227,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(int, int, int, int, int, int, int, int)", ExpectedTuple(elems));
         }
 
+        /// <summary>
+        /// Nine elements nest the last two into the rest argument.
+        /// </summary>
         [Test]
         public void Tuple_Nine_Elements_Nested()
         {
@@ -171,6 +237,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(int, int, int, int, int, int, int, int, int)", ExpectedTuple(elems));
         }
 
+        /// <summary>
+        /// A tuple inside a tuple resolves to nested ValueTuples.
+        /// </summary>
         [Test]
         public void Tuple_Nested_Tuple_Inside()
         {
@@ -179,6 +248,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(int, (float, float))", expected);
         }
 
+        /// <summary>
+        /// Spaces around the elements do not matter.
+        /// </summary>
         [Test]
         public void Tuple_With_Whitespace_Variants()
         {
@@ -186,6 +258,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("(  float ,  float,float   )", expected);
         }
 
+        /// <summary>
+        /// Arrays and nullables of tuples keep the tuple type.
+        /// </summary>
         [Test]
         public void Tuple_Array_And_Nullable_Combinations()
         {
@@ -193,13 +268,17 @@ namespace xAPI4Unity.Tests
             var expectedArray = ExpectedTuple(typeof(int), typeof(float)).MakeArrayType();
             AssertOkExpr("(int, float)[]", expectedArray);
 
-            // (int,(float,float))? → Nullable<ValueTuple<int,ValueTuple<float,float>>>
+            // (int,(float,float))? → nullable ValueTuple<int,ValueTuple<float,float>>
             var inner = ExpectedTuple(typeof(float), typeof(float));
             var outer = ExpectedTuple(typeof(int), inner);
-            var expectedNullable = typeof(Nullable<>).MakeGenericType(outer);
-            AssertOkExpr("(int,(float,float))?", expectedNullable);
+            var nullable = ResolveExpr("(int,(float,float))?");
+            Assert.That(nullable.IsNullable, Is.True);
+            Assert.That(nullable.Type, Is.EqualTo(outer));
         }
 
+        /// <summary>
+        /// An empty tuple throws.
+        /// </summary>
         [Test]
         public void Tuple_Empty_Throws()
         {
@@ -207,6 +286,9 @@ namespace xAPI4Unity.Tests
             Assert.Throws<ArgumentException>(() => ResolveExpr("()"));
         }
 
+        /// <summary>
+        /// A tuple without closing parenthesis does not resolve.
+        /// </summary>
         [Test]
         public void Tuple_Unbalanced_Parens_ReturnsNull_On_Resolve()
         {
@@ -217,6 +299,9 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // TypeExpressionSet – Unionen
         // -----------------------------
+        /// <summary>
+        /// A union resolves to each of its types.
+        /// </summary>
         [Test]
         public void Union_Int_Or_String()
         {
@@ -226,6 +311,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.Contains(types, typeof(string));
         }
 
+        /// <summary>
+        /// A union of a tuple and a Unity alias resolves to both.
+        /// </summary>
         [Test]
         public void Union_Tuple_Or_UnityVector()
         {
@@ -237,6 +325,9 @@ namespace xAPI4Unity.Tests
             CollectionAssert.Contains(types, typeof(Vector3));
         }
 
+        /// <summary>
+        /// A blank union throws.
+        /// </summary>
         [Test]
         public void Union_Empty_Part_Throws()
         {
@@ -246,6 +337,9 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // TypeSchema – Parsing & Validation
         // -----------------------------
+        /// <summary>
+        /// A parsed schema returns the types of each key.
+        /// </summary>
         [Test]
         public void Schema_Parse_And_GetTypesFromKey()
         {
@@ -271,6 +365,9 @@ namespace xAPI4Unity.Tests
             Assert.That(tupleArray[0].Type, Is.EqualTo(ExpectedTuple(typeof(int), typeof(float)).MakeArrayType()));
         }
 
+        /// <summary>
+        /// TryParse collects errors and keeps the keys that parsed.
+        /// </summary>
         [Test]
         public void Schema_TryParse_Collects_Errors()
         {
@@ -296,6 +393,9 @@ namespace xAPI4Unity.Tests
         // -----------------------------
         // Unity-spezifische Aliases
         // -----------------------------
+        /// <summary>
+        /// Unity aliases resolve to the Unity types.
+        /// </summary>
         [Test]
         public void Unity_Aliases_Vector_And_Color()
         {
@@ -304,6 +404,9 @@ namespace xAPI4Unity.Tests
             AssertOkExpr("color32", typeof(Color32));
         }
         
+        /// <summary>
+        /// A regex expression matches only the values its pattern allows.
+        /// </summary>
         [Test]
         public void Regex_Parses_And_Matches_Valid_Values()
         {
@@ -321,6 +424,9 @@ namespace xAPI4Unity.Tests
             Assert.That(regex.IsMatch("123"), Is.False);
         }
         
+        /// <summary>
+        /// A range with brackets is inclusive and keeps its bounds.
+        /// </summary>
         [Test]
         public void Range_Parses_InclusiveIntRange()
         {
@@ -338,6 +444,9 @@ namespace xAPI4Unity.Tests
             Assert.That(range.RawMax, Is.EqualTo("10"));
         }
 
+        /// <summary>
+        /// A range with parentheses is exclusive and keeps its bounds.
+        /// </summary>
         [Test]
         public void Range_Parses_ExclusiveFloatRange()
         {

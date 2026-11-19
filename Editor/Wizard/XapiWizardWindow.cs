@@ -22,31 +22,80 @@ namespace xAPI4Unity.Editor.Wizard
     /// </summary>
     public sealed class XapiWizardWindow : EditorWindow
     {
+        /// <summary>
+        /// Folder of the wizard's assets in this package.
+        /// </summary>
         private const string PackageRoot = "Packages/com.rwth.unity.omilaxr.xapi4unity/Editor/Wizard/";
+        /// <summary>
+        /// Style sheet of the wizard.
+        /// </summary>
         private const string StyleSheetPath = PackageRoot + "XapiWizardWindow.uss";
-        // Shown only if the OmiLAXR core package is installed, xAPI4Unity does not depend on it
+        /// <summary>
+        /// OmiLAXR logo, shown in the header only if the OmiLAXR core package is installed. xAPI4Unity does not depend on it.
+        /// </summary>
         private const string LogoPath = "Packages/com.rwth.unity.omilaxr/Editor/Wizard/Images/OmiLAXR_Logo.png";
+        /// <summary>
+        /// SessionState key of the current step, so the step survives script reloads.
+        /// </summary>
         private const string StepKey = "xAPI4Unity.Wizard.Step";
+        /// <summary>
+        /// Website of the xAPI registry.
+        /// </summary>
         private const string RegistryUrl = "https://omilaxr-ecosystem.github.io/xapi/";
+        /// <summary>
+        /// Define that OmiLAXR.xAPI sets once the registry exists.
+        /// </summary>
         private const string RegistryDefine = "XAPI_REGISTRY_EXISTS";
 
+        /// <summary>
+        /// Steps of the wizard, in order.
+        /// </summary>
         private enum Step
         {
+            /// <summary>
+            /// Introduction and overview.
+            /// </summary>
             Welcome,
+            /// <summary>
+            /// Where the definitions come from.
+            /// </summary>
             Source,
+            /// <summary>
+            /// Generate the registry and set the options.
+            /// </summary>
             Generate,
+            /// <summary>
+            /// Optional tools: definitions editor, merge conflicts, export.
+            /// </summary>
             Use,
+            /// <summary>
+            /// Summary and links.
+            /// </summary>
             Done
         }
 
-        // Same order as LocalSourceSettings.selectedOptionIndex
+        /// <summary>
+        /// How the wizard gets the definitions. Same order as <see cref="LocalSourceSettings.selectedOptionIndex"/>.
+        /// </summary>
         private enum SourceOption
         {
+            /// <summary>
+            /// Download the repository archive and merge it into <c>Assets/xapi</c>.
+            /// </summary>
             PatchIntoAssets,
+            /// <summary>
+            /// Download the archive with the browser.
+            /// </summary>
             DownloadZip,
+            /// <summary>
+            /// Clone the repository with git, as a submodule if the project uses git.
+            /// </summary>
             GitClone
         }
 
+        /// <summary>
+        /// Steps with their labels in the stepper.
+        /// </summary>
         private static readonly (Step Step, string Label)[] Steps =
         {
             (Step.Welcome, "Welcome"),
@@ -56,13 +105,34 @@ namespace xAPI4Unity.Editor.Wizard
             (Step.Done, "Done"),
         };
 
+        /// <summary>
+        /// One line of a status card: a check with a hint and an optional fix button.
+        /// </summary>
         private sealed class Check
         {
+            /// <summary>
+            /// Text of the check.
+            /// </summary>
             public string Label;
+            /// <summary>
+            /// True if the check passed.
+            /// </summary>
             public bool Passed;
+            /// <summary>
+            /// Shown below the label while the check fails.
+            /// </summary>
             public string Hint;
+            /// <summary>
+            /// Text of the fix button. Defaults to <c>Fix</c>.
+            /// </summary>
             public string FixLabel;
+            /// <summary>
+            /// Action of the fix button. No button without it.
+            /// </summary>
             public Action Fix;
+            /// <summary>
+            /// An optional check shows an info icon instead of a warning when it fails.
+            /// </summary>
             public bool Optional;
         }
 
@@ -71,24 +141,69 @@ namespace xAPI4Unity.Editor.Wizard
         /// </summary>
         private sealed class ActionResult
         {
+            /// <summary>
+            /// Name of the action.
+            /// </summary>
             public string Title;
+            /// <summary>
+            /// One sentence about the outcome.
+            /// </summary>
             public string Summary;
+            /// <summary>
+            /// Errors and warnings logged while the action ran.
+            /// </summary>
             public LogCollector Log;
+            /// <summary>
+            /// When the action ran.
+            /// </summary>
             public DateTime Time;
         }
 
+        /// <summary>
+        /// The settings of this project.
+        /// </summary>
         private static MainSettings Settings => MainSettings.Instance;
+        /// <summary>
+        /// Download, patch, clone and pull actions of the Source step.
+        /// </summary>
         private readonly LocalSourceView _source = new LocalSourceView();
+        /// <summary>
+        /// Project state of the last <see cref="Evaluate"/>, to rebuild only when it changes.
+        /// </summary>
         private string _signature;
+        /// <summary>
+        /// Message shown below the Source step's actions, such as a running download.
+        /// </summary>
         private string _message;
+        /// <summary>
+        /// Result of the last Generate run, shown in the Generate step.
+        /// </summary>
         private ActionResult _generateResult;
+        /// <summary>
+        /// Result of the last config validation, shown in the Generate step.
+        /// </summary>
         private ActionResult _validateResult;
 
+        /// <summary>
+        /// Row with one circle per step.
+        /// </summary>
         private VisualElement _stepper;
+        /// <summary>
+        /// Scrollable area that holds the current page.
+        /// </summary>
         private ScrollView _content;
+        /// <summary>
+        /// Footer button to the previous step.
+        /// </summary>
         private Button _back;
+        /// <summary>
+        /// Footer button to the next step, or Finish on the last one.
+        /// </summary>
         private Button _next;
 
+        /// <summary>
+        /// Opens the wizard (<c>xAPI4Unity / Open Wizard</c>).
+        /// </summary>
         [MenuItem("xAPI4Unity / Open Wizard", priority = 0)]
         public static void Open()
         {
@@ -98,6 +213,9 @@ namespace xAPI4Unity.Editor.Wizard
             window.Show();
         }
 
+        /// <summary>
+        /// The step that is shown, kept in SessionState.
+        /// </summary>
         private static Step CurrentStep
         {
             get => (Step)SessionState.GetInt(StepKey, (int)Step.Welcome);
@@ -106,19 +224,51 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region State
 
+        /// <summary>
+        /// Paths and checks of the project, shared with the menu items and <see cref="Startup"/>.
+        /// </summary>
+        private static ProjectStatus Status => new ProjectStatus(RegistryPaths.FromSettings(Settings));
+        /// <summary>
+        /// Source folder from the settings.
+        /// </summary>
         private static string SourcePath => Settings.localSource.path;
-        private static string DefinitionsPath => string.IsNullOrEmpty(SourcePath) ? null : Path.Combine(SourcePath, "definitions");
-        private static string RegistryPath => Path.Combine(Application.dataPath, Settings.@namespace);
-        // FetcherWindow reads the types config from '<folder>.config.json' next to the source folder
-        private static string ConfigPath => string.IsNullOrEmpty(SourcePath) ? null : SourcePath.TrimEnd('/', '\\') + ".config.json";
+        /// <summary>
+        /// The <c>definitions</c> folder in the source folder.
+        /// </summary>
+        private static string DefinitionsPath => Status.Paths.DefinitionsFolder;
+        /// <summary>
+        /// The registry folder <c>Assets/&lt;namespace&gt;</c>.
+        /// </summary>
+        private static string RegistryPath => Status.Paths.RegistryFolder;
+        /// <summary>
+        /// The types config next to the source folder.
+        /// </summary>
+        private static string ConfigPath => Status.Paths.ConfigFile;
 
-        private static bool HasDefinitions => DefinitionsPath != null && Directory.Exists(DefinitionsPath);
-        private static bool HasRegistry => Directory.Exists(RegistryPath);
+        /// <summary>
+        /// The source folder has a <c>definitions</c> folder.
+        /// </summary>
+        private static bool HasDefinitions => Status.HasDefinitions;
+        /// <summary>
+        /// The registry folder exists.
+        /// </summary>
+        private static bool HasRegistry => Status.HasRegistry;
+        /// <summary>
+        /// The <c>XAPI_REGISTRY_EXISTS</c> define is set.
+        /// </summary>
         private static bool HasDefine => Startup.DefineExist(RegistryDefine);
-        private static bool HasConfig => ConfigPath != null && File.Exists(ConfigPath);
-        private static bool HasMergeReports => Directory.Exists(SourcePath) &&
-                                               Directory.GetFiles(SourcePath, "*-xapi-report.json", SearchOption.TopDirectoryOnly).Length > 0;
+        /// <summary>
+        /// The types config exists.
+        /// </summary>
+        private static bool HasConfig => Status.HasConfig;
+        /// <summary>
+        /// The source folder has merge reports.
+        /// </summary>
+        private static bool HasMergeReports => Status.HasMergeReports;
 
+        /// <summary>
+        /// The selected source option, saved in the settings.
+        /// </summary>
         private static SourceOption SelectedOption
         {
             get => (SourceOption)Mathf.Clamp(Settings.localSource.selectedOptionIndex, 0, 2);
@@ -133,6 +283,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Lifecycle
 
+        /// <summary>
+        /// Loads the settings, builds the layout and starts watching for project changes.
+        /// </summary>
         private void OnEnable()
         {
             Settings.Load();
@@ -142,12 +295,18 @@ namespace xAPI4Unity.Editor.Wizard
             Evaluate();
         }
 
+        /// <summary>
+        /// Stops watching for project changes and saves the settings.
+        /// </summary>
         private void OnDisable()
         {
             EditorApplication.projectChanged -= Evaluate;
             Settings.Save();
         }
 
+        /// <summary>
+        /// Checks the project again when the window gets focus.
+        /// </summary>
         private void OnFocus() => Evaluate();
 
         /// <summary>
@@ -166,7 +325,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Layout
 
-        // Built in OnEnable instead of CreateGUI, which older Unity versions do not call
+        /// <summary>
+        /// Builds the header, stepper, content area and footer. Called in OnEnable instead of CreateGUI, which older Unity versions do not call.
+        /// </summary>
         private void BuildLayout()
         {
             var root = rootVisualElement;
@@ -191,6 +352,9 @@ namespace xAPI4Unity.Editor.Wizard
             root.Add(CreateFooter());
         }
 
+        /// <summary>
+        /// Creates the header with the logo (if available), the title and the versions.
+        /// </summary>
         private static VisualElement CreateHeader()
         {
             var header = Css(new VisualElement(), "header");
@@ -212,6 +376,9 @@ namespace xAPI4Unity.Editor.Wizard
             return header;
         }
 
+        /// <summary>
+        /// Creates the footer with the startup toggle and the Back and Next buttons.
+        /// </summary>
         private VisualElement CreateFooter()
         {
             var footer = Css(new VisualElement(), "footer");
@@ -245,6 +412,9 @@ namespace xAPI4Unity.Editor.Wizard
             return footer;
         }
 
+        /// <summary>
+        /// Shows a step and clears the messages and results of the previous one.
+        /// </summary>
         private void GoTo(Step step)
         {
             if (step < Step.Welcome || step > Step.Done)
@@ -286,6 +456,9 @@ namespace xAPI4Unity.Editor.Wizard
             _next.text = CurrentStep == Step.Done ? "Finish" : CurrentStep == Step.Welcome ? "Start" : "Next";
         }
 
+        /// <summary>
+        /// Builds the stepper: one circle per step, marked done or needing attention.
+        /// </summary>
         private void BuildStepper()
         {
             _stepper.Clear();
@@ -323,6 +496,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Pages
 
+        /// <summary>
+        /// Builds the Welcome page.
+        /// </summary>
         private static void BuildWelcome(VisualElement page)
         {
             page.Add(Css(new Label("Welcome to xAPI4Unity"), "h1"));
@@ -339,6 +515,9 @@ namespace xAPI4Unity.Editor.Wizard
             page.Add(Muted("You can come back any time via 'xAPI4Unity > Open Wizard'."));
         }
 
+        /// <summary>
+        /// Builds the Source page: status, local path and the ways to get the definitions.
+        /// </summary>
         private void BuildSource(VisualElement page)
         {
             page.Add(Css(new Label("Source"), "h1"));
@@ -363,6 +542,9 @@ namespace xAPI4Unity.Editor.Wizard
                 page.Add(Css(Muted(_message), "field"));
         }
 
+        /// <summary>
+        /// Builds the Generate page: status checks, options and the generate and validate buttons.
+        /// </summary>
         private void BuildGenerate(VisualElement page)
         {
             page.Add(Css(new Label("Generate"), "h1"));
@@ -432,7 +614,7 @@ namespace xAPI4Unity.Editor.Wizard
         private void RunGenerate()
         {
             var log = LogCollector.Run(FetcherWindow.QuickFetch);
-            var files = HasRegistry ? Directory.GetFiles(RegistryPath, "*.cs", SearchOption.AllDirectories).Length : 0;
+            var files = Status.RegistryFileCount;
             _generateResult = new ActionResult
             {
                 Title = "Update xAPI.Registry",
@@ -466,6 +648,9 @@ namespace xAPI4Unity.Editor.Wizard
             Rebuild();
         }
 
+        /// <summary>
+        /// Builds the Use page with the optional tools.
+        /// </summary>
         private static void BuildUse(VisualElement page)
         {
             page.Add(Css(new Label("Use"), "h1"));
@@ -492,6 +677,9 @@ namespace xAPI4Unity.Editor.Wizard
                 Css(new Button(() => Application.OpenURL(RegistryUrl)) { text = "Open website" }, "btn")));
         }
 
+        /// <summary>
+        /// Builds the Done page with a summary and links.
+        /// </summary>
         private static void BuildDone(VisualElement page)
         {
             var ready = HasDefinitions && HasRegistry;
@@ -520,6 +708,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Source
 
+        /// <summary>
+        /// Creates the card with the local path field and the Browse and Open folder buttons.
+        /// </summary>
         private VisualElement PathCard()
         {
             var card = Css(new VisualElement(), "card");
@@ -551,6 +742,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates the card with the three source options.
+        /// </summary>
         private VisualElement OptionsCard()
         {
             var card = Css(new VisualElement(), "card");
@@ -566,6 +760,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Adds one source option. The toggles act as radio buttons.
+        /// </summary>
         private void AddOption(VisualElement card, SourceOption option, string title, string description)
         {
             var toggle = new Toggle { text = title, value = SelectedOption == option };
@@ -585,6 +782,9 @@ namespace xAPI4Unity.Editor.Wizard
             card.Add(Css(Muted(description), "option-hint"));
         }
 
+        /// <summary>
+        /// Creates the card with the settings and the action buttons of the selected source option.
+        /// </summary>
         private VisualElement OptionDetailsCard()
         {
             var card = Css(new VisualElement(), "card");
@@ -652,6 +852,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a text field that saves the settings on every change.
+        /// </summary>
         private static TextField SettingField(string label, string value, Action<string> onChange)
         {
             var field = Css(new TextField(label) { value = value }, "field");
@@ -667,6 +870,9 @@ namespace xAPI4Unity.Editor.Wizard
 
         #region Building blocks
 
+        /// <summary>
+        /// Creates a card with one row per check.
+        /// </summary>
         private VisualElement ChecksCard(params Check[] checks)
         {
             var card = Css(new VisualElement(), "card");
@@ -675,6 +881,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates the row of a check: icon, label, hint and fix button.
+        /// </summary>
         private VisualElement CheckRow(Check check)
         {
             var row = Css(new VisualElement(), "check");
@@ -697,6 +906,9 @@ namespace xAPI4Unity.Editor.Wizard
             return row;
         }
 
+        /// <summary>
+        /// Creates the card of an action result with its errors and warnings (at most eight, the rest in the Console).
+        /// </summary>
         private static VisualElement ResultCard(ActionResult result)
         {
             const int maxMessages = 8;
@@ -717,6 +929,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a row with an icon, an optional title and a text.
+        /// </summary>
         private static VisualElement MessageRow(string icon, string title, string text)
         {
             var row = Css(new VisualElement(), "check");
@@ -729,6 +944,9 @@ namespace xAPI4Unity.Editor.Wizard
             return row;
         }
 
+        /// <summary>
+        /// Creates a card of the Use page with a title, a description and buttons.
+        /// </summary>
         private static VisualElement ToolCard(string title, string description, params Button[] buttons)
         {
             var card = Css(new VisualElement(), "card");
@@ -748,6 +966,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a card of the Welcome page's overview.
+        /// </summary>
         private static VisualElement OverviewCard(string title, string text)
         {
             var card = Css(new VisualElement(), "card");
@@ -756,6 +977,9 @@ namespace xAPI4Unity.Editor.Wizard
             return card;
         }
 
+        /// <summary>
+        /// Creates a row of the Done page's summary.
+        /// </summary>
         private static VisualElement SummaryRow(string label, string value, bool ok)
         {
             var row = Css(new VisualElement(), "check");
@@ -779,22 +1003,42 @@ namespace xAPI4Unity.Editor.Wizard
             return fullPath.StartsWith(projectRoot) ? fullPath.Substring(projectRoot.Length) : fullPath;
         }
 
-        // Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout
+        /// <summary>
+        /// Runs an action after the current event, because refreshing the AssetDatabase inside a UI event can break the layout.
+        /// </summary>
         private static Action Deferred(Action action) => () => EditorApplication.delayCall += () => action();
 
+        /// <summary>
+        /// Creates a section heading.
+        /// </summary>
         private static Label H2(string text) => Css(new Label(text), "h2");
+        /// <summary>
+        /// Creates a paragraph.
+        /// </summary>
         private static Label Text(string text) => Css(new Label(text), "text");
+        /// <summary>
+        /// Creates a dimmed hint text.
+        /// </summary>
         private static Label Muted(string text) => Css(new Label(text), "muted");
 
+        /// <summary>
+        /// Creates a button that opens a URL.
+        /// </summary>
         private static Button LinkButton(string text, string url)
             => Css(new Button(() => Application.OpenURL(url)) { text = text }, "btn", "link");
 
+        /// <summary>
+        /// Enables or disables an element and returns it.
+        /// </summary>
         private static T Enabled<T>(T element, bool enabled) where T : VisualElement
         {
             element.SetEnabled(enabled);
             return element;
         }
 
+        /// <summary>
+        /// Adds USS classes to an element and returns it.
+        /// </summary>
         private static T Css<T>(T element, params string[] classes) where T : VisualElement
         {
             foreach (var c in classes)

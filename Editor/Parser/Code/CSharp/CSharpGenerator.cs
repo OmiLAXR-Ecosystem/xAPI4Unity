@@ -26,8 +26,8 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
         /// Creates a CSharpGenerator
         /// </summary>
         /// <param name="namespace">Namespace</param>
-        public CSharpGenerator(string @namespace)
-            : base(new CSharpSerializer())
+        public CSharpGenerator(string @namespace, IGeneratorLog log = null)
+            : base(new CSharpSerializer(), log)
         {
             Namespace = @namespace;
         }
@@ -133,10 +133,10 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
         /// <returns>A MethodBody containing validation (if applicable), the Add call, and a fluent return.</returns>
         protected override MethodBody CreateExtensionsMethodBody(Class owner, xAPIExtension extension, ResolvedType t = null)
         {
-            var args = $"{Indent(2)}context: Context,{Environment.NewLine}"
-                       + $"{Indent(2)}extensionType: ExtensionType,{Environment.NewLine}"
-                       + $"{Indent(2)}key: \"{extension.DefName}\",{Environment.NewLine}"
-                       + $"{Indent(2)}names: {Serializer.DictionaryToString(extension.Names, 2)},{Environment.NewLine}"
+            var args = $"{Indent(2)}context: Context,{NewLine}"
+                       + $"{Indent(2)}extensionType: ExtensionType,{NewLine}"
+                       + $"{Indent(2)}key: \"{extension.DefName}\",{NewLine}"
+                       + $"{Indent(2)}names: {Serializer.DictionaryToString(extension.Names, 2)},{NewLine}"
                        + $"{Indent(2)}descriptions: {Serializer.DictionaryToString(extension.Descriptions, 2)}";
             var methodBody = new MethodBody();
 
@@ -208,7 +208,7 @@ namespace xAPI4Unity.Editor.Parser.Code.CSharp
             
             // Add the extension with its metadata and supplied value, then return 'this' for fluent API
             methodBody.AddStatements(
-                new Statement($"Add(new {ExtensionClassName}({Environment.NewLine}{args}),{Environment.NewLine}{Indent(1)} value);"), 
+                new Statement($"Add(new {ExtensionClassName}({NewLine}{args}),{NewLine}{Indent(1)} value);"), 
                 new Statement("return this;"));
 
             return methodBody;

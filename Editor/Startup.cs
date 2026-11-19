@@ -66,8 +66,8 @@ namespace xAPI4Unity.Editor
             EditorApplication.delayCall += () =>
             {
                 // XAPI_REGISTRY_EXISTS is not checked here: OmiLAXR.xAPI sets it once the registry exists
-                var hasRegistry = Directory.Exists(Path.Combine(Application.dataPath, settings.@namespace));
-                if (!hasRegistry || !GitHelper.HasDefinitionsFolder(settings.localSource.path))
+                var status = new ProjectStatus(RegistryPaths.FromSettings(settings));
+                if (!status.HasRegistry || !status.HasDefinitions)
                 {
                     // Open the wizard to guide the user
                     XapiWizardWindow.Open();

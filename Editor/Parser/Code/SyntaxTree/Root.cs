@@ -11,9 +11,13 @@ namespace xAPI4Unity.Editor.Parser.Code.SyntaxTree {
     /// Root of the syntax tree
     /// </summary>
     internal class Root {
-        // Holds the primary class node within the syntax tree.
+        /// <summary>
+        /// Holds the primary class node within the syntax tree.
+        /// </summary>
         private Class _cls;
-        // Holds the list of imported namespaces or classes.
+        /// <summary>
+        /// Holds the list of imported namespaces or classes.
+        /// </summary>
         private readonly List<Import> _imports = new List<Import>();
 
         /// <summary>

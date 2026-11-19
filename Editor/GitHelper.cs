@@ -15,10 +15,22 @@ namespace xAPI4Unity.Editor
     /// </summary>
     public class GitHelper
     {
-        private Process _processHandle; // Maintains the process handle for ongoing Git operations.
-        public string Url; // The repository URL.
-        public string Directory; // The local directory where the repository is cloned.
-        public bool IsBusy { get; private set; } // Indicates if a Git operation is in progress.
+        /// <summary>
+        /// The git process that is running, if any.
+        /// </summary>
+        private Process _processHandle;
+        /// <summary>
+        /// The repository URL.
+        /// </summary>
+        public string Url;
+        /// <summary>
+        /// The local folder of the clone.
+        /// </summary>
+        public string Directory;
+        /// <summary>
+        /// True while a git command runs.
+        /// </summary>
+        public bool IsBusy { get; private set; }
         
         /// <summary>
         /// Gets the path to the "xapi" directory in the repository.

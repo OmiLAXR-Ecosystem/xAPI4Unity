@@ -108,6 +108,10 @@ namespace xAPI4Unity.Editor.Parser.Definitions {
         /// </summary>
         public string[] GetLanguages() => Names.Keys.Union(Descriptions.Keys).ToArray();
 
+        /// <summary>
+        /// Returns the folder of this kind of definition in a context (<c>verbs</c>, <c>activities</c>, <c>extensions</c>).
+        /// Subclasses override it; the base class throws <see cref="NotImplementedException"/>.
+        /// </summary>
         public virtual string GetDefinitionGroup() => throw new NotImplementedException();
     }
 }
