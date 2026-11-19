@@ -20,5 +20,20 @@ namespace xAPI4Unity.Editor
         /// </summary>
         Local
     }
+
+    /// <summary>
+    /// Where the wizard gets the definitions from.
+    /// </summary>
+    public enum DefinitionsSource
+    {
+        /// <summary>
+        /// A released version of the official OmiLAXR registry, installed from its zip archive.
+        /// </summary>
+        Official,
+        /// <summary>
+        /// Any repository with a <c>definitions</c> folder, such as a fork: patch, zip download or git clone of a branch or commit.
+        /// </summary>
+        Custom
+    }
 }
 #endif

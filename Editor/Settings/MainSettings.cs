@@ -169,8 +169,8 @@ namespace xAPI4Unity.Editor.Settings
             if (localSource == null) localSource = new LocalSourceSettings();
 #endif
 
-            // Projects set up before 2.3.0 saved the old GitLab repository
-            if (localSource.MigrateLegacyRepository())
+            // Settings saved before the official releases have no source yet
+            if (localSource.ResolveSource())
                 Save(store);
         }
 
@@ -184,6 +184,8 @@ namespace xAPI4Unity.Editor.Settings
         /// </summary>
         internal void Save(ISettingsStore store)
         {
+            // Saved settings always have a source, so loading them does not save them again
+            localSource.ResolveSource();
             store.SetString(SettingsKey, JsonUtility.ToJson(this, false));
         }
     }

@@ -6,6 +6,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using NUnit.Framework;
+using xAPI4Unity.Editor;
 using xAPI4Unity.Editor.Settings;
 
 namespace xAPI4Unity.Tests
@@ -113,28 +114,33 @@ namespace xAPI4Unity.Tests
         }
 
         /// <summary>
-        /// Loading migrates the GitLab repository and saves the migrated settings once.
+        /// Loading settings saved before the official releases decides the source and saves it once.
         /// </summary>
         [Test]
-        public void Load_Migrates_The_GitLab_Repository_And_Saves_It()
+        public void Load_Decides_The_Source_Of_Old_Settings_And_Saves_It()
         {
             // Arrange
             var store = new InMemorySettingsStore();
             var old = new MainSettings();
-            old.localSource.repoUrl = "https://gitlab.com/learntech-rwth/xapi.git";
-            old.localSource.repoBranch = "master";
+            old.localSource.repoUrl = "https://github.com/OmiLAXR-Ecosystem/xapi.git";
+            old.localSource.repoDownloadUrl = "https://github.com/OmiLAXR-Ecosystem/xapi";
+            old.localSource.repoBranch = "main";
             old.Save(store);
+            // Older versions saved no source
+            store.Values[MainSettings.SettingsKey] = System.Text.RegularExpressions.Regex.Replace(
+                store.Values[MainSettings.SettingsKey], "\"source\":-?\\d+,?", "");
+            StringAssert.DoesNotContain("\"source\"", store.Values[MainSettings.SettingsKey]);
             store.Writes = 0;
 
             // Act
             var settings = new MainSettings();
             settings.Load(store);
+            settings.Load(store);
 
             // Assert
+            Assert.AreEqual(DefinitionsSource.Official, settings.localSource.Source);
             Assert.AreEqual("https://github.com/OmiLAXR-Ecosystem/xapi.git", settings.localSource.repoUrl);
-            Assert.AreEqual("main", settings.localSource.repoBranch);
             Assert.AreEqual(1, store.Writes);
-            StringAssert.Contains("OmiLAXR-Ecosystem", store.Values[MainSettings.SettingsKey]);
         }
 
         /// <summary>
